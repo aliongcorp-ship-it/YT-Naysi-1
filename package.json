@@ -1,0 +1,30 @@
+{
+  "name": "naysi-doorway-short",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "setup-browser": "node scripts/setup-browser.mjs",
+    "timeline": "node scripts/build-timeline.mjs",
+    "score": "python3 scripts/score.py",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Naysi out/naysi_master.mp4 --browser-executable=./.bin/chrome-wrapper --codec=h264 --crf=20 --concurrency=2 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --overwrite",
+    "build": "./build.sh"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "5.3.0",
+    "@fontsource-variable/inter-tight": "5.3.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
+    "@remotion/cli": "4.0.545",
+    "@remotion/renderer": "4.0.545",
+    "@sparticuz/chromium": "153.0.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.545"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

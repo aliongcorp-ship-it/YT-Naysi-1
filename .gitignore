@@ -1,0 +1,9 @@
+node_modules
+.venv
+out
+.bin
+audio/wav
+audio/vo_fx
+audio/mix
+public/audio
+*.log
