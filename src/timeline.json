@@ -1,0 +1,229 @@
+{
+  "fps": 90,
+  "width": 1440,
+  "height": 2560,
+  "duration": 83.6195,
+  "frames": 7526,
+  "scenes": [
+    {
+      "id": "s1",
+      "vo": "vo01",
+      "chapter": "HOOK",
+      "label": "TITIK PALING SEPI",
+      "index": 1,
+      "start": 0,
+      "voStart": 0.22,
+      "voEnd": 8.5042,
+      "end": 8.8042,
+      "duration": 8.8042,
+      "lineStarts": [
+        0,
+        3.061,
+        6.939
+      ],
+      "lineEnds": [
+        3.061,
+        6.939,
+        8.284
+      ],
+      "startFrame": 0,
+      "durationInFrames": 792
+    },
+    {
+      "id": "s2",
+      "vo": "vo02",
+      "chapter": "KOORDINAT",
+      "label": "POINT NEMO",
+      "index": 2,
+      "start": 8.8042,
+      "voStart": 9.0242,
+      "voEnd": 17.219,
+      "end": 17.519,
+      "duration": 8.7148,
+      "lineStarts": [
+        0,
+        2.043,
+        4.935
+      ],
+      "lineEnds": [
+        2.043,
+        4.935,
+        8.195
+      ],
+      "startFrame": 792,
+      "durationInFrames": 784
+    },
+    {
+      "id": "s3",
+      "vo": "vo03",
+      "chapter": "SKALA",
+      "label": "2.688 KM",
+      "index": 3,
+      "start": 17.519,
+      "voStart": 17.739,
+      "voEnd": 26.2645,
+      "end": 26.5645,
+      "duration": 9.0456,
+      "lineStarts": [
+        0,
+        2.657,
+        5.726
+      ],
+      "lineEnds": [
+        2.657,
+        5.726,
+        8.526
+      ],
+      "startFrame": 1577,
+      "durationInFrames": 814
+    },
+    {
+      "id": "s4",
+      "vo": "vo04",
+      "chapter": "ORBIT",
+      "label": "400 KM",
+      "index": 4,
+      "start": 26.5645,
+      "voStart": 26.7845,
+      "voEnd": 37.002,
+      "end": 37.302,
+      "duration": 10.7374,
+      "lineStarts": [
+        0,
+        2.895,
+        5.397,
+        8.201
+      ],
+      "lineEnds": [
+        2.895,
+        5.397,
+        8.201,
+        10.217
+      ],
+      "startFrame": 2391,
+      "durationInFrames": 966
+    },
+    {
+      "id": "s5",
+      "vo": "vo05",
+      "chapter": "KEDALAMAN",
+      "label": "KUBURAN LUAR ANGKASA",
+      "index": 5,
+      "start": 37.302,
+      "voStart": 37.522,
+      "voEnd": 47.5635,
+      "end": 47.8635,
+      "duration": 10.5615,
+      "lineStarts": [
+        0,
+        3.07,
+        4.506,
+        7.823
+      ],
+      "lineEnds": [
+        3.07,
+        4.506,
+        7.823,
+        10.042
+      ],
+      "startFrame": 3357,
+      "durationInFrames": 951
+    },
+    {
+      "id": "s6",
+      "vo": "vo06",
+      "chapter": "SINYAL",
+      "label": "THE BLOOP",
+      "index": 6,
+      "start": 47.8635,
+      "voStart": 48.0835,
+      "voEnd": 58.5952,
+      "end": 58.8952,
+      "duration": 11.0317,
+      "lineStarts": [
+        0,
+        4.55,
+        7.636
+      ],
+      "lineEnds": [
+        4.55,
+        7.636,
+        10.512
+      ],
+      "startFrame": 4308,
+      "durationInFrames": 993
+    },
+    {
+      "id": "s7",
+      "vo": "vo07",
+      "chapter": "JAWABAN",
+      "label": "ES YANG PATAH",
+      "index": 7,
+      "start": 58.8952,
+      "voStart": 59.1152,
+      "voEnd": 67.9064,
+      "end": 68.2064,
+      "duration": 9.3112,
+      "lineStarts": [
+        0,
+        3.019,
+        5.448
+      ],
+      "lineEnds": [
+        3.019,
+        5.448,
+        8.791
+      ],
+      "startFrame": 5301,
+      "durationInFrames": 838
+    },
+    {
+      "id": "s8",
+      "vo": "vo08",
+      "chapter": "PENUTUP",
+      "label": "CERITA PALING RAMAI",
+      "index": 8,
+      "start": 68.2064,
+      "voStart": 68.4264,
+      "voEnd": 75.6715,
+      "end": 75.9715,
+      "duration": 7.7651,
+      "lineStarts": [
+        0,
+        1.899,
+        4.99
+      ],
+      "lineEnds": [
+        1.899,
+        4.99,
+        7.245
+      ],
+      "startFrame": 6139,
+      "durationInFrames": 699
+    },
+    {
+      "id": "s9",
+      "vo": "vo09",
+      "chapter": "KAMU",
+      "label": "SATU TITIK",
+      "index": 9,
+      "start": 75.9715,
+      "voStart": 76.1915,
+      "voEnd": 80.9195,
+      "end": 83.6195,
+      "duration": 7.6479,
+      "lineStarts": [
+        0,
+        2.312,
+        3.598
+      ],
+      "lineEnds": [
+        2.312,
+        3.598,
+        4.728
+      ],
+      "startFrame": 6837,
+      "durationInFrames": 688
+    }
+  ]
+}

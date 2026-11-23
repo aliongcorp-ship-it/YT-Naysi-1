@@ -1,0 +1,42 @@
+{
+  "name": "yt-naysi-1",
+  "version": "1.0.0",
+  "private": true,
+  "description": "YT Naysi — cinematic 2K 90fps shorts rendered from code with Remotion",
+  "scripts": {
+    "studio": "remotion studio",
+    "timeline": "node scripts/timeline.mjs",
+    "audio": "node scripts/build-audio.mjs",
+    "globe": "node scripts/render-globe.mjs",
+    "build": "npm run timeline && npm run audio && npm run globe",
+    "render": "remotion render Short out/video.mp4",
+    "mux": "ffmpeg -i out/video.mp4 -i out/mix.wav -c:v copy -c:a aac -b:a 192k -af loudnorm=I=-14:TP=-1.5:LRA=11 -shortest out/final.mp4"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@fontsource/archivo": "5.3.0",
+    "@fontsource/bebas-neue": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
+    "ffprobe-static": "3.1.0",
+    "@napi-rs/canvas": "1.2.0",
+    "@remotion/cli": "4.0.545",
+    "@sparticuz/chromium": "^153.0.0",
+    "@types/d3-geo": "3.1.1",
+    "@types/topojson-client": "3.1.5",
+    "@types/topojson-specification": "1.0.5",
+    "d3-geo": "3.1.2",
+    "ffprobe-static": "^3.1.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.545",
+    "topojson-client": "3.1.0",
+    "topojson-simplify": "3.0.3",
+    "world-atlas": "2.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
