@@ -1,178 +1,144 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeOut, ramp } from "../lib";
-import { Grain, Grid, Vignette } from "../fx";
-import { PacificMap } from "../geo/PacificMap";
+import { easeOut, lerp, ramp } from "../lib";
+import {
+  Backdrop,
+  GlassCard,
+  Grain,
+  LightLeak,
+  Ruler,
+  SonarRings,
+  StarDrift,
+  Vignette,
+} from "../fx";
+import { DepthPin, Island } from "../objects";
 
-const fmt = (n: number) => {
-  const s = String(Math.round(n));
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-};
-
+/**
+ * 03 — DISTANCE
+ * The number is shown as a physical measurement: a ruler spanning the frame
+ * between three real islands, with the distance counting up.
+ */
 export const S3Distance: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = f / fps;
+  const { durationInFrames } = useVideoConfig();
 
-  const count = 2688 * easeOut(ramp(f, 70, 130));
-  const ringP = easeOut(ramp(f, 20, 90));
-  const sweep = (t * 34) % 360;
-  const cx = 720;
-  const cy = 1000;
-  const PX_PER_KM = 0.1572;
-
-  const rings = [500, 1000, 1500, 2000, 2500];
+  const rulerP = easeOut(ramp(f, 40, 46));
+  const count = Math.round(2688 * easeOut(ramp(f, 60, 60)));
+  const leftIn = easeOut(ramp(f, 10, 22));
+  const rightIn = easeOut(ramp(f, 70, 22));
+  const labelIn = easeOut(ramp(f, 130, 24));
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(circle at 50% 34%, #0A1520 0%, #060A0F 55%, #04060A 100%)",
-      }}
-    >
-      {/* map panel */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 130,
-          width: 1440,
-          height: 1640,
-          overflow: "hidden",
-          maskImage:
-            "linear-gradient(to bottom, transparent 0%, black 7%, black 78%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, transparent 0%, black 7%, black 78%, transparent 100%)",
-        }}
-      >
-        <div style={{ position: "absolute", left: 0, top: 0 }}>
-          <PacificMap scale={760} width={1440} height={1640} landOpacity={0.11} lineOpacity={0.34} />
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/water.png" scale={1.14} drift={30} dim={0.25} />
+      <StarDrift opacity={0.14} speed={12} />
+
+      {/* the three equidistant islands, labelled */}
+      <div style={{ opacity: leftIn }}>
+        <div style={{ position: "absolute", left: 120, top: 700 }}>
+          <Island width={300} />
         </div>
-        <Grid opacity={0.05} size={72} />
+        <div
+          style={{
+            position: "absolute",
+            left: 150,
+            top: 636,
+            fontFamily: F.mono,
+            fontSize: 22,
+            letterSpacing: "0.28em",
+            color: C.creamDim,
+          }}
+        >
+          PULAU DUCIE
+        </div>
       </div>
 
-      <Grain opacity={0.05} />
+      <div style={{ opacity: rightIn }}>
+        <div style={{ position: "absolute", left: 1020, top: 700 }}>
+          <Island width={300} />
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: 1050,
+            top: 636,
+            fontFamily: F.mono,
+            fontSize: 22,
+            letterSpacing: "0.28em",
+            color: C.creamDim,
+          }}
+        >
+          MOTU NUI
+        </div>
+      </div>
 
-      {/* radar sweep */}
-      <div
-        style={{
-          position: "absolute",
-          left: cx - 430,
-          top: cy - 430,
-          width: 860,
-          height: 860,
-          borderRadius: "50%",
-          background: `conic-gradient(from ${sweep}deg, rgba(255,90,31,0) 0deg, rgba(255,90,31,0.20) 34deg, rgba(255,90,31,0) 88deg)`,
-          opacity: 0.85 * ramp(f, 40, 40),
-          filter: "blur(2px)",
-        }}
-      />
+      {/* Point Nemo pin in the middle of the water */}
+      <div style={{ position: "absolute", left: 720 - 24, top: 812, opacity: leftIn }}>
+        <DepthPin size={48} color={C.orange} />
+        <div
+          style={{
+            position: "absolute",
+            left: 40,
+            top: 4,
+            fontFamily: F.mono,
+            fontSize: 20,
+            letterSpacing: "0.26em",
+            color: C.orange,
+            whiteSpace: "nowrap",
+          }}
+        >
+          POINT NEMO
+        </div>
+      </div>
 
-      {/* distance rings */}
-      {rings.map((km, i) => {
-        const r = km * PX_PER_KM * ringP;
-        const a = 0.16 + i * 0.045;
-        return (
-          <React.Fragment key={km}>
-            <div
-              style={{
-                position: "absolute",
-                left: cx - r,
-                top: cy - r,
-                width: r * 2,
-                height: r * 2,
-                borderRadius: "50%",
-                border: `1px solid rgba(239,230,212,${a * ringP})`,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: cx + 8,
-                top: cy - r - 12,
-                fontFamily: F.mono,
-                fontSize: 18,
-                letterSpacing: "0.18em",
-                color: C.cream,
-                opacity: 0.34 * ringP,
-              }}
-            >
-              {km === 2500 ? "2.500 KM" : km}
-            </div>
-          </React.Fragment>
-        );
-      })}
-
-      {/* outer 2.688 ring */}
-      <div
-        style={{
-          position: "absolute",
-          left: cx - 422,
-          top: cy - 422,
-          width: 844,
-          height: 844,
-          borderRadius: "50%",
-          border: `2px solid rgba(255,90,31,${0.55 * ringP})`,
-          boxShadow: `0 0 40px rgba(255,90,31,0.12), inset 0 0 60px rgba(255,90,31,0.05)`,
-        }}
-      />
-
-      {/* marker */}
-      <div
-        style={{
-          position: "absolute",
-          left: cx - 10,
-          top: cy - 10,
-          width: 20,
-          height: 20,
-          borderRadius: 99,
-          background: C.orange,
-          boxShadow: `0 0 30px ${C.orange}`,
-          opacity: ramp(f, 30, 16),
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: cx - 34,
-          top: cy - 34,
-          width: 68,
-          height: 68,
-          borderRadius: "50%",
-          border: `1px solid rgba(255,90,31,${0.5 * (1 - ((t * 0.9) % 1))})`,
-          transform: `scale(${0.6 + ((t * 0.9) % 1) * 0.9})`,
-        }}
-      />
-
-      {/* dashed line to nearest land */}
-      <svg width={1440} height={2560} style={{ position: "absolute", inset: 0 }}>
-        <line
-          x1={cx}
-          y1={cy}
-          x2={cx + 300}
-          y2={cy - 300}
-          stroke={C.orange}
-          strokeWidth={1.5}
-          strokeDasharray="6 10"
-          opacity={0.6 * ramp(f, 150, 30)}
+      {/* dashed geodesic between the islands */}
+      <svg width={1440} height={900} style={{ position: "absolute", left: 0, top: 520 }}>
+        <path
+          d="M210 760 Q 720 560 1230 760"
+          fill="none"
+          stroke="rgba(143,220,239,0.45)"
+          strokeWidth="2"
+          strokeDasharray="10 12"
+          strokeDashoffset={-f * 1.6}
         />
-        <circle cx={cx + 300} cy={cy - 300} r={4} fill={C.orange} opacity={ramp(f, 150, 30)} />
       </svg>
-      <div
-        style={{
-          position: "absolute",
-          left: cx + 312,
-          top: cy - 322,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.18em",
-          color: C.cream,
-          opacity: 0.6 * ramp(f, 150, 30),
-        }}
-      >
-        PULAU DUCIE
-        <div style={{ fontSize: 16, opacity: 0.7, marginTop: 4 }}>2.688 KM</div>
+
+      <div style={{ opacity: leftIn * 0.9 }}>
+        <SonarRings x={720} y={860} count={3} maxR={360} speed={110} color="255,176,58" />
+      </div>
+
+      {/* the measurement */}
+      <div style={{ position: "absolute", left: 160, top: 1120 }}>
+        <Ruler width={1120} ticks={54} height={44} progress={rulerP} />
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 52,
+            fontFamily: F.mono,
+            fontSize: 18,
+            letterSpacing: "0.2em",
+            color: C.creamDim,
+            whiteSpace: "nowrap",
+          }}
+        >
+          0
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 52,
+            fontFamily: F.mono,
+            fontSize: 18,
+            letterSpacing: "0.2em",
+            color: C.creamDim,
+            whiteSpace: "nowrap",
+          }}
+        >
+          2.688 KM
+        </div>
       </div>
 
       {/* counter */}
@@ -181,68 +147,78 @@ export const S3Distance: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1660,
+          top: 1290,
           textAlign: "center",
+          opacity: easeOut(ramp(f, 55, 20)),
         }}
       >
         <div
           style={{
-            fontFamily: F.mono,
-            fontSize: 24,
-            letterSpacing: "0.42em",
-            color: C.orange,
-            opacity: ramp(f, 40, 24),
-          }}
-        >
-          JARAK KE DARATAN TERDEKAT
-        </div>
-        <div
-          style={{
             fontFamily: F.display,
-            fontSize: 300,
+            fontSize: 340,
             lineHeight: 0.9,
             color: C.cream,
             letterSpacing: "0.01em",
-            marginTop: 8,
-            fontVariantNumeric: "tabular-nums",
+            textShadow: "0 14px 80px rgba(0,0,0,0.9)",
           }}
         >
-          {fmt(count)}
+          {count.toLocaleString("id-ID")}
         </div>
         <div
           style={{
             fontFamily: F.mono,
-            fontSize: 28,
+            fontSize: 30,
             letterSpacing: "0.5em",
-            color: C.cream,
-            opacity: 0.5,
-            marginTop: 2,
+            color: C.orange,
+            marginTop: 6,
           }}
         >
           KILOMETER
         </div>
       </div>
 
-      {/* side scale note */}
+      {/* glass stat card */}
       <div
         style={{
-          position: "absolute",
-          left: 64,
-          top: 210,
-          fontFamily: F.mono,
-          fontSize: 19,
-          lineHeight: 1.7,
-          letterSpacing: "0.14em",
-          color: C.cream,
-          opacity: 0.34 * ramp(f, 200, 30),
+          opacity: labelIn,
+          transform: `translateY(${(1 - labelIn) * 30}px)`,
         }}
       >
-        SKALA 1 : 26.000.000
-        <br />
-        PROYEKSI EQUIRECTANGULAR
+        <GlassCard style={{ left: 250, top: 1810, width: 940, height: 168 }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 44,
+              top: 30,
+              fontFamily: F.mono,
+              fontSize: 19,
+              letterSpacing: "0.32em",
+              color: C.cyan,
+              opacity: 0.85,
+            }}
+          >
+            DARATAN TERDEKAT
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 44,
+              top: 70,
+              fontFamily: F.sans,
+              fontSize: 46,
+              fontWeight: 600,
+              color: C.cream,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Tiga pulau kecil. Tanpa penghuni.
+          </div>
+        </GlassCard>
       </div>
 
-      <Vignette strength={0.6} />
+      <LightLeak start={40} dur={30} opacity={0.22} />
+      <Grain opacity={0.05} />
+      <Vignette strength={0.58} />
     </AbsoluteFill>
   );
 };

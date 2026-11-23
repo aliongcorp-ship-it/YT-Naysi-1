@@ -1,197 +1,163 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeOut, ramp } from "../lib";
-import { Dust, Grain, Reveal, Vignette } from "../fx";
+import { easeOut, lerp, ramp, rand } from "../lib";
+import { Backdrop, Flare, Grain, LightLeak, Orbit, StarDrift, Vignette } from "../fx";
 
+/**
+ * 09 — END CARD
+ * A quiet close: the planet as a small object, the question, the wordmark.
+ */
 export const S9End: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const t = f / fps;
-  const pulse = 1 + 0.035 * Math.sin(t * 3.2);
-  const appear = ramp(f, 20, 26);
+  const { durationInFrames } = useVideoConfig();
+  const p = durationInFrames > 0 ? f / durationInFrames : 0;
+
+  const qIn = easeOut(ramp(f, 20, 30));
+  const q2In = easeOut(ramp(f, 70, 30));
+  const ctaIn = easeOut(ramp(f, 170, 26));
+  const markIn = easeOut(ramp(f, 240, 30));
+  const ringIn = easeOut(ramp(f, 60, 40));
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(circle at 50% 42%, #0C141D 0%, #060A0F 48%, #04060A 100%)",
-      }}
-    >
-      <Dust count={40} opacity={0.25} speed={0.12} seed={21} />
-      <Grain opacity={0.05} />
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/nebula.png" scale={1.2} drift={20} />
+      <StarDrift opacity={0.7} speed={16} />
 
-      {/* returning dot */}
+      {/* slow concentric rings behind the type */}
+      <div style={{ position: "absolute", left: 720, top: 1000, opacity: ringIn * 0.8 }}>
+        <Orbit size={1200} opacity={0.4} tilt={-18} />
+      </div>
+
       <div
         style={{
           position: "absolute",
-          left: 720 - 10 * pulse,
-          top: 330 - 10 * pulse,
-          width: 20 * pulse,
-          height: 20 * pulse,
-          borderRadius: 99,
-          background: C.orange,
-          boxShadow: `0 0 40px ${C.orange}`,
-          opacity: appear,
+          left: 0,
+          right: 0,
+          top: 700,
+          textAlign: "center",
+          fontFamily: F.mono,
+          fontSize: 24,
+          letterSpacing: "0.42em",
+          color: C.cyan,
+          opacity: qIn * 0.9,
         }}
-      />
-      {[0, 1].map((i) => {
-        const p = ((t * 0.5 + i / 2) % 1);
+      >
+        SATU PERTANYAAN TERAKHIR
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 790,
+          textAlign: "center",
+          opacity: qIn,
+          transform: `translateY(${(1 - qIn) * 34}px)`,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: F.display,
+            fontSize: 130,
+            lineHeight: 1,
+            color: C.cream,
+            textShadow: "0 12px 60px rgba(0,0,0,0.85)",
+          }}
+        >
+          KAMU MAU KE MANA?
+        </div>
+      </div>
+
+      {/* floating locator pins — the map without the map */}
+      {Array.from({ length: 12 }, (_, i) => {
+        const x = 120 + rand(i, 3) * 1200;
+        const y = 1150 + rand(i, 7) * 700;
+        const pulse = 0.5 + 0.5 * Math.abs(Math.sin(f / 18 + i));
         return (
           <div
             key={i}
             style={{
               position: "absolute",
-              left: 720 - 90 * p,
-              top: 330 - 90 * p,
-              width: 180 * p,
-              height: 180 * p,
+              left: x,
+              top: y,
+              width: 8 + rand(i, 11) * 10,
+              height: 8 + rand(i, 11) * 10,
               borderRadius: "50%",
-              border: `1px solid rgba(255,90,31,${0.4 * (1 - p)})`,
+              border: `1px solid rgba(143,220,239,${0.18 + 0.3 * pulse})`,
+              opacity: q2In * (0.4 + 0.4 * pulse),
             }}
           />
         );
       })}
 
-      <div style={{ position: "absolute", left: 0, right: 0, top: 620, textAlign: "center" }}>
-        <Reveal delay={26} y={80}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 150,
-              lineHeight: 0.96,
-              color: C.cream,
-              letterSpacing: "0.02em",
-            }}
-          >
-            KAMU MAU
-          </div>
-        </Reveal>
-        <Reveal delay={50} y={100}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 232,
-              lineHeight: 0.92,
-              color: C.orange,
-              textShadow: "0 0 60px rgba(255,90,31,0.3)",
-            }}
-          >
-            KE MANA?
-          </div>
-        </Reveal>
-        <div
-          style={{
-            fontFamily: F.mono,
-            fontSize: 22,
-            letterSpacing: "0.38em",
-            color: C.cream,
-            opacity: 0.42 * ramp(f, 80, 24),
-            marginTop: 18,
-          }}
-        >
-          SATU TITIK. SATU PERJALANAN.
-        </div>
-      </div>
-
-      {/* CTA pill */}
+      {/* CTA */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1250,
-          display: "flex",
-          justifyContent: "center",
-          opacity: ramp(f, 100, 24),
-          transform: `scale(${1 + 0.02 * Math.sin(t * 3.2)})`,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 18,
-            padding: "30px 64px",
-            border: `2px solid ${C.orange}`,
-            borderRadius: 99,
-            background: "rgba(255,90,31,0.08)",
-            boxShadow: `0 0 60px rgba(255,90,31,0.18), inset 0 0 40px rgba(255,90,31,0.06)`,
-          }}
-        >
-          <span
-            style={{
-              width: 12,
-              height: 12,
-              borderRadius: 99,
-              background: C.orange,
-              boxShadow: `0 0 16px ${C.orange}`,
-            }}
-          />
-          <span
-            style={{
-              fontFamily: F.mono,
-              fontSize: 30,
-              letterSpacing: "0.26em",
-              color: C.cream,
-            }}
-          >
-            TULIS DI KOMENTAR
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1490,
+          top: 1330,
           textAlign: "center",
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.32em",
-          color: C.cream,
-          opacity: 0.3 * ramp(f, 130, 24),
+          opacity: ctaIn,
+          transform: `translateY(${(1 - ctaIn) * 30}px)`,
         }}
       >
-        IKUTI NAYSI ATLAS UNTUK LEMBAR BERIKUTNYA
+        <div
+          style={{
+            display: "inline-block",
+            padding: "26px 54px",
+            borderRadius: 999,
+            border: `1px solid rgba(255,176,58,0.55)`,
+            background: "linear-gradient(180deg, rgba(255,176,58,0.16), rgba(255,176,58,0.05))",
+            boxShadow: "0 0 60px rgba(255,176,58,0.28), inset 0 1px 0 rgba(255,220,170,0.35)",
+            fontFamily: F.mono,
+            fontSize: 30,
+            letterSpacing: "0.34em",
+            color: C.orangeHot,
+          }}
+        >
+          TULIS DI KOMENTAR
+        </div>
       </div>
 
+      {/* wordmark */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1650,
+          top: 1730,
           textAlign: "center",
-          opacity: ramp(f, 150, 30),
+          opacity: markIn,
+          transform: `translateY(${(1 - markIn) * 26}px)`,
         }}
       >
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
-          <span style={{ fontFamily: F.display, fontSize: 78, letterSpacing: "0.08em", color: C.cream }}>
-            NAYSI
-          </span>
-          <span style={{ width: 12, height: 12, borderRadius: 99, background: C.orange }} />
-          <span style={{ fontFamily: F.mono, fontSize: 27, letterSpacing: "0.4em", color: C.orange }}>
-            ATLAS
-          </span>
+        <div
+          style={{
+            fontFamily: F.display,
+            fontSize: 118,
+            letterSpacing: "0.16em",
+            color: C.cream,
+          }}
+        >
+          NAYSI<span style={{ color: C.orange }}>·</span>ATLAS
         </div>
         <div
           style={{
-            fontFamily: F.mono,
-            fontSize: 18,
-            letterSpacing: "0.32em",
-            color: C.cream,
-            opacity: 0.35,
-            marginTop: 18,
+            width: 240,
+            height: 2,
+            margin: "18px auto 0",
+            background: `linear-gradient(90deg, rgba(255,176,58,0), ${C.orange}, rgba(255,176,58,0))`,
           }}
-        >
-          EP. 002 — POINT NEMO
-        </div>
+        />
       </div>
 
-      <Vignette strength={0.62} />
+      <Flare x={720} y={1000} width={760} opacity={0.24} color="170,225,245" />
+      <LightLeak start={230} dur={40} opacity={0.3} />
+      <Grain opacity={0.05} />
+      <Vignette strength={0.66} />
     </AbsoluteFill>
   );
 };

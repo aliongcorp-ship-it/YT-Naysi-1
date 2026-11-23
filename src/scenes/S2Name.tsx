@@ -1,60 +1,64 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeInOut, easeOut, lerp, ramp } from "../lib";
-import { Contours, Grain, Grid, Reveal, Vignette } from "../fx";
+import { easeOut, lerp, ramp } from "../lib";
+import {
+  Backdrop,
+  Flare,
+  GlassCard,
+  Grain,
+  LightLeak,
+  Orbit,
+  StarDrift,
+  Vignette,
+  Words,
+} from "../fx";
 
+/**
+ * 02 — NAME
+ * The globe becomes a real object: atmosphere rim, orbital ring, a locator
+ * reticle, and a mission-card readout for the coordinates.
+ */
 export const S2Name: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const p = easeInOut(ramp(f, 0, durationInFrames * 0.42));
-  const drift = Math.sin((f / fps) * 0.5) * 2.2;
-  const rot: [number, number] = [lerp(214, 123.4, p) + drift, lerp(-16, -48.9, p)];
+  const { durationInFrames } = useVideoConfig();
+  const p = durationInFrames > 0 ? f / durationInFrames : 0;
 
-  const markerPulse = ramp(f, 120, 30);
+  const globeIn = easeOut(ramp(f, 0, 34));
+  const titleIn = easeOut(ramp(f, 96, 26));
+  const cardIn = easeOut(ramp(f, 150, 26));
+  const scale = 1 + 0.05 * p;
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(circle at 50% 38%, #0B141D 0%, #060A0F 48%, #04060A 100%)",
-      }}
-    >
-      <Contours opacity={0.05} step={110} />
-      <Grid opacity={0.035} size={80} />
-      <Grain opacity={0.05} />
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/nebula.png" scale={1.16} drift={40} />
+      <StarDrift opacity={0.5} speed={30} />
 
-      {/* big soft glow behind the globe */}
+      {/* orbital plane behind the globe */}
+      <div style={{ position: "absolute", left: 720, top: 720, opacity: easeOut(ramp(f, 40, 30)) }}>
+        <Orbit size={1160} opacity={0.55} tilt={-14} />
+      </div>
+
+      {/* globe */}
       <div
         style={{
           position: "absolute",
-          left: 720 - 760,
-          top: 900 - 760,
-          width: 1520,
-          height: 1520,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(143,214,210,0.10) 0%, rgba(255,90,31,0.05) 42%, rgba(0,0,0,0) 66%)",
+          left: 720 - 440,
+          top: 280,
+          width: 880,
+          height: 880,
+          opacity: globeIn,
+          transform: `scale(${scale}) translateY(${(1 - globeIn) * 60}px)`,
         }}
-      />
-
-      <div style={{ position: "absolute", left: 220, top: 400, width: 1000, height: 1000 }}>
-        {/* atmosphere */}
+      >
+        {/* atmosphere — a soft rim, not a band */}
         <div
           style={{
             position: "absolute",
-            inset: -80,
+            inset: -14,
             borderRadius: "50%",
-            background:
-              "radial-gradient(circle, rgba(143,214,210,0.13) 0%, rgba(255,90,31,0.07) 44%, rgba(0,0,0,0) 68%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            boxShadow: "0 0 140px rgba(143,214,210,0.12)",
+            boxShadow:
+              "0 0 26px 6px rgba(150,225,245,0.55), 0 0 110px 30px rgba(110,195,230,0.28), inset 0 0 70px rgba(0,0,0,0.8)",
           }}
         />
         <div
@@ -63,174 +67,178 @@ export const S2Name: React.FC = () => {
             inset: 0,
             borderRadius: "50%",
             overflow: "hidden",
-            transform: `scale(${1 + 0.035 * (f / Math.max(1, durationInFrames))})`,
           }}
         >
           <Img
             src={staticFile("globe-s2.png")}
-            style={{ width: 1000, height: 1000 }}
+            style={{ width: 880, height: 880 }}
           />
-          {/* rotating radar sweep (gradient static, rotated via transform) */}
+          {/* day/night terminator sweep */}
           <div
             style={{
               position: "absolute",
-              left: -200,
-              top: -200,
-              width: 1400,
-              height: 1400,
+              inset: 0,
               borderRadius: "50%",
               background:
-                "conic-gradient(from 0deg, rgba(255,90,31,0) 0deg, rgba(255,90,31,0.20) 38deg, rgba(255,90,31,0) 95deg)",
-              transform: `rotate(${(f / fps) * 26}deg)`,
+                "linear-gradient(112deg, rgba(0,0,0,0) 40%, rgba(2,10,16,0.34) 64%, rgba(2,8,12,0.66) 100%)",
             }}
           />
-          {/* animated ping on Point Nemo */}
-          {[0, 1, 2].map((i) => {
-            const p = ((f - i * 24) % 72 + 72) % 72 / 72;
-            return (
-              <div
-                key={i}
-                style={{
-                  position: "absolute",
-                  left: 500 - 80 * p,
-                  top: 500 - 80 * p,
-                  width: 160 * p,
-                  height: 160 * p,
-                  borderRadius: "50%",
-                  border: `2px solid rgba(255,90,31,${0.55 * (1 - p)})`,
-                }}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* corner brackets around the globe */}
-      {[
-        { left: 190, top: 370, r: 0 },
-        { left: 1250, top: 370, r: 90 },
-        { left: 190, top: 1430, r: 270 },
-        { left: 1250, top: 1430, r: 180 },
-      ].map((b, i) => {
-        const s = 54 * easeOut(ramp(f, 60 + i * 6, 20));
-        return (
+          {/* radar sweep */}
           <div
-            key={i}
             style={{
               position: "absolute",
-              left: b.left,
-              top: b.top,
-              width: s,
-              height: s,
-              transform: `rotate(${b.r}deg)`,
-              borderTop: `2px solid rgba(255,90,31,${0.7 * ramp(f, 60, 20)})`,
-              borderLeft: `2px solid rgba(255,90,31,${0.7 * ramp(f, 60, 20)})`,
+              left: -300,
+              top: -300,
+              width: 1640,
+              height: 1640,
+              borderRadius: "50%",
+              background:
+                "conic-gradient(from 0deg, rgba(143,220,239,0) 0deg, rgba(143,220,239,0.16) 34deg, rgba(143,220,239,0) 92deg)",
+              transform: `rotate(${(f / 90) * 24}deg)`,
+              mixBlendMode: "screen",
             }}
           />
-        );
-      })}
+        </div>
 
-      {/* labels */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1500,
-          textAlign: "center",
-          fontFamily: F.mono,
-          fontSize: 26,
-          letterSpacing: "0.42em",
-          color: C.orange,
-          opacity: ramp(f, 90, 24),
-        }}
-      >
-        SAMUDRA PASIFIK SELATAN
-      </div>
-
-      <Reveal delay={120} y={150} style={{ position: "absolute", left: 0, right: 0, top: 1552 }}>
+        {/* locator pings */}
+        {[0, 1, 2].map((i) => {
+          const q = ((f - i * 26) % 78 + 78) % 78 / 78;
+          return (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: 440 - 96 * q,
+                top: 440 - 96 * q,
+                width: 192 * q,
+                height: 192 * q,
+                borderRadius: "50%",
+                border: `2px solid rgba(255,176,58,${0.6 * (1 - q)})`,
+                boxShadow: `0 0 18px rgba(255,176,58,${0.3 * (1 - q)})`,
+              }}
+            />
+          );
+        })}
         <div
           style={{
-            textAlign: "center",
-            fontFamily: F.display,
-            fontSize: 236,
-            lineHeight: 0.92,
-            letterSpacing: "0.005em",
-            color: C.cream,
-            textShadow: "0 8px 60px rgba(0,0,0,0.8)",
+            position: "absolute",
+            left: 432,
+            top: 432,
+            width: 16,
+            height: 16,
+            borderRadius: 8,
+            background: C.orange,
+            boxShadow: "0 0 26px rgba(255,176,58,0.95)",
+          }}
+        />
+      </div>
+
+      <Flare x={720} y={720} width={820} opacity={0.34} color="160,220,245" />
+
+      {/* title */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 1210,
+          textAlign: "center",
+          opacity: titleIn,
+          transform: `translateY(${(1 - titleIn) * 44}px)`,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: F.mono,
+            fontSize: 26,
+            letterSpacing: "0.42em",
+            color: C.cyan,
+            opacity: 0.9,
           }}
         >
-          POINT NEMO
+          SAMUDRA PASIFIK SELATAN
         </div>
-      </Reveal>
-
-      {/* underline */}
-      <div
-        style={{
-          position: "absolute",
-          left: 720 - 300 * easeOut(ramp(f, 200, 26)),
-          top: 1832,
-          width: 600 * easeOut(ramp(f, 200, 26)),
-          height: 3,
-          background: C.orange,
-          boxShadow: `0 0 20px rgba(255,90,31,0.6)`,
-        }}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1876,
-          textAlign: "center",
-          fontFamily: F.mono,
-          fontSize: 32,
-          letterSpacing: "0.24em",
-          color: C.cream,
-          opacity: 0.62 * ramp(f, 220, 26),
-        }}
-      >
-        48°52.6′S — 123°23.6′W
+        <Words
+          text="POINT NEMO"
+          at={104}
+          stagger={9}
+          y={70}
+          style={{
+            fontFamily: F.display,
+            fontSize: 232,
+            lineHeight: 0.92,
+            color: C.cream,
+            marginTop: 10,
+            textShadow: "0 12px 70px rgba(0,0,0,0.9)",
+            letterSpacing: "0.01em",
+          }}
+        />
+        <div
+          style={{
+            width: 620,
+            height: 3,
+            margin: "26px auto 0",
+            background: `linear-gradient(90deg, rgba(255,176,58,0), ${C.orange}, rgba(255,176,58,0))`,
+            boxShadow: "0 0 24px rgba(255,176,58,0.6)",
+          }}
+        />
       </div>
 
+      {/* coordinate card */}
       <div
         style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1950,
-          textAlign: "center",
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.3em",
-          color: C.cream,
-          opacity: 0.32 * ramp(f, 250, 26),
+          opacity: cardIn,
+          transform: `translateY(${(1 - cardIn) * 36}px)`,
         }}
       >
-        KUTUB KETIDAKTERSAMPAIAN SAMUDRA
+        <GlassCard style={{ left: 210, top: 1556, width: 1020, height: 200 }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 34,
+              fontFamily: F.mono,
+              fontSize: 20,
+              letterSpacing: "0.34em",
+              color: C.cyan,
+              opacity: 0.85,
+            }}
+          >
+            KUTUB KETIDAKTERSAMPAIAN SAMUDRA
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 84,
+              fontFamily: F.mono,
+              fontSize: 62,
+              letterSpacing: "0.10em",
+              color: C.cream,
+              textShadow: "0 0 34px rgba(143,220,239,0.35)",
+            }}
+          >
+            48°52.6′S — 123°23.6′W
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 158,
+              fontFamily: F.mono,
+              fontSize: 19,
+              letterSpacing: "0.24em",
+              color: C.creamDim,
+            }}
+          >
+            2.688 KM DARI DARATAN MANA PUN
+          </div>
+        </GlassCard>
       </div>
 
-      {/* vertical caption */}
-      <div
-        style={{
-          position: "absolute",
-          left: 96,
-          top: 900,
-          transform: "rotate(-90deg)",
-          transformOrigin: "center",
-          fontFamily: F.mono,
-          fontSize: 19,
-          letterSpacing: "0.4em",
-          color: C.cream,
-          opacity: 0.3 * ramp(f, 150, 24),
-          whiteSpace: "nowrap",
-        }}
-      >
-        2.688 KM DARI DARATAN MANA PUN
-      </div>
-
-      <Vignette strength={0.66} />
+      <LightLeak start={110} dur={34} opacity={0.35} />
+      <Grain opacity={0.05} />
+      <Vignette strength={0.55} />
     </AbsoluteFill>
   );
 };

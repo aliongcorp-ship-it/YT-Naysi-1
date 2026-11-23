@@ -2,316 +2,252 @@ import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeOut, lerp, ramp } from "../lib";
-import { Dust, Grain, Reveal, Vignette } from "../fx";
+import {
+  Backdrop,
+  Flare,
+  GlassCard,
+  Grain,
+  LightLeak,
+  StarDrift,
+  Vignette,
+} from "../fx";
+import { ISS } from "../objects";
 
-const ISS: React.FC<{ x: number; y: number; s: number }> = ({ x, y, s }) => (
-  <div style={{ position: "absolute", left: x, top: y, width: 0, height: 0 }}>
-    {/* truss */}
-    <div
-      style={{
-        position: "absolute",
-        left: -130 * s,
-        top: -5 * s,
-        width: 260 * s,
-        height: 10 * s,
-        background: "#C9BEAA",
-        opacity: 0.9,
-        transform: "rotate(-6deg)",
-      }}
-    />
-    {/* solar panels */}
-    {[-1, 1].map((side) => (
-      <div
-        key={side}
-        style={{
-          position: "absolute",
-          left: side === -1 ? -235 * s : 95 * s,
-          top: -42 * s,
-          width: 150 * s,
-          height: 84 * s,
-          background:
-            "repeating-linear-gradient(90deg, rgba(30,58,95,0.95) 0px, rgba(30,58,95,0.95) 14px, rgba(143,214,210,0.55) 14px, rgba(143,214,210,0.55) 16px)",
-          border: `1.5px solid rgba(143,214,210,0.6)`,
-          transform: "rotate(-6deg)",
-          boxShadow: "0 0 30px rgba(143,214,210,0.18)",
-        }}
-      />
-    ))}
-    {/* modules */}
-    <div
-      style={{
-        position: "absolute",
-        left: -46 * s,
-        top: -30 * s,
-        width: 92 * s,
-        height: 60 * s,
-        borderRadius: 10 * s,
-        background: "linear-gradient(180deg, #EFE6D4 0%, #A79C88 100%)",
-        boxShadow: "0 0 24px rgba(239,230,212,0.25)",
-      }}
-    />
-    <div
-      style={{
-        position: "absolute",
-        left: -14 * s,
-        top: -12 * s,
-        width: 28 * s,
-        height: 24 * s,
-        borderRadius: 6 * s,
-        background: "#0B1A24",
-        border: `1px solid rgba(143,214,210,0.6)`,
-      }}
-    />
-  </div>
-);
-
+/**
+ * 04 — ORBIT
+ * The station is the explainer: it hangs above an Earth limb while the two
+ * distances are compared as two physical bars.
+ */
 export const S4ISS: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = f / fps;
+  const { durationInFrames } = useVideoConfig();
+  const p = durationInFrames > 0 ? f / durationInFrames : 0;
 
-  const issX = 720 + Math.sin(t * 0.5) * 190;
-  const issY = 520 + Math.sin(t * 0.9) * 16;
-
-  const barP = easeOut(ramp(f, 150, 90));
-  const maxW = 1080;
-  const landW = maxW * barP;
-  const issW = (400 / 2688) * maxW * barP;
+  const issIn = easeOut(ramp(f, 10, 34));
+  const earthIn = easeOut(ramp(f, 0, 40));
+  const barA = easeOut(ramp(f, 150, 40));
+  const barB = easeOut(ramp(f, 210, 40));
+  const badge = easeOut(ramp(f, 300, 26));
+  const titleIn = easeOut(ramp(f, 60, 24));
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "linear-gradient(to bottom, #04070C 0%, #071018 46%, #08131C 62%, #05121A 100%)",
-      }}
-    >
-      {/* stars */}
-      {Array.from({ length: 90 }, (_, i) => {
-        const x = ((i * 137.508) % 1440);
-        const y = ((i * 89.71) % 1400);
-        const a = 0.15 + 0.65 * Math.abs(Math.sin(f * 0.02 + i));
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: x,
-              top: y,
-              width: i % 11 === 0 ? 3 : 1.6,
-              height: i % 11 === 0 ? 3 : 1.6,
-              borderRadius: 99,
-              background: i % 13 === 0 ? C.orange : C.cream,
-              opacity: a,
-            }}
-          />
-        );
-      })}
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/nebula.png" scale={1.18} drift={34} />
+      <StarDrift opacity={0.55} speed={40} />
 
-      {/* orbit arc */}
-      <svg width={1440} height={2560} style={{ position: "absolute", inset: 0 }}>
-        <path
-          d="M 40 760 Q 720 330 1400 760"
-          fill="none"
-          stroke={C.cyan}
-          strokeWidth={1.5}
-          strokeDasharray="3 12"
-          opacity={0.4 * ramp(f, 30, 30)}
-        />
-        <path
-          d="M 40 760 Q 720 330 1400 760"
-          fill="none"
-          stroke={C.orange}
-          strokeWidth={2}
-          strokeDasharray="60 1400"
-          strokeDashoffset={-lerp(0, 1500, (t * 0.22) % 1)}
-          opacity={0.8 * ramp(f, 60, 30)}
-        />
-      </svg>
-
-      <ISS x={issX} y={issY} s={1} />
-
+      {/* Earth limb */}
       <div
         style={{
           position: "absolute",
-          left: issX - 60,
-          top: issY - 120,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.24em",
-          color: C.cyan,
-          opacity: 0.7 * ramp(f, 90, 24),
+          left: 720 - 2100,
+          top: 1760,
+          width: 4200,
+          height: 4200,
+          borderRadius: "50%",
+          opacity: earthIn,
+          background:
+            "radial-gradient(circle at 50% 12%, #12384C 0%, #0A1F2C 26%, #05121A 46%, #02080D 70%)",
+          boxShadow:
+            "0 -2px 0 rgba(190,240,255,0.85), 0 -14px 60px rgba(143,220,239,0.55), 0 -60px 180px rgba(90,180,220,0.28), inset 0 120px 200px rgba(143,220,239,0.18)",
         }}
-      >
-        ISS
-      </div>
-
-      {/* headline */}
+      />
+      {/* atmosphere haze above the limb */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 880,
-          textAlign: "center",
+          top: 1590,
+          height: 240,
+          background:
+            "linear-gradient(180deg, rgba(143,220,239,0) 0%, rgba(143,220,239,0.16) 70%, rgba(180,235,255,0.34) 100%)",
+          opacity: earthIn * 0.8,
+          maskImage:
+            "linear-gradient(90deg, transparent 0%, black 18%, black 82%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(90deg, transparent 0%, black 18%, black 82%, transparent 100%)",
+        }}
+      />
+
+      {/* orbit path */}
+      <svg width={1440} height={1200} style={{ position: "absolute", left: 0, top: 0, opacity: issIn * 0.75 }}>
+        <path
+          d="M-100 520 Q 720 300 1540 520"
+          fill="none"
+          stroke="rgba(143,220,239,0.32)"
+          strokeWidth="2"
+          strokeDasharray="6 14"
+          strokeDashoffset={-f * 2.2}
+        />
+      </svg>
+
+      {/* ISS */}
+      <div
+        style={{
+          position: "absolute",
+          left: 720 - 620,
+          top: 380,
+          opacity: issIn,
+          transform: `translateY(${(1 - issIn) * -60}px)`,
+          filter: "drop-shadow(0 30px 50px rgba(0,0,0,0.7))",
         }}
       >
-        <Reveal delay={70} y={80}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 126,
-              lineHeight: 0.95,
-              color: C.cream,
-              letterSpacing: "0.02em",
-            }}
-          >
-            ASTRONOT
-          </div>
-        </Reveal>
-        <Reveal delay={96} y={100}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 186,
-              lineHeight: 0.92,
-              color: C.orange,
-              textShadow: "0 0 50px rgba(255,90,31,0.3)",
-            }}
-          >
-            LEBIH DEKAT
-          </div>
-        </Reveal>
+        <ISS width={1240} />
+      </div>
+
+      <Flare x={720} y={420} width={980} opacity={0.26} color="170,225,245" />
+
+      {/* title */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 1000,
+          textAlign: "center",
+          opacity: titleIn,
+          transform: `translateY(${(1 - titleIn) * 34}px)`,
+        }}
+      >
         <div
           style={{
             fontFamily: F.mono,
-            fontSize: 22,
-            letterSpacing: "0.34em",
-            color: C.cream,
-            opacity: 0.45 * ramp(f, 140, 24),
-            marginTop: 14,
+            fontSize: 24,
+            letterSpacing: "0.42em",
+            color: C.cyan,
           }}
         >
-          DARIPADA MANUSIA MANA PUN DI BUMI
+          STASIUN LUAR ANGKASA INTERNASIONAL
+        </div>
+        <div
+          style={{
+            fontFamily: F.display,
+            fontSize: 128,
+            lineHeight: 0.98,
+            color: C.cream,
+            marginTop: 12,
+            textShadow: "0 10px 60px rgba(0,0,0,0.85)",
+          }}
+        >
+          ASTRONOT
+        </div>
+        <div
+          style={{
+            fontFamily: F.display,
+            fontSize: 128,
+            lineHeight: 0.98,
+            color: C.orange,
+            textShadow: "0 0 60px rgba(255,176,58,0.45)",
+          }}
+        >
+          LEBIH DEKAT
         </div>
       </div>
 
       {/* comparison bars */}
-      <div style={{ position: "absolute", left: 90, right: 90, top: 1450 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: F.mono,
-            fontSize: 22,
-            letterSpacing: "0.18em",
-            color: C.cream,
-            opacity: 0.65,
-          }}
-        >
-          <span>DARATAN TERDEKAT</span>
-          <span>2.688 KM</span>
-        </div>
-        <div
-          style={{
-            marginTop: 14,
-            height: 44,
-            width: maxW,
-            background: "rgba(239,230,212,0.09)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+      <div style={{ opacity: easeOut(ramp(f, 140, 24)) }}>
+        <GlassCard style={{ left: 150, top: 1450, width: 1140, height: 400 }}>
+          {/* row 1 */}
+          <div style={{ position: "absolute", left: 54, top: 54 }}>
+            <div style={{ fontFamily: F.mono, fontSize: 20, letterSpacing: "0.3em", color: C.creamDim }}>
+              DARATAN TERDEKAT
+            </div>
+            <div
+              style={{
+                marginTop: 16,
+                width: 1032,
+                height: 26,
+                borderRadius: 13,
+                background: "rgba(255,255,255,0.07)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${barA * 100}%`,
+                  height: "100%",
+                  borderRadius: 13,
+                  background:
+                    "linear-gradient(90deg, rgba(233,240,244,0.55), rgba(233,240,244,0.95))",
+                  boxShadow: "0 0 26px rgba(233,240,244,0.5)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 44,
+                fontFamily: F.mono,
+                fontSize: 26,
+                color: C.cream,
+              }}
+            >
+              2.688 KM
+            </div>
+          </div>
+
+          {/* row 2 */}
+          <div style={{ position: "absolute", left: 54, top: 200 }}>
+            <div style={{ fontFamily: F.mono, fontSize: 20, letterSpacing: "0.3em", color: C.orange }}>
+              ISS DI ATAS KEPALA
+            </div>
+            <div
+              style={{
+                marginTop: 16,
+                width: 1032,
+                height: 26,
+                borderRadius: 13,
+                background: "rgba(255,255,255,0.07)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${barB * 14.9}%`,
+                  height: "100%",
+                  borderRadius: 13,
+                  background: `linear-gradient(90deg, ${C.orangeDeep}, ${C.orange}, ${C.orangeHot})`,
+                  boxShadow: "0 0 30px rgba(255,176,58,0.75)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 96,
+                fontFamily: F.mono,
+                fontSize: 26,
+                color: C.orange,
+              }}
+            >
+              400 KM
+            </div>
+          </div>
+
+          {/* multiplier */}
           <div
             style={{
               position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: landW,
-              background: "linear-gradient(90deg, rgba(239,230,212,0.85), rgba(239,230,212,0.45))",
+              right: 54,
+              top: 300,
+              fontFamily: F.display,
+              fontSize: 92,
+              lineHeight: 1,
+              color: C.cream,
+              opacity: badge,
+              textShadow: "0 0 50px rgba(255,176,58,0.5)",
             }}
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: 46,
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: F.mono,
-            fontSize: 22,
-            letterSpacing: "0.18em",
-            color: C.orange,
-          }}
-        >
-          <span>ISS DI ATAS KEPALA</span>
-          <span>400 KM</span>
-        </div>
-        <div
-          style={{
-            marginTop: 14,
-            height: 44,
-            width: maxW,
-            background: "rgba(239,230,212,0.06)",
-            position: "relative",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: issW,
-              background: C.orange,
-              boxShadow: `0 0 26px rgba(255,90,31,0.55)`,
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: 26,
-            fontFamily: F.mono,
-            fontSize: 26,
-            letterSpacing: "0.24em",
-            color: C.orange,
-            opacity: ramp(f, 260, 30),
-          }}
-        >
-          6,7× LEBIH DEKAT
-        </div>
+          >
+            6,7× LEBIH DEKAT
+          </div>
+        </GlassCard>
       </div>
 
-      {/* ocean */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 360,
-          background:
-            "linear-gradient(to bottom, rgba(10,42,51,0) 0%, #06222C 22%, #04161D 100%)",
-        }}
-      />
-      <svg width={1440} height={400} style={{ position: "absolute", bottom: 0 }}>
-        {[0, 1, 2].map((k) => (
-          <path
-            key={k}
-            d={`M 0 ${150 + k * 40} Q 180 ${130 + k * 40} 360 ${150 + k * 40} T 720 ${150 + k * 40} T 1080 ${150 + k * 40} T 1440 ${150 + k * 40}`}
-            fill="none"
-            stroke={C.cyan}
-            strokeWidth={1.4}
-            opacity={0.18 - k * 0.04}
-            transform={`translate(${Math.sin(t * 0.6 + k) * 26}, 0)`}
-          />
-        ))}
-      </svg>
-
-      <Dust count={26} opacity={0.18} speed={0.1} seed={9} />
+      <LightLeak start={150} dur={30} opacity={0.28} />
       <Grain opacity={0.05} />
-      <Vignette strength={0.55} />
+      <Vignette strength={0.6} />
     </AbsoluteFill>
   );
 };

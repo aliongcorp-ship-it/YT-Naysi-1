@@ -1,211 +1,186 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeOut, lerp, ramp } from "../lib";
-import { Grain, Reveal, Vignette } from "../fx";
+import { easeOut, ramp } from "../lib";
+import { Backdrop, Flare, GlassCard, Grain, LightLeak, SonarRings, Vignette } from "../fx";
+import { Hydrophone } from "../objects";
 
+/**
+ * 06 — SIGNAL
+ * A hydrophone in the water column, a waveform that answers it, and the
+ * one word that stuck: The Bloop.
+ */
 export const S6Bloop: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const t = f / fps;
-  const dur = durationInFrames / fps;
 
-  // the spike lands at ~66% of the scene, right on "The Bloop"
-  const spikeAt = dur * 0.66;
-  const spike = Math.exp(-Math.pow((t - spikeAt) / 0.42, 2));
-  const base = 26 + 34 * ramp(t, 0, 2.4);
-  const amp = base + 230 * spike;
+  const rigIn = easeOut(ramp(f, 0, 34));
+  const waveIn = easeOut(ramp(f, 56, 30));
+  const titleIn = easeOut(ramp(f, 150, 30));
+  const cardIn = easeOut(ramp(f, 240, 26));
 
-  const pts: string[] = [];
-  const N = 240;
-  for (let i = 0; i <= N; i++) {
-    const x = (i / N) * 1440;
-    const env = Math.sin((i / N) * Math.PI) ** 0.7;
+  const pts = Array.from({ length: 90 }, (_, i) => {
+    const x = (i / 89) * 1440;
+    const env = Math.exp(-Math.pow((i - 44) / 16, 2));
     const y =
-      1180 +
-      env *
-        (Math.sin(x * 0.028 + t * 3.2) * amp * 0.45 +
-          Math.sin(x * 0.011 - t * 2.1) * amp * 0.3 +
-          Math.sin(x * 0.061 + t * 5.3) * amp * 0.12);
-    pts.push(`${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`);
-  }
-  const path = pts.join(" ");
-
-  const spikeX = 720;
-  const alert = spike;
+      Math.sin(i * 0.7 + f * 0.18) * 26 * env +
+      Math.sin(i * 0.23 - f * 0.11) * 46 * env +
+      Math.sin(i * 1.7 + f * 0.3) * 8;
+    return `${x},${980 + y}`;
+  }).join(" ");
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% 44%, #1A0A0C 0%, #0B0507 42%, #040305 100%)",
-      }}
-    >
-      {/* oscilloscope grid */}
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/water.png" scale={1.24} drift={34} dim={0.32} />
+
+      {/* depth scale on the left edge */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          backgroundImage: `linear-gradient(to right, rgba(255,90,31,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,90,31,0.10) 1px, transparent 1px)`,
-          backgroundSize: "96px 96px",
-          maskImage:
-            "radial-gradient(ellipse 70% 55% at 50% 46%, black 20%, transparent 78%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 70% 55% at 50% 46%, black 20%, transparent 78%)",
+          left: 96,
+          top: 260,
+          height: 700,
+          width: 1,
+          background:
+            "linear-gradient(180deg, rgba(143,220,239,0.05), rgba(143,220,239,0.4), rgba(143,220,239,0.05))",
         }}
       />
+      {Array.from({ length: 9 }, (_, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: 88,
+            top: 300 + i * 82,
+            width: i % 4 === 0 ? 26 : 14,
+            height: 1,
+            background: "rgba(143,220,239,0.4)",
+          }}
+        />
+      ))}
 
-      {/* hydrophone rings */}
-      {[0, 1, 2, 3].map((i) => {
-        const p = ((t * 0.5 + i / 4) % 1);
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: spikeX - 320 * p,
-              top: 1180 - 320 * p,
-              width: 640 * p,
-              height: 640 * p,
-              borderRadius: "50%",
-              border: `1px solid rgba(255,46,63,${0.32 * (1 - p)})`,
-            }}
-          />
-        );
-      })}
+      {/* hydrophone rig */}
+      <div
+        style={{
+          position: "absolute",
+          left: 720 - 120,
+          top: 120,
+          opacity: rigIn,
+          transform: `translateY(${(1 - rigIn) * -50}px)`,
+          filter: "drop-shadow(0 0 50px rgba(143,220,239,0.25))",
+        }}
+      >
+        <Hydrophone height={760} />
+      </div>
 
-      <svg width={1440} height={2560} style={{ position: "absolute", inset: 0 }}>
-        <path d={path} fill="none" stroke={C.orange} strokeWidth={2.4} opacity={0.95} />
-        <path
-          d={path}
+      {/* signal rings from the sensor */}
+      <div style={{ opacity: rigIn }}>
+        <SonarRings x={720} y={700} count={5} maxR={600} speed={100} color="143,220,239" thickness={2} />
+      </div>
+
+      {/* waveform */}
+      <svg width={1440} height={1400} style={{ position: "absolute", left: 0, top: 0, opacity: waveIn }}>
+        <polyline
+          points={pts}
           fill="none"
           stroke={C.orange}
-          strokeWidth={16}
-          opacity={0.08}
+          strokeWidth="3.5"
+          strokeLinejoin="round"
+          style={{ filter: "drop-shadow(0 0 14px rgba(255,176,58,0.8))" }}
         />
-        {/* centre line */}
-        <line x1={0} y1={1180} x2={1440} y2={1180} stroke="rgba(239,230,212,0.15)" strokeWidth={1} />
-        {/* alert marker */}
-        <line
-          x1={spikeX}
-          y1={1180 - 300}
-          x2={spikeX}
-          y2={1180 + 300}
-          stroke={C.red}
-          strokeWidth={2}
-          strokeDasharray="4 8"
-          opacity={alert * 0.8}
-        />
+        <polyline points={pts} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
       </svg>
 
-      {/* readouts */}
-      <div
-        style={{
-          position: "absolute",
-          left: 90,
-          top: 250,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.24em",
-          color: C.cream,
-          opacity: 0.45 * ramp(f, 20, 24),
-          lineHeight: 2,
-        }}
-      >
-        <div>HYDROPHONE ARRAY</div>
-        <div style={{ color: C.red, opacity: 0.9 }}>AUTONOMOUS · 1997</div>
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          right: 90,
-          top: 250,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.24em",
-          color: C.cream,
-          opacity: 0.45 * ramp(f, 30, 24),
-          textAlign: "right",
-          lineHeight: 2,
-        }}
-      >
-        <div>50°S — 100°W</div>
-        <div>PASIFIK SELATAN</div>
-      </div>
-
-      {/* amplitude readout */}
-      <div
-        style={{
-          position: "absolute",
-          left: 90,
-          top: 1120,
-          fontFamily: F.mono,
-          fontSize: 26,
-          letterSpacing: "0.2em",
-          color: C.red,
-          opacity: ramp(f, 40, 30),
-        }}
-      >
-        {Math.round(amp).toString().padStart(3, "0")} dB
-      </div>
+      <Flare x={720} y={980} width={1000} opacity={0.3} color="255,176,58" />
 
       {/* title */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1560, textAlign: "center" }}>
-        <Reveal delay={50} y={90}>
-          <div
-            style={{
-              fontFamily: F.serif,
-              fontStyle: "italic",
-              fontSize: 214,
-              lineHeight: 0.95,
-              color: C.cream,
-              letterSpacing: "-0.01em",
-              textShadow: "0 12px 80px rgba(0,0,0,0.8)",
-            }}
-          >
-            The Bloop
-          </div>
-        </Reveal>
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 1074,
+          textAlign: "center",
+          opacity: titleIn,
+          transform: `translateY(${(1 - titleIn) * 40}px)`,
+        }}
+      >
+        <div style={{ fontFamily: F.mono, fontSize: 23, letterSpacing: "0.44em", color: C.cyan }}>
+          PASIFIK SELATAN · 1997
+        </div>
+        <div
+          style={{
+            fontFamily: F.serif,
+            fontSize: 196,
+            lineHeight: 1,
+            color: C.cream,
+            marginTop: 8,
+            fontStyle: "italic",
+            textShadow: "0 14px 80px rgba(0,0,0,0.9)",
+          }}
+        >
+          The Bloop
+        </div>
         <div
           style={{
             fontFamily: F.mono,
             fontSize: 24,
-            letterSpacing: "0.46em",
-            color: C.red,
-            marginTop: 26,
-            opacity: ramp(f, 110, 26),
+            letterSpacing: "0.4em",
+            color: C.creamDim,
+            marginTop: 18,
           }}
         >
           SUARA YANG TIDAK BISA DIJELASKAN
         </div>
       </div>
 
-      {/* brackets */}
-      <div
-        style={{
-          position: "absolute",
-          left: 60,
-          top: 760,
-          width: 60,
-          height: 60,
-          borderLeft: `2px solid rgba(255,46,63,${0.5 * ramp(f, 20, 20)})`,
-          borderTop: `2px solid rgba(255,46,63,${0.5 * ramp(f, 20, 20)})`,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          right: 60,
-          top: 760,
-          width: 60,
-          height: 60,
-          borderRight: `2px solid rgba(255,46,63,${0.5 * ramp(f, 20, 20)})`,
-          borderTop: `2px solid rgba(255,46,63,${0.5 * ramp(f, 20, 20)})`,
-        }}
-      />
+      {/* data card */}
+      <div style={{ opacity: cardIn, transform: `translateY(${(1 - cardIn) * 30}px)` }}>
+        <GlassCard style={{ left: 260, top: 1440, width: 920, height: 200 }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 30,
+              fontFamily: F.mono,
+              fontSize: 19,
+              letterSpacing: "0.3em",
+              color: C.cyan,
+            }}
+          >
+            HYDROPHONE ARRAY · AUTONOMOUS
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 74,
+              fontFamily: F.display,
+              fontSize: 92,
+              lineHeight: 1,
+              color: C.cream,
+            }}
+          >
+            5.000 KM
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 46,
+              top: 156,
+              fontFamily: F.mono,
+              fontSize: 19,
+              letterSpacing: "0.24em",
+              color: C.creamDim,
+            }}
+          >
+            TERDETEKSI DARI JARAK SEJAUH ITU
+          </div>
+        </GlassCard>
+      </div>
 
-      <Grain opacity={0.07} />
-      <Vignette strength={0.68} color="20,0,0" />
+      <LightLeak start={150} dur={30} opacity={0.3} />
+      <Grain opacity={0.055} />
+      <Vignette strength={0.66} />
     </AbsoluteFill>
   );
 };

@@ -3,10 +3,15 @@
 //   1. procedural cinematic score (D minor → D major resolution)
 //   2. voice-over placement from the timeline
 //   3. side-chain ducking + soft limiting
-// Output: out/mix.wav  (48 kHz / 16-bit stereo)
+// Output: out/mix.wav (master) → public/audio/mix.m4a (delivery track)
+// The composition only ever references the compressed track.
 // ---------------------------------------------------------------------------
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
+import ffmpegPath from "@ffmpeg-installer/ffmpeg";
+
+const FFMPEG = ffmpegPath.path;
 import timeline from "../src/timeline.json" with { type: "json" };
 const TL = timeline;
 
@@ -438,3 +443,15 @@ for (let i = 0; i < N; i++) {
 fs.mkdirSync("out", { recursive: true });
 fs.writeFileSync("out/mix.wav", buf);
 console.log(`wrote out/mix.wav — ${DUR.toFixed(2)}s, peak ${(peak * norm).toFixed(3)}`);
+
+// Delivery encode: AAC in an MP4 container. Lossy on purpose — the master WAV
+// stays on disk for re-encodes but never ships.
+fs.mkdirSync("public/audio", { recursive: true });
+execFileSync(FFMPEG, [
+  "-y", "-v", "error",
+  "-i", "out/mix.wav",
+  "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
+  "-movflags", "+faststart",
+  "public/audio/mix.m4a",
+]);
+console.log(`wrote public/audio/mix.m4a — ${(fs.statSync("public/audio/mix.m4a").size / 1024).toFixed(0)} KB`);

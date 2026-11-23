@@ -1,188 +1,177 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeInOut, lerp, ramp } from "../lib";
-import { Contours, Grain, Reveal, Vignette } from "../fx";
+import { easeOut, lerp, ramp } from "../lib";
+import {
+  Backdrop,
+  Flare,
+  Grain,
+  LightLeak,
+  Orbit,
+  StarDrift,
+  Vignette,
+  Words,
+} from "../fx";
 
+/**
+ * 08 — REVEAL
+ * Pull back to the whole planet: the loneliest point carries the busiest
+ * story. Serif for the turn, mono for the coordinates.
+ */
 export const S8Reveal: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const p = easeInOut(ramp(f, 0, durationInFrames));
-  const rot: [number, number] = [lerp(150, 123.4, p), lerp(-30, -48.9, p)];
+  const { durationInFrames } = useVideoConfig();
+  const p = durationInFrames > 0 ? f / durationInFrames : 0;
+
+  const zoom = 1.18 - 0.22 * easeOut(ramp(f, 0, 70));
+  const titleIn = easeOut(ramp(f, 40, 30));
+  const serifIn = easeOut(ramp(f, 150, 34));
+  const footIn = easeOut(ramp(f, 290, 26));
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(circle at 50% 40%, #0B141D 0%, #060A0F 50%, #04060A 100%)",
-      }}
-    >
-      <Contours opacity={0.045} step={130} />
-      <Grain opacity={0.05} />
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/nebula.png" scale={1.22} drift={30} />
+      <StarDrift opacity={0.6} speed={34} />
 
-      {/* ghost globe */}
-      <div style={{ position: "absolute", left: 0, top: 400, width: 1440, height: 1440, opacity: 0.3 }}>
+      {/* planet, held back so the type can land on it */}
+      <div
+        style={{
+          position: "absolute",
+          left: 720 - 720,
+          top: 380,
+          width: 1440,
+          height: 1440,
+          borderRadius: "50%",
+          overflow: "hidden",
+          opacity: 0.55,
+          transform: `scale(${zoom})`,
+        }}
+      >
+        <Img src={staticFile("globe-s8.png")} style={{ width: 1440, height: 1440 }} />
         <div
           style={{
             position: "absolute",
             inset: 0,
-            borderRadius: "50%",
-            overflow: "hidden",
-            transform: `scale(${1 + 0.05 * (f / Math.max(1, durationInFrames))})`,
+            background:
+              "linear-gradient(150deg, rgba(0,0,0,0.1) 20%, rgba(2,8,12,0.45) 68%, rgba(2,8,12,0.8) 100%)",
           }}
-        >
-          <Img
-            src={staticFile("globe-s8.png")}
-            style={{ width: 1440, height: 1440 }}
-          />
-        </div>
+        />
       </div>
 
+      <div style={{ position: "absolute", left: 720, top: 1100, opacity: easeOut(ramp(f, 20, 40)) }}>
+        <Orbit size={1560} opacity={0.5} tilt={-12} />
+      </div>
+
+      <Flare x={720} y={1102} width={1100} opacity={0.28} color="160,220,245" />
+
+      {/* coordinates */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 620,
+          top: 760,
           textAlign: "center",
+          fontFamily: F.mono,
+          fontSize: 26,
+          letterSpacing: "0.4em",
+          color: C.orange,
+          opacity: titleIn * 0.9,
+        }}
+      >
+        48°52.6′S — 123°23.6′W
+      </div>
+
+      {/* statement */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 840,
+          textAlign: "center",
+          opacity: titleIn,
+          transform: `translateY(${(1 - titleIn) * 34}px)`,
         }}
       >
         <div
           style={{
-            fontFamily: F.mono,
-            fontSize: 24,
-            letterSpacing: "0.44em",
-            color: C.orange,
-            opacity: ramp(f, 10, 20),
+            fontFamily: F.display,
+            fontSize: 116,
+            lineHeight: 0.98,
+            letterSpacing: "0.02em",
+            color: C.cream,
+            textShadow: "0 12px 60px rgba(0,0,0,0.85)",
           }}
         >
-          48°52.6′S — 123°23.6′W
+          TITIK PALING SEPI
+          <br />
+          DI BUMI
         </div>
-        <Reveal delay={30} y={80}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 122,
-              lineHeight: 0.98,
-              color: C.cream,
-              opacity: 0.82,
-              marginTop: 26,
-              letterSpacing: "0.03em",
-            }}
-          >
-            TITIK PALING SEPI
-          </div>
-        </Reveal>
-        <Reveal delay={52} y={80}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 122,
-              lineHeight: 0.98,
-              color: C.cream,
-              opacity: 0.82,
-              letterSpacing: "0.03em",
-            }}
-          >
-            DI BUMI
-          </div>
-        </Reveal>
       </div>
 
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1030, textAlign: "center" }}>
-        <Reveal delay={80} y={110}>
-          <div
-            style={{
-              fontFamily: F.serif,
-              fontStyle: "italic",
-              fontSize: 168,
-              lineHeight: 0.98,
-              color: C.orange,
-              textShadow: "0 0 60px rgba(255,90,31,0.25)",
-            }}
-          >
-            cerita paling
-          </div>
-        </Reveal>
-        <Reveal delay={104} y={110}>
-          <div
-            style={{
-              fontFamily: F.serif,
-              fontStyle: "italic",
-              fontSize: 168,
-              lineHeight: 0.98,
-              color: C.cream,
-            }}
-          >
-            ramai.
-          </div>
-        </Reveal>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 720 - 260 * easeInOut(ramp(f, 150, 30)),
-          top: 1480,
-          width: 520 * easeInOut(ramp(f, 150, 30)),
-          height: 1,
-          background: "rgba(239,230,212,0.3)",
-        }}
-      />
-
+      {/* the turn */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1524,
+          top: 1180,
+          textAlign: "center",
+          opacity: serifIn,
+          transform: `translateY(${(1 - serifIn) * 44}px)`,
+        }}
+      >
+        <Words
+          text="cerita paling"
+          at={150}
+          stagger={12}
+          y={80}
+          style={{
+            fontFamily: F.serif,
+            fontSize: 200,
+            lineHeight: 1.02,
+            fontStyle: "italic",
+            color: C.orange,
+            textShadow: "0 0 80px rgba(255,176,58,0.35)",
+          }}
+        />
+        <Words
+          text="ramai."
+          at={186}
+          stagger={12}
+          y={80}
+          style={{
+            fontFamily: F.serif,
+            fontSize: 200,
+            lineHeight: 1.02,
+            fontStyle: "italic",
+            color: C.cream,
+          }}
+        />
+      </div>
+
+      {/* footnote */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 1720,
           textAlign: "center",
           fontFamily: F.mono,
-          fontSize: 21,
-          letterSpacing: "0.36em",
-          color: C.cream,
-          opacity: 0.4 * ramp(f, 160, 24),
+          fontSize: 24,
+          letterSpacing: "0.34em",
+          color: C.creamDim,
+          opacity: footIn * 0.9,
         }}
       >
-        POINT NEMO — SAMUDRA PASIFIK SELATAN
+        DAN HAMPIR TIDAK ADA YANG PERNAH KE SANA
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1860,
-          textAlign: "center",
-          opacity: ramp(f, 180, 30),
-        }}
-      >
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
-          <span
-            style={{
-              fontFamily: F.display,
-              fontSize: 72,
-              letterSpacing: "0.08em",
-              color: C.cream,
-            }}
-          >
-            NAYSI
-          </span>
-          <span style={{ width: 12, height: 12, borderRadius: 99, background: C.orange }} />
-          <span
-            style={{
-              fontFamily: F.mono,
-              fontSize: 26,
-              letterSpacing: "0.4em",
-              color: C.orange,
-            }}
-          >
-            ATLAS
-          </span>
-        </div>
-      </div>
-
-      <Vignette strength={0.66} />
+      <LightLeak start={140} dur={34} opacity={0.34} />
+      <Grain opacity={0.05} />
+      <Vignette strength={0.6} />
     </AbsoluteFill>
   );
 };

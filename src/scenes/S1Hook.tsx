@@ -1,325 +1,137 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeInOut, easeOut, ramp } from "../lib";
-import { Dust, Grain, Reveal, Vignette } from "../fx";
+import { clamp01, easeOut, lerp, ramp } from "../lib";
+import { Backdrop, Flare, SonarRings, StarDrift, Vignette, Grain } from "../fx";
+import { Ship } from "../objects";
 
+/**
+ * 01 — HOOK
+ * A research vessel alone at night, one locator ping, and the line that
+ * breaks the expectation: the nearest human is not on land.
+ */
 export const S1Hook: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = f / fps;
+  const { durationInFrames } = useVideoConfig();
+  const p = durationInFrames > 0 ? f / durationInFrames : 0;
 
-  const dotIn = ramp(f, 0, 14);
-  const rise = easeInOut(ramp(f, 300, 50));
-  const dotY = 690 - 130 * rise;
-  const dotScale = (1 - 0.35 * rise) * (1 + 0.14 * Math.sin(t * 4.2));
-  const dotGlow = 1 + 1.8 * easeOut(ramp(f, 560, 40));
-
-  const aOut = 1 - ramp(f, 298, 16);
-  const bIn = ramp(f, 306, 16);
-  const bOut = 1 - ramp(f, 548, 16);
-  const cIn = ramp(f, 556, 16);
-
-  const stars = Array.from({ length: 70 }, (_, i) => ({
-    x: (Math.sin(i * 12.9898) * 43758.5453) % 1,
-    y: (Math.sin(i * 78.233) * 12543.123) % 1,
-    s: 0.8 + ((i * 37) % 10) / 6,
-    d: (i % 9) * 3,
-  }));
+  const shipIn = easeOut(ramp(f, 0, 40));
+  const bob = Math.sin(f / 22) * 7;
+  const beamIn = easeOut(ramp(f, 18, 30));
+  const titleIn = easeOut(ramp(f, 70, 26));
+  const strike = easeOut(ramp(f, 128, 24));
+  const subIn = easeOut(ramp(f, 170, 24));
 
   return (
-    <AbsoluteFill
-      style={{
-        background:
-          "radial-gradient(circle at 50% 30%, #0D1520 0%, #070A0F 42%, #05070A 100%)",
-      }}
-    >
-      <Dust count={44} opacity={0.22} speed={0.18} />
-      <Grain opacity={0.05} />
+    <AbsoluteFill style={{ backgroundColor: C.ink }}>
+      <Backdrop tex="tex/water.png" scale={1.12} drift={26} />
+      <StarDrift opacity={0.18} speed={14} />
 
-      {/* faint vertical axis */}
+      {/* searchlight from above */}
       <div
         style={{
           position: "absolute",
-          left: 719,
-          top: 0,
-          width: 1,
-          height: 2560,
-          background: `linear-gradient(to bottom, rgba(239,230,212,0) 0%, rgba(239,230,212,0.14) 30%, rgba(239,230,212,0.14) 62%, rgba(239,230,212,0) 100%)`,
-          opacity: dotIn,
+          left: 720 - 210,
+          top: -60,
+          width: 420,
+          height: 1320,
+          background:
+            "linear-gradient(180deg, rgba(200,235,250,0.20) 0%, rgba(180,225,245,0.07) 46%, rgba(180,225,245,0) 100%)",
+          clipPath: "polygon(46% 0, 54% 0, 100% 100%, 0 100%)",
+          opacity: beamIn * 0.9,
+          mixBlendMode: "screen",
         }}
       />
 
-      {/* rings */}
-      {[0, 1, 2].map((i) => {
-        const p = ((f + i * 26) % 78) / 78;
-        const r = 26 + 110 * p;
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: 720 - r,
-              top: dotY - r,
-              width: r * 2,
-              height: r * 2,
-              borderRadius: "50%",
-              border: `1px solid rgba(255,90,31,${0.55 * (1 - p) * dotIn})`,
-            }}
-          />
-        );
-      })}
-
-      {/* dot */}
+      {/* ship */}
       <div
         style={{
           position: "absolute",
-          left: 720 - 9 * dotScale,
-          top: dotY - 9 * dotScale,
-          width: 18 * dotScale,
-          height: 18 * dotScale,
-          borderRadius: 99,
-          background: C.orange,
-          boxShadow: `0 0 ${28 * dotScale * dotGlow}px ${C.orange}, 0 0 ${90 * dotGlow}px rgba(255,90,31,0.45)`,
-          opacity: dotIn,
-        }}
-      />
-
-      {/* coordinates near the dot */}
-      <div
-        style={{
-          position: "absolute",
-          left: 760,
-          top: dotY - 14,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.18em",
-          color: C.cream,
-          opacity: 0.4 * ramp(f, 90, 20),
-          whiteSpace: "nowrap",
+          left: 720 - 340,
+          top: 1040 + bob,
+          opacity: shipIn,
+          transform: `translateY(${(1 - shipIn) * 40}px)`,
+          filter: "drop-shadow(0 26px 40px rgba(0,0,0,0.8))",
         }}
       >
-        48°52.6′S
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          left: 760,
-          top: dotY + 12,
-          fontFamily: F.mono,
-          fontSize: 20,
-          letterSpacing: "0.18em",
-          color: C.cream,
-          opacity: 0.4 * ramp(f, 100, 20),
-          whiteSpace: "nowrap",
-        }}
-      >
-        123°23.6′W
+        <Ship width={680} />
       </div>
 
-      {/* PHASE A */}
+      {/* locator ping on the water */}
+      <div style={{ opacity: easeOut(ramp(f, 40, 20)) }}>
+        <SonarRings x={720} y={1180} count={4} maxR={520} speed={96} color="143,220,239" />
+      </div>
+      <Flare x={720} y={1178} width={560} opacity={0.28} color="170,225,245" />
+
+      {/* title block */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1010,
+          top: 1420,
           textAlign: "center",
-          opacity: aOut,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: F.display,
-            fontSize: 92,
-            letterSpacing: "0.3em",
-            color: C.cream,
-            opacity: 0.55 * bIn * 0 + 0.55 * ramp(f, 20, 20),
-            transform: `translateY(${(1 - easeOut(ramp(f, 20, 24))) * 30}px)`,
-          }}
-        >
-          ADA SATU TITIK
-        </div>
-        <Reveal delay={54} y={110} style={{ marginTop: 8 }}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 210,
-              lineHeight: 0.92,
-              color: C.cream,
-              letterSpacing: "0.01em",
-            }}
-          >
-            DI BUMI
-          </div>
-        </Reveal>
-        <Reveal delay={110} y={110}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 148,
-              lineHeight: 0.98,
-              color: C.cream,
-              marginTop: 34,
-              letterSpacing: "0.02em",
-            }}
-          >
-            YANG BEGITU <span style={{ color: C.orange }}>SEPI.</span>
-          </div>
-        </Reveal>
-      </div>
-
-      {/* PHASE B */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 1000,
-          textAlign: "center",
-          opacity: bIn * bOut,
+          opacity: titleIn,
+          transform: `translateY(${(1 - titleIn) * 40}px)`,
         }}
       >
         <div
           style={{
             fontFamily: F.mono,
-            fontSize: 30,
-            letterSpacing: "0.34em",
+            fontSize: 26,
+            letterSpacing: "0.44em",
             color: C.orange,
-            transform: `translateY(${(1 - easeOut(ramp(f, 312, 18))) * 20}px)`,
+            textShadow: "0 0 24px rgba(255,176,58,0.5)",
           }}
         >
           MANUSIA TERDEKAT
         </div>
-        <Reveal delay={330} y={120}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 126,
-              lineHeight: 0.95,
-              color: C.cream,
-              marginTop: 30,
-            }}
-          >
-            BUKAN DI
-          </div>
-        </Reveal>
-        <Reveal delay={362} y={140}>
-          <div
-            style={{
-              fontFamily: F.display,
-              fontSize: 232,
-              lineHeight: 0.92,
-              color: C.cream,
-              position: "relative",
-              display: "inline-block",
-            }}
-          >
-            DARAT.
-            {/* strike-through */}
-            <div
-              style={{
-                position: "absolute",
-                left: "-4%",
-                top: "52%",
-                height: 14,
-                width: `${easeOut(ramp(f, 440, 22)) * 108}%`,
-                background: C.orange,
-                transform: "rotate(-3deg)",
-                boxShadow: `0 0 24px rgba(255,90,31,0.5)`,
-              }}
-            />
-          </div>
-        </Reveal>
-        <div
-          style={{
-            fontFamily: F.mono,
-            fontSize: 24,
-            letterSpacing: "0.3em",
-            color: C.cream,
-            opacity: 0.4 * ramp(f, 470, 20),
-            marginTop: 26,
-          }}
-        >
-          2.688 KM DARI DARATAN
-        </div>
-      </div>
 
-      {/* PHASE C */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: 980,
-          textAlign: "center",
-          opacity: cIn,
-        }}
-      >
         <div
           style={{
             fontFamily: F.display,
-            fontSize: 112,
-            letterSpacing: "0.22em",
+            fontSize: 168,
+            lineHeight: 0.94,
+            letterSpacing: "0.01em",
             color: C.cream,
-            opacity: 0.6,
-            transform: `translateY(${(1 - easeOut(ramp(f, 560, 18))) * 24}px)`,
+            marginTop: 18,
+            textShadow: "0 10px 60px rgba(0,0,0,0.85)",
           }}
         >
-          TAPI DI
+          BUKAN DI
         </div>
-        <Reveal delay={584} y={160}>
+
+        <div style={{ position: "relative", display: "inline-block", marginTop: 4 }}>
           <div
             style={{
               fontFamily: F.display,
-              fontSize: 196,
-              lineHeight: 0.95,
-              color: C.orange,
-              marginTop: 18,
+              fontSize: 250,
+              lineHeight: 0.9,
               letterSpacing: "0.01em",
-              textShadow: `0 0 60px rgba(255,90,31,0.35)`,
+              color: C.cream,
+              textShadow: "0 12px 70px rgba(0,0,0,0.9)",
             }}
           >
-            LUAR ANGKASA.
+            DARAT.
           </div>
-        </Reveal>
-        <div
-          style={{
-            fontFamily: F.mono,
-            fontSize: 24,
-            letterSpacing: "0.4em",
-            color: C.cream,
-            opacity: 0.4 * ramp(f, 640, 24),
-            marginTop: 40,
-          }}
-        >
-          400 KM DI ATAS KAMU
+          {/* amber strike-through, drawn on */}
+          <div
+            style={{
+              position: "absolute",
+              left: -18,
+              top: "54%",
+              height: 16,
+              width: `${strike * 108}%`,
+              background: `linear-gradient(90deg, ${C.orangeDeep}, ${C.orange}, ${C.orangeHot})`,
+              boxShadow: "0 0 34px rgba(255,176,58,0.75)",
+              transform: "rotate(-2.4deg)",
+            }}
+          />
         </div>
       </div>
 
-      {/* star burst */}
-      {stars.map((s, i) => {
-        const a = ramp(f, 560 + s.d, 24) * cIn;
-        if (a <= 0) return null;
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: Math.abs(s.x) * 1440,
-              top: Math.abs(s.y) * 2560,
-              width: s.s,
-              height: s.s,
-              borderRadius: 99,
-              background: i % 7 === 0 ? C.orange : C.cream,
-              opacity: a * (0.25 + 0.6 * Math.abs(Math.sin(f * 0.04 + i))),
-              boxShadow: i % 7 === 0 ? `0 0 14px ${C.orange}` : "none",
-            }}
-          />
-        );
-      })}
-
-      <Vignette strength={0.7} />
+      <Grain opacity={0.05} />
+      <Vignette strength={0.6} />
     </AbsoluteFill>
   );
 };
