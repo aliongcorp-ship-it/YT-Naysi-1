@@ -1,33 +1,35 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
-import { easeOut, lerp, ramp } from "../lib";
+import { easeOut, ramp } from "../lib";
 import {
   Backdrop,
-  GlassCard,
+  Chip,
+  Flare,
+  Frame,
   Grain,
   LightLeak,
-  Ruler,
   SonarRings,
   StarDrift,
   Vignette,
 } from "../fx";
+import { DimLine, DrawOn, GrowLine } from "../tech";
 import { DepthPin, Island } from "../objects";
 
 /**
  * 03 — DISTANCE
- * The number is shown as a physical measurement: a ruler spanning the frame
- * between three real islands, with the distance counting up.
+ * A measured distance, not a stated one: two real islands, a dimension line
+ * drawn between them with end ticks, and the number counting up on the line.
  */
 export const S3Distance: React.FC = () => {
   const f = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
 
-  const rulerP = easeOut(ramp(f, 40, 46));
+  const lineP = easeOut(ramp(f, 46, 48));
   const count = Math.round(2688 * easeOut(ramp(f, 60, 60)));
   const leftIn = easeOut(ramp(f, 10, 22));
   const rightIn = easeOut(ramp(f, 70, 22));
-  const labelIn = easeOut(ramp(f, 130, 24));
+  const cardIn = easeOut(ramp(f, 150, 26));
+  const pinIn = easeOut(ramp(f, 118, 24));
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.ink }}>
@@ -36,16 +38,16 @@ export const S3Distance: React.FC = () => {
 
       {/* the three equidistant islands, labelled */}
       <div style={{ opacity: leftIn }}>
-        <div style={{ position: "absolute", left: 120, top: 700 }}>
+        <div style={{ position: "absolute", left: 110, top: 600 }}>
           <Island width={300} />
         </div>
         <div
           style={{
             position: "absolute",
-            left: 150,
-            top: 636,
+            left: 140,
+            top: 576,
             fontFamily: F.mono,
-            fontSize: 22,
+            fontSize: 21,
             letterSpacing: "0.28em",
             color: C.creamDim,
           }}
@@ -55,16 +57,16 @@ export const S3Distance: React.FC = () => {
       </div>
 
       <div style={{ opacity: rightIn }}>
-        <div style={{ position: "absolute", left: 1020, top: 700 }}>
+        <div style={{ position: "absolute", left: 1030, top: 600 }}>
           <Island width={300} />
         </div>
         <div
           style={{
             position: "absolute",
-            left: 1050,
-            top: 636,
+            left: 1060,
+            top: 576,
             fontFamily: F.mono,
-            fontSize: 22,
+            fontSize: 21,
             letterSpacing: "0.28em",
             color: C.creamDim,
           }}
@@ -73,16 +75,27 @@ export const S3Distance: React.FC = () => {
         </div>
       </div>
 
-      {/* Point Nemo pin in the middle of the water */}
-      <div style={{ position: "absolute", left: 720 - 24, top: 812, opacity: leftIn }}>
+      {/* dashed geodesic, drawn on between the two shores */}
+      <svg width={1440} height={1000} style={{ position: "absolute", left: 0, top: 440 }}>
+        <DrawOn
+          d="M210 660 Q 720 430 1230 660"
+          progress={lineP}
+          stroke="rgba(143,220,239,0.5)"
+          width={2}
+          dash="9 13"
+        />
+      </svg>
+
+      {/* Point Nemo pin at the midpoint */}
+      <div style={{ position: "absolute", left: 720 - 24, top: 696, opacity: pinIn }}>
         <DepthPin size={48} color={C.orange} />
         <div
           style={{
             position: "absolute",
-            left: 40,
-            top: 4,
+            left: 44,
+            top: 2,
             fontFamily: F.mono,
-            fontSize: 20,
+            fontSize: 19,
             letterSpacing: "0.26em",
             color: C.orange,
             whiteSpace: "nowrap",
@@ -92,54 +105,14 @@ export const S3Distance: React.FC = () => {
         </div>
       </div>
 
-      {/* dashed geodesic between the islands */}
-      <svg width={1440} height={900} style={{ position: "absolute", left: 0, top: 520 }}>
-        <path
-          d="M210 760 Q 720 560 1230 760"
-          fill="none"
-          stroke="rgba(143,220,239,0.45)"
-          strokeWidth="2"
-          strokeDasharray="10 12"
-          strokeDashoffset={-f * 1.6}
-        />
-      </svg>
-
       <div style={{ opacity: leftIn * 0.9 }}>
-        <SonarRings x={720} y={860} count={3} maxR={360} speed={110} color="255,176,58" />
+        <SonarRings x={720} y={750} count={3} maxR={340} speed={110} color="255,176,58" />
       </div>
 
       {/* the measurement */}
-      <div style={{ position: "absolute", left: 160, top: 1120 }}>
-        <Ruler width={1120} ticks={54} height={44} progress={rulerP} />
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 52,
-            fontFamily: F.mono,
-            fontSize: 18,
-            letterSpacing: "0.2em",
-            color: C.creamDim,
-            whiteSpace: "nowrap",
-          }}
-        >
-          0
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: 52,
-            fontFamily: F.mono,
-            fontSize: 18,
-            letterSpacing: "0.2em",
-            color: C.creamDim,
-            whiteSpace: "nowrap",
-          }}
-        >
-          2.688 KM
-        </div>
-      </div>
+      <svg width={1440} height={700} style={{ position: "absolute", left: 0, top: 760 }}>
+        <DimLine x1={260} x2={1180} y={250} label="2.688 KM" progress={lineP} size={30} />
+      </svg>
 
       {/* counter */}
       <div
@@ -147,7 +120,7 @@ export const S3Distance: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1290,
+          top: 1120,
           textAlign: "center",
           opacity: easeOut(ramp(f, 55, 20)),
         }}
@@ -155,7 +128,7 @@ export const S3Distance: React.FC = () => {
         <div
           style={{
             fontFamily: F.display,
-            fontSize: 340,
+            fontSize: 330,
             lineHeight: 0.9,
             color: C.cream,
             letterSpacing: "0.01em",
@@ -167,10 +140,10 @@ export const S3Distance: React.FC = () => {
         <div
           style={{
             fontFamily: F.mono,
-            fontSize: 30,
+            fontSize: 29,
             letterSpacing: "0.5em",
             color: C.orange,
-            marginTop: 6,
+            marginTop: 4,
           }}
         >
           KILOMETER
@@ -180,42 +153,46 @@ export const S3Distance: React.FC = () => {
       {/* glass stat card */}
       <div
         style={{
-          opacity: labelIn,
-          transform: `translateY(${(1 - labelIn) * 30}px)`,
+          opacity: cardIn,
+          transform: `translateY(${(1 - cardIn) * 30}px)`,
         }}
       >
-        <GlassCard style={{ left: 250, top: 1810, width: 940, height: 168 }}>
+        <Frame
+          progress={cardIn}
+          label="DARATAN TERDEKAT"
+          style={{ left: 220, top: 1524, width: 1000, height: 190 }}
+        >
           <div
             style={{
               position: "absolute",
-              left: 44,
-              top: 30,
-              fontFamily: F.mono,
-              fontSize: 19,
-              letterSpacing: "0.32em",
-              color: C.cyan,
-              opacity: 0.85,
-            }}
-          >
-            DARATAN TERDEKAT
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              left: 44,
-              top: 70,
+              left: 40,
+              top: 76,
               fontFamily: F.sans,
-              fontSize: 46,
+              fontSize: 44,
               fontWeight: 600,
               color: C.cream,
               letterSpacing: "-0.01em",
             }}
           >
-            Tiga pulau kecil. Tanpa penghuni.
+            Tiga pulau kecil. <span style={{ color: C.creamDim }}>Tanpa penghuni.</span>
           </div>
-        </GlassCard>
+          <div
+            style={{
+              position: "absolute",
+              right: 40,
+              top: 84,
+              fontFamily: F.mono,
+              fontSize: 22,
+              letterSpacing: "0.2em",
+              color: C.orange,
+            }}
+          >
+            0 PENGHUNI
+          </div>
+        </Frame>
       </div>
 
+      <Flare x={720} y={750} width={700} opacity={0.18} color="255,176,58" />
       <LightLeak start={40} dur={30} opacity={0.22} />
       <Grain opacity={0.05} />
       <Vignette strength={0.58} />

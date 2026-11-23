@@ -695,3 +695,194 @@ export const Words: React.FC<{
     </div>
   );
 };
+
+/* ------------------------------------------------------------------ */
+/* Technical frame — the drafting-table container used by the          */
+/* reference: hairline box, corner ticks, optional mono label.         */
+/* ------------------------------------------------------------------ */
+export const Frame: React.FC<{
+  style?: CSSProperties;
+  children?: ReactNode;
+  label?: string;
+  progress?: number;
+  color?: string;
+  radius?: number;
+}> = ({ style, children, label, progress = 1, color = "rgba(160,215,235,0.30)", radius = 18 }) => {
+  const p = clamp01(progress);
+  const tick = 26;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        borderRadius: radius,
+        border: `1px solid ${color}`,
+        background:
+          "linear-gradient(160deg, rgba(18,42,56,0.42) 0%, rgba(8,20,28,0.5) 60%, rgba(5,12,18,0.55) 100%)",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(200,240,255,0.10)",
+        opacity: p,
+        ...style,
+      }}
+    >
+      {([
+        { pos: { left: -1, top: -1 }, rot: 0 },
+        { pos: { right: -1, top: -1 }, rot: 90 },
+        { pos: { right: -1, bottom: -1 }, rot: 180 },
+        { pos: { left: -1, bottom: -1 }, rot: 270 },
+      ] as { pos: CSSProperties; rot: number }[]).map((c, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            width: tick,
+            height: tick,
+            ...c.pos,
+            transform: `rotate(${c.rot}deg)`,
+            transformOrigin: "center",
+          }}
+        >
+          <div style={{ position: "absolute", left: 0, top: 0, width: tick, height: 2, background: C.orange }} />
+          <div style={{ position: "absolute", left: 0, top: 0, width: 2, height: tick, background: C.orange }} />
+        </div>
+      ))}
+      {label ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 34,
+            top: 24,
+            fontFamily: F.mono,
+            fontSize: 19,
+            letterSpacing: "0.3em",
+            color: C.cyan,
+            opacity: 0.9,
+          }}
+        >
+          {label}
+        </div>
+      ) : null}
+      {children}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Stat chip — value, unit, micro label                                */
+/* ------------------------------------------------------------------ */
+export const Chip: React.FC<{
+  value: string;
+  unit?: string;
+  label?: string;
+  color?: string;
+  size?: number;
+  align?: "left" | "center";
+  style?: CSSProperties;
+}> = ({ value, unit, label, color = C.cream, size = 96, align = "left", style }) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: align === "center" ? "center" : "flex-start",
+      ...style,
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+      <span
+        style={{
+          fontFamily: F.display,
+          fontSize: size,
+          lineHeight: 0.9,
+          color,
+          letterSpacing: "0.01em",
+          textShadow: "0 10px 50px rgba(0,0,0,0.8)",
+        }}
+      >
+        {value}
+      </span>
+      {unit ? (
+        <span
+          style={{
+            fontFamily: F.mono,
+            fontSize: size * 0.28,
+            letterSpacing: "0.16em",
+            color: C.creamDim,
+          }}
+        >
+          {unit}
+        </span>
+      ) : null}
+    </div>
+    {label ? (
+      <div
+        style={{
+          marginTop: 14,
+          fontFamily: F.mono,
+          fontSize: 20,
+          letterSpacing: "0.26em",
+          color: C.creamDim,
+        }}
+      >
+        {label}
+      </div>
+    ) : null}
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/* Scan line — a single bright row that sweeps down the frame          */
+/* ------------------------------------------------------------------ */
+export const Scan: React.FC<{
+  y: number;
+  height?: number;
+  color?: string;
+  opacity?: number;
+}> = ({ y, height = 260, color = "143,220,239", opacity = 0.22 }) => (
+  <div
+    style={{
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: y - height / 2,
+      height,
+      background: `linear-gradient(180deg, rgba(${color},0) 0%, rgba(${color},${opacity * 0.5}) 46%, rgba(${color},${opacity}) 50%, rgba(${color},${opacity * 0.5}) 54%, rgba(${color},0) 100%)`,
+      mixBlendMode: "screen",
+      pointerEvents: "none",
+    }}
+  />
+);
+
+/* ------------------------------------------------------------------ */
+/* Crosshair — degree ring + tick marks, centred on a point            */
+/* ------------------------------------------------------------------ */
+export const Crosshair: React.FC<{
+  x: number;
+  y: number;
+  r?: number;
+  progress?: number;
+  color?: string;
+  ticks?: number;
+}> = ({ x, y, r = 220, progress = 1, color = "rgba(143,220,239,0.5)", ticks = 36 }) => {
+  const p = clamp01(progress);
+  return (
+    <svg width={1440} height={2560} style={{ position: "absolute", left: 0, top: 0, opacity: p }}>
+      <circle cx={x} cy={y} r={r * p} fill="none" stroke={color} strokeWidth="1" strokeDasharray="2 7" />
+      <circle cx={x} cy={y} r={r * 0.62 * p} fill="none" stroke={color} strokeWidth="1" opacity="0.6" />
+      {Array.from({ length: ticks }, (_, i) => {
+        const a = (i / ticks) * Math.PI * 2 - Math.PI / 2;
+        const long = i % 9 === 0;
+        const r1 = r * (long ? 0.94 : 0.97) * p;
+        const r2 = r * p;
+        return (
+          <line
+            key={i}
+            x1={x + Math.cos(a) * r1}
+            y1={y + Math.sin(a) * r1}
+            x2={x + Math.cos(a) * r2}
+            y2={y + Math.sin(a) * r2}
+            stroke={color}
+            strokeWidth={long ? 2 : 1}
+          />
+        );
+      })}
+    </svg>
+  );
+};

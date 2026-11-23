@@ -98,7 +98,7 @@ export const S9End: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1330,
+          top: 1250,
           textAlign: "center",
           opacity: ctaIn,
           transform: `translateY(${(1 - ctaIn) * 30}px)`,
@@ -128,7 +128,7 @@ export const S9End: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1730,
+          top: 1740,
           textAlign: "center",
           opacity: markIn,
           transform: `translateY(${(1 - markIn) * 26}px)`,
@@ -152,6 +152,18 @@ export const S9End: React.FC = () => {
             background: `linear-gradient(90deg, rgba(255,176,58,0), ${C.orange}, rgba(255,176,58,0))`,
           }}
         />
+        <div
+          style={{
+            marginTop: 34,
+            fontFamily: F.mono,
+            fontSize: 19,
+            letterSpacing: "0.34em",
+            color: C.creamDim,
+            opacity: 0.7,
+          }}
+        >
+          EPISODE 37 · TITIK NEMO
+        </div>
       </div>
 
       <Flare x={720} y={1000} width={760} opacity={0.24} color="170,225,245" />

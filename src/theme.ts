@@ -20,7 +20,17 @@ export const F = {
   display: '"Bebas Neue", Impact, sans-serif',
   serif: '"Instrument Serif", Georgia, serif',
   sans: '"Archivo", Helvetica, sans-serif',
+  /** Caption face — rounder and wider than Archivo, matches the reference. */
+  caption: '"Plus Jakarta Sans", "Archivo", Helvetica, sans-serif',
   mono: '"JetBrains Mono", ui-monospace, monospace',
+};
+
+/* Caption palette, lifted from the reference frame. */
+export const CAP = {
+  spoken: "#F2EDE3",
+  future: "rgba(242,237,227,0.34)",
+  hot: "#FFB03A",
+  hotGlow: "rgba(255,176,58,0.55)",
 };
 
 export const W = 1440;

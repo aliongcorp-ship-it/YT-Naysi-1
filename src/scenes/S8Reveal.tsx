@@ -38,7 +38,7 @@ export const S8Reveal: React.FC = () => {
         style={{
           position: "absolute",
           left: 720 - 720,
-          top: 380,
+          top: 330,
           width: 1440,
           height: 1440,
           borderRadius: "50%",
@@ -157,7 +157,7 @@ export const S8Reveal: React.FC = () => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1720,
+          top: 1640,
           textAlign: "center",
           fontFamily: F.mono,
           fontSize: 24,

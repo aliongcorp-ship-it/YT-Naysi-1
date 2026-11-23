@@ -4,6 +4,7 @@ import { C, F } from "../theme";
 import { easeOut, lerp, ramp } from "../lib";
 import {
   Backdrop,
+  Crosshair,
   Flare,
   GlassCard,
   Grain,
@@ -27,6 +28,7 @@ export const S2Name: React.FC = () => {
   const globeIn = easeOut(ramp(f, 0, 34));
   const titleIn = easeOut(ramp(f, 96, 26));
   const cardIn = easeOut(ramp(f, 150, 26));
+  const crossIn = easeOut(ramp(f, 60, 40));
   const scale = 1 + 0.05 * p;
 
   return (
@@ -134,6 +136,11 @@ export const S2Name: React.FC = () => {
       </div>
 
       <Flare x={720} y={720} width={820} opacity={0.34} color="160,220,245" />
+
+      {/* technical overlay: crosshair + leader to the marker */}
+      <div style={{ opacity: crossIn }}>
+        <Crosshair x={720} y={720} r={430} progress={crossIn} ticks={36} />
+      </div>
 
       {/* title */}
       <div
