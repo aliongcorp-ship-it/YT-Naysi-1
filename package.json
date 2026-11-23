@@ -10,7 +10,7 @@
     "globe": "node scripts/render-globe.mjs",
     "build": "npm run timeline && npm run audio && npm run globe",
     "render": "remotion render Short out/short-video.mp4 --concurrency=2",
-    "mux": "ffmpeg -i out/video.mp4 -i out/mix.wav -c:v copy -c:a aac -b:a 192k -af loudnorm=I=-14:TP=-1.5:LRA=11 -shortest out/final.mp4"
+    "encode": "node scripts/encode.mjs"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "1.1.0",
