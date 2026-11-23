@@ -3,7 +3,6 @@ node_modules
 out
 .bin
 audio/wav
-audio/vo_fx
 audio/mix
 public/audio
 *.log
