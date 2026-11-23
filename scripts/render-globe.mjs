@@ -131,12 +131,11 @@ for (const [id, rotFn] of Object.entries(SCENES)) {
   }
   console.log(`  ${total}/${total}`);
 
-  execFileSync(FF, [
-    "-y", "-v", "error", "-framerate", String(timeline.fps),
-    "-i", path.join(dir, "%05d.png"),
-    "-c:v", "libx264", "-preset", "veryfast", "-crf", "16",
-    "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-    `public/globe-${id}.mp4`,
-  ]);
-  console.log(`  -> public/globe-${id}.mp4`);
+  // The composition animates the globe with CSS transforms, so only the
+  // final (most zoomed-in) frame is needed as a static plate.
+  fs.copyFileSync(
+    path.join(dir, `${String(total - 1).padStart(5, "0")}.png`),
+    `public/globe-${id}.png`,
+  );
+  console.log(`  -> public/globe-${id}.png`);
 }

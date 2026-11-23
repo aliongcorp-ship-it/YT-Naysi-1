@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeInOut, easeOut, lerp, ramp } from "../lib";
 import { Contours, Grain, Grid, Reveal, Vignette } from "../fx";
@@ -54,14 +54,54 @@ export const S2Name: React.FC = () => {
             position: "absolute",
             inset: 0,
             borderRadius: "50%",
-            overflow: "hidden",
             boxShadow: "0 0 140px rgba(143,214,210,0.12)",
           }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            overflow: "hidden",
+            transform: `scale(${1 + 0.035 * (f / Math.max(1, durationInFrames))})`,
+          }}
         >
-          <OffthreadVideo
-            src={staticFile("globe-s2.mp4")}
+          <Img
+            src={staticFile("globe-s2.png")}
             style={{ width: 1000, height: 1000 }}
           />
+          {/* rotating radar sweep (gradient static, rotated via transform) */}
+          <div
+            style={{
+              position: "absolute",
+              left: -200,
+              top: -200,
+              width: 1400,
+              height: 1400,
+              borderRadius: "50%",
+              background:
+                "conic-gradient(from 0deg, rgba(255,90,31,0) 0deg, rgba(255,90,31,0.20) 38deg, rgba(255,90,31,0) 95deg)",
+              transform: `rotate(${(f / fps) * 26}deg)`,
+            }}
+          />
+          {/* animated ping on Point Nemo */}
+          {[0, 1, 2].map((i) => {
+            const p = ((f - i * 24) % 72 + 72) % 72 / 72;
+            return (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: 500 - 80 * p,
+                  top: 500 - 80 * p,
+                  width: 160 * p,
+                  height: 160 * p,
+                  borderRadius: "50%",
+                  border: `2px solid rgba(255,90,31,${0.55 * (1 - p)})`,
+                }}
+              />
+            );
+          })}
         </div>
       </div>
 

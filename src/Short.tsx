@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Sequence } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { C } from "./theme";
 import { TL } from "./data";
 import { CutFX, Grain, Vignette } from "./fx";
@@ -42,6 +42,8 @@ export const Short: React.FC = () => {
           </Sequence>
         );
       })}
+
+      <Audio src={staticFile("audio/mix.wav")} />
 
       <SubtitleShade />
       <CutFX />

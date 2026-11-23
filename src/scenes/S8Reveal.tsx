@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Video, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeInOut, lerp, ramp } from "../lib";
 import { Contours, Grain, Reveal, Vignette } from "../fx";
@@ -28,10 +28,11 @@ export const S8Reveal: React.FC = () => {
             inset: 0,
             borderRadius: "50%",
             overflow: "hidden",
+            transform: `scale(${1 + 0.05 * (f / Math.max(1, durationInFrames))})`,
           }}
         >
-          <Video
-            src={staticFile("globe-s8.mp4")}
+          <Img
+            src={staticFile("globe-s8.png")}
             style={{ width: 1440, height: 1440 }}
           />
         </div>

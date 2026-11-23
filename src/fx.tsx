@@ -22,12 +22,16 @@ export const Grain: React.FC<{ opacity?: number }> = ({ opacity = 0.045 }) => {
     <div
       style={{
         position: "absolute",
-        inset: 0,
+        left: -512,
+        top: -512,
+        width: 1440 + 1024,
+        height: 2560 + 1024,
         backgroundImage: `url(${staticFile("tex/grain.png")})`,
         backgroundSize: "512px 512px",
-        backgroundPosition: `${x}px ${y}px`,
+        transform: `translate3d(${-x}px, ${-y}px, 0)`,
         opacity,
         pointerEvents: "none",
+        willChange: "transform",
       }}
     />
   );
