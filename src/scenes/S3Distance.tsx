@@ -24,8 +24,10 @@ import { DepthPin, Island } from "../objects";
 export const S3Distance: React.FC = () => {
   const f = useCurrentFrame();
 
-  const lineP = easeOut(ramp(f, wordFrame("s3", "berjarak") - 26, 44));
-  const count = Math.round(2688 * easeOut(ramp(f, wordFrame("s3", "berjarak"), 52)));
+  const lineP = easeOut(ramp(f, wordFrame("s3", "Dari"), wordFrame("s3", "berjarak") - wordFrame("s3", "Dari")));
+  const count = Math.round(
+    2688 * easeOut(ramp(f, wordFrame("s3", "Dari"), wordFrame("s3", "kilometer") - wordFrame("s3", "Dari"))),
+  );
   const leftIn = easeOut(ramp(f, 10, 22));
   const rightIn = easeOut(ramp(f, 70, 22));
   const cardIn = easeOut(ramp(f, wordFrame("s3", "Dan"), 26));
@@ -122,7 +124,7 @@ export const S3Distance: React.FC = () => {
           right: 0,
           top: 1120,
           textAlign: "center",
-          opacity: easeOut(ramp(f, wordFrame("s3", "berjarak") - 10, 18)),
+          opacity: easeOut(ramp(f, wordFrame("s3", "Dari") + 6, 18)),
         }}
       >
         <div

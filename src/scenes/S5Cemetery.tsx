@@ -15,7 +15,9 @@ import { Capsule, Shard } from "../objects";
 export const S5Cemetery: React.FC = () => {
   const f = useCurrentFrame();
 
-  const count = Math.round(263 * easeOut(ramp(f, wordFrame("s5", "Lebih"), 66)));
+  const count = Math.round(
+    263 * easeOut(ramp(f, wordFrame("s5", "Dan"), wordFrame("s5", "angkasa") - wordFrame("s5", "Dan"))),
+  );
   const strip = easeOut(ramp(f, wordFrame("s5", "kuburan"), 70));
   const traj = easeOut(ramp(f, 20, 56));
   const rig = easeOut(ramp(f, 10, 30));
@@ -103,7 +105,7 @@ export const S5Cemetery: React.FC = () => {
           right: 0,
           top: 660,
           textAlign: "center",
-          opacity: easeOut(ramp(f, wordFrame("s5", "Lebih") - 12, 22)),
+          opacity: easeOut(ramp(f, wordFrame("s5", "Dan") + 10, 22)),
         }}
       >
         <div
