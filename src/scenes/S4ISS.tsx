@@ -11,7 +11,7 @@ import {
   StarDrift,
   Vignette,
 } from "../fx";
-import { DrawOn, GrowLine } from "../tech";
+import { DrawOn, GrowLine, wordFrame } from "../tech";
 import { ISS } from "../objects";
 
 /**
@@ -25,12 +25,12 @@ export const S4ISS: React.FC = () => {
 
   const issIn = easeOut(ramp(f, 10, 34));
   const earthIn = easeOut(ramp(f, 0, 40));
-  const dimP = easeOut(ramp(f, 90, 40));
+  const dimP = easeOut(ramp(f, wordFrame("s4", "400") - 40, 40));
   const barA = easeOut(ramp(f, 150, 40));
-  const barB = easeOut(ramp(f, 210, 40));
-  const badge = easeOut(ramp(f, 300, 26));
+  const barB = easeOut(ramp(f, wordFrame("s4", "400"), 40));
+  const badge = easeOut(ramp(f, wordFrame("s4", "daripada"), 26));
   const titleIn = easeOut(ramp(f, 60, 24));
-  const cardIn = easeOut(ramp(f, 130, 26));
+  const cardIn = easeOut(ramp(f, wordFrame("s4", "ISS") - 20, 26));
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.ink }}>

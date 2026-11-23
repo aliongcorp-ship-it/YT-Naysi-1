@@ -3,6 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeOut, lerp, ramp, rand } from "../lib";
 import { Backdrop, Flare, Grain, LightLeak, Orbit, StarDrift, Vignette } from "../fx";
+import { wordFrame } from "../tech";
 
 /**
  * 09 — END CARD
@@ -15,8 +16,8 @@ export const S9End: React.FC = () => {
 
   const qIn = easeOut(ramp(f, 20, 30));
   const q2In = easeOut(ramp(f, 70, 30));
-  const ctaIn = easeOut(ramp(f, 170, 26));
-  const markIn = easeOut(ramp(f, 240, 30));
+  const ctaIn = easeOut(ramp(f, wordFrame("s9", "Tulis"), 26));
+  const markIn = easeOut(ramp(f, wordFrame("s9", "komentar") + 26, 30));
   const ringIn = easeOut(ramp(f, 60, 40));
 
   return (

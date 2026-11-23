@@ -11,7 +11,7 @@ import {
   Paper,
   Vignette,
 } from "../fx";
-import { DepthTicks, GrowLine } from "../tech";
+import { DepthTicks, GrowLine, wordFrame } from "../tech";
 import { Iceberg } from "../objects";
 
 /**
@@ -24,9 +24,9 @@ export const S7Resolve: React.FC = () => {
 
   const monster = easeOut(ramp(f, 10, 46));
   const dissolve = ramp(f, 112, 56);
-  const crack = easeOut(ramp(f, 100, 44));
-  const titleIn = easeOut(ramp(f, 190, 26));
-  const cardIn = easeOut(ramp(f, 280, 26));
+  const crack = easeOut(ramp(f, wordFrame("s7", "monster"), 40));
+  const titleIn = easeOut(ramp(f, wordFrame("s7", "bukan"), 26));
+  const cardIn = easeOut(ramp(f, wordFrame("s7", "Hanya"), 26));
   const rulerIn = easeOut(ramp(f, 24, 34));
 
   return (

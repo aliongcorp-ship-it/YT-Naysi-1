@@ -3,7 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeOut, ramp } from "../lib";
 import { Backdrop, Flare, Frame, Grain, LightLeak, SonarRings, Vignette } from "../fx";
-import { DepthTicks, DrawOn, GrowLine } from "../tech";
+import { DepthTicks, DrawOn, GrowLine, wordFrame } from "../tech";
 import { Hydrophone } from "../objects";
 
 /**
@@ -16,9 +16,9 @@ export const S6Bloop: React.FC = () => {
   const f = useCurrentFrame();
 
   const rigIn = easeOut(ramp(f, 0, 34));
-  const waveIn = easeOut(ramp(f, 56, 30));
-  const titleIn = easeOut(ramp(f, 150, 30));
-  const cardIn = easeOut(ramp(f, 240, 26));
+  const waveIn = easeOut(ramp(f, wordFrame("s6", "hidrofon"), 30));
+  const titleIn = easeOut(ramp(f, wordFrame("s6", "menyebutnya"), 30));
+  const cardIn = easeOut(ramp(f, wordFrame("s6", "hidrofon") + 44, 26));
   const rulerIn = easeOut(ramp(f, 24, 30));
 
   const pts = Array.from({ length: 90 }, (_, i) => {

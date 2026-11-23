@@ -3,7 +3,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeOut, ramp, rand } from "../lib";
 import { Backdrop, Flash, Frame, Grain, LightLeak, SonarRings, Vignette } from "../fx";
-import { DepthTicks, DrawOn } from "../tech";
+import { DepthTicks, DrawOn, wordFrame } from "../tech";
 import { Capsule, Shard } from "../objects";
 
 /**
@@ -15,8 +15,8 @@ import { Capsule, Shard } from "../objects";
 export const S5Cemetery: React.FC = () => {
   const f = useCurrentFrame();
 
-  const count = Math.round(263 * easeOut(ramp(f, 70, 70)));
-  const strip = easeOut(ramp(f, 30, 70));
+  const count = Math.round(263 * easeOut(ramp(f, wordFrame("s5", "Lebih"), 66)));
+  const strip = easeOut(ramp(f, wordFrame("s5", "kuburan"), 70));
   const traj = easeOut(ramp(f, 20, 56));
   const rig = easeOut(ramp(f, 10, 30));
 
@@ -103,7 +103,7 @@ export const S5Cemetery: React.FC = () => {
           right: 0,
           top: 660,
           textAlign: "center",
-          opacity: easeOut(ramp(f, 50, 24)),
+          opacity: easeOut(ramp(f, wordFrame("s5", "Lebih") - 12, 22)),
         }}
       >
         <div

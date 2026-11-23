@@ -289,3 +289,23 @@ export const useSceneT = (start: number, dur: number) => {
   const f = useCurrentFrame();
   return ramp(f, start, dur);
 };
+
+/* ------------------------------------------------------------------ */
+/* Beat sync — resolve the frame at which a spoken word starts, so     */
+/* numbers, bars and reveals land on the narrator's voice instead of   */
+/* on an arbitrary offset.                                             */
+/* ------------------------------------------------------------------ */
+import captions from "./captions.json";
+import { TL } from "./data";
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+export const wordFrame = (sceneId: string, word: string, offset = 0): number => {
+  const sc = TL.scenes.find((s) => s.id === sceneId);
+  const pre = sc ? sc.voStart - sc.start : 0.22;
+  const list = (captions as Record<string, { w: string; st: number }[]>)[sceneId] ?? [];
+  const target = norm(word);
+  const hit = list.find((x) => norm(x.w).startsWith(target));
+  const t = (hit ? hit.st : 0) + pre;
+  return Math.max(0, Math.round(t * TL.fps) + offset);
+};

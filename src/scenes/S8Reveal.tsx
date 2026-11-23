@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, F } from "../theme";
 import { easeOut, lerp, ramp } from "../lib";
+import { wordFrame } from "../tech";
 import {
   Backdrop,
   Flare,
@@ -25,8 +26,8 @@ export const S8Reveal: React.FC = () => {
 
   const zoom = 1.18 - 0.22 * easeOut(ramp(f, 0, 70));
   const titleIn = easeOut(ramp(f, 40, 30));
-  const serifIn = easeOut(ramp(f, 150, 34));
-  const footIn = easeOut(ramp(f, 290, 26));
+  const serifIn = easeOut(ramp(f, wordFrame("s8", "cerita"), 34));
+  const footIn = easeOut(ramp(f, wordFrame("s8", "Dan"), 26));
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.ink }}>
@@ -124,7 +125,7 @@ export const S8Reveal: React.FC = () => {
       >
         <Words
           text="cerita paling"
-          at={150}
+          at={wordFrame("s8", "cerita")}
           stagger={12}
           y={80}
           style={{
@@ -138,7 +139,7 @@ export const S8Reveal: React.FC = () => {
         />
         <Words
           text="ramai."
-          at={186}
+          at={wordFrame("s8", "ramai")}
           stagger={12}
           y={80}
           style={{
