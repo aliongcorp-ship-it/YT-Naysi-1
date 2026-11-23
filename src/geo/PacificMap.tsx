@@ -4,7 +4,9 @@ import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import landTopo from "../land.json";
 import { C } from "../theme";
-import { POINT_NEMO } from "./Globe";
+
+
+export const POINT_NEMO: [number, number] = [-123.3939, -48.8767];
 
 const topo = landTopo as unknown as Topology<{ land: GeometryCollection }>;
 const land = feature(topo, topo.objects.land) as any;
