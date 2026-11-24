@@ -41,25 +41,22 @@ const assets = {
 fs.mkdirSync('out', {recursive: true});
 fs.writeFileSync('out/naysi_pack.json', JSON.stringify(assets, null, 2));
 
-// A plain-text twin so the same pack can be pasted by hand if needed.
+// A plain-text twin, pasteable by hand: title, description, hashtags, tags. Nothing else.
 fs.writeFileSync(
   'out/naysi_pack.txt',
   [
-    `TITLE (${title.length}/100)`,
+    'JUDUL',
     title,
     '',
-    `DESCRIPTION (${description.length}/5000)`,
+    'DESKRIPSI',
     description,
     '',
-    `HASHTAGS (${pack.hashtags.length})`,
+    'HASHTAG',
     pack.hashtags.join(' '),
     '',
-    `TAGS (${pack.tags.length} / ${tagLen} chars)`,
+    'TAG',
     pack.tags.join(', '),
-    '',
-    `RUNTIME ${fmt(tl.durationSec)} · ${tl.width}x${tl.height} · ${tl.fps} FPS · ${tl.shots.length} shots · ${tl.acts.length} acts`,
-    `IDENTITY ${pack.identity}`,
-  ].join('\n')
+  ].join('\n') + '\n'
 );
 
 console.log(`title       ${title.length}/100`);

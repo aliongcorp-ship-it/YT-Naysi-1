@@ -15,6 +15,8 @@ run('python3', ['scripts/vo.py'], 'narration: trim + EQ + level');
 run('node', ['scripts/timeline.mjs'], 'timeline: acts, shots, word timings');
 run('python3', ['scripts/score.py'], 'score: synth bed, SFX, ducking');
 run(FF, ['-y', '-v', 'error', '-i', 'audio/mix/raw.wav', '-af', 'loudnorm=I=-14:TP=-1.4:LRA=11', '-ar', '48000', '-ac', '2', 'public/audio/master.wav'], 'master bus: -14 LUFS');
+run('node', ['scripts/pack.mjs'], 'upload pack: title, description, hashtags, tags');
+run('python3', ['scripts/pack_zip.py'], 'upload pack: zip');
 run(
   './node_modules/.bin/remotion',
   [
