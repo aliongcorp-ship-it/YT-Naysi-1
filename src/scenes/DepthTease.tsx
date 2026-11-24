@@ -21,8 +21,8 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
 
   const fall = eOutQuint(clamp((t - 0.5) / 6.6));
   const depth = lerp(0, 7440, fall);
-  const y0 = 300;
-  const y1 = 1560;
+  const y0 = 470;
+  const y1 = 1500;
   const p = depth / 7440;
   const cursorY = lerp(y0, y1, p);
   const end = eOut(clamp((t - 6.8) / 0.9));
@@ -44,7 +44,7 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
           letterSpacing: '-0.045em',
           color: C.ink,
           opacity: eOut(clamp(t / 0.7)),
-          width: 900,
+          width: 620,
         }}
       >
         Di bawah sana,
@@ -53,19 +53,19 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       </div>
 
       {/* the sounding line */}
-      <div style={{position: 'absolute', left: 236, top: y0, width: 2, height: y1 - y0, background: `linear-gradient(180deg, ${C.sonar}66, ${C.sonar}11)`}} />
+      <div style={{position: 'absolute', left: 742, top: y0, width: 2, height: y1 - y0, background: `linear-gradient(180deg, ${C.sonar}66, ${C.sonar}11)`}} />
       {MARKS.map(([m, label], i) => {
         const yy = lerp(y0, y1, m / 7440);
         const reached = depth >= m - 40;
         const hi = i === MARKS.length - 1;
         return (
-          <div key={label} style={{position: 'absolute', left: 236, top: yy, opacity: reached ? 1 : 0.34}}>
+          <div key={label} style={{position: 'absolute', left: 742, top: yy, opacity: reached ? 1 : 0.34}}>
             <div style={{position: 'absolute', left: -18, top: -1, width: 38, height: 2, background: reached ? (hi ? C.magma : C.sonar) : C.faint}} />
             <div
               style={{
                 position: 'absolute',
-                left: 110,
-                top: -18,
+                left: 108,
+                top: -20,
                 fontFamily: F.mono,
                 fontSize: hi ? 24 : 19,
                 letterSpacing: '0.2em',
@@ -78,8 +78,10 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
             <div
               style={{
                 position: 'absolute',
-                left: 36,
+                left: -104,
                 top: -16,
+                width: 88,
+                textAlign: 'right',
                 fontFamily: F.mono,
                 fontSize: 18,
                 color: reached ? (hi ? C.magma : C.sonarDim) : C.faint,
@@ -96,7 +98,7 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       <div
         style={{
           position: 'absolute',
-          left: 214,
+          left: 720,
           top: cursorY - 5,
           width: 52,
           height: 10,
@@ -108,7 +110,7 @@ export const DepthTease: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       <div
         style={{
           position: 'absolute',
-          left: 290,
+          left: 790,
           top: cursorY - 34,
           fontFamily: F.display,
           fontSize: 54,

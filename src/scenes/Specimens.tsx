@@ -129,7 +129,7 @@ const Anglerfish: React.FC<{accent: string; f: number}> = ({accent, f}) => (
 );
 
 const Specimen: React.FC<{i: number; accent: string; f: number}> = ({i, accent, f}) => (
-  <svg viewBox="0 -30 380 220" width={1120} height={648} style={{display: 'block', overflow: 'visible'}}>
+  <svg viewBox="-14 -40 408 240" width={1040} height={612} style={{display: 'block', overflow: 'visible'}}>
     {/* survey grid behind the drawing */}
     {Array.from({length: 6}).map((_, k) => (
       <line key={`v${k}`} x1={k * 76} y1={-30} x2={k * 76} y2={190} stroke={accent} strokeWidth={0.6} opacity={0.09} />
@@ -147,9 +147,12 @@ export const Specimens: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const t = f / fps - shot.start;
 
   // each specimen owns a beat: card in, hold, card out
-  const beats = [1.5, 5.0, 8.2].map((at, i) => {
-    const p = eOutQuint(clamp((t - at) / 0.85));
-    const out = eOut(clamp((t - at - 3.5) / 0.5));
+  // cards overlap slightly so the frame is never empty between specimens
+  const AT = [1.1, 4.3, 7.3];
+  const beats = AT.map((at, i) => {
+    const p = eOutQuint(clamp((t - at) / 0.8));
+    const nextAt = AT[i + 1] ?? 10.4;
+    const out = i === AT.length - 1 ? eOut(clamp((t - (nextAt + 1.4)) / 0.7)) : eOut(clamp((t - (nextAt - 0.35)) / 0.45));
     return {p, vis: p * (1 - out), i};
   });
 
@@ -176,7 +179,7 @@ export const Specimens: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
             style={{
               position: 'absolute',
               left: SAFE.left - 8,
-              top: 500,
+              top: 486,
               width: 1240,
               opacity: vis,
               transform: `translateY(${(1 - p) * 44}px)`,
@@ -228,8 +231,8 @@ export const Specimens: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
         style={{
           position: 'absolute',
           left: SAFE.left,
-          top: 1300,
-          opacity: eOut(clamp((t - 11.4) / 0.9)),
+          top: 1260,
+          opacity: eOut(clamp((t - 9.9) / 0.9)),
           fontFamily: F.display,
           fontSize: 54,
           fontWeight: 700,

@@ -156,15 +156,15 @@ export const Descend: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       <div
         style={{
           position: 'absolute',
-          left: SAFE.left,
-          top: 1440,
+          left: 604,
+          top: 1418,
           opacity: done,
           transform: `translateY(${(1 - done) * 26}px)`,
           borderLeft: `4px solid ${C.sonar}`,
           paddingLeft: 26,
         }}
       >
-        <div style={{fontFamily: F.display, fontSize: 58, fontWeight: 700, letterSpacing: '-0.035em', color: C.ink, lineHeight: 1}}>
+        <div style={{fontFamily: F.display, fontSize: 54, fontWeight: 700, letterSpacing: '-0.035em', color: C.ink, lineHeight: 1}}>
           56 × Monas
         </div>
         <div style={{fontFamily: F.mono, fontSize: 19, letterSpacing: '0.22em', color: C.muted, marginTop: 12}}>

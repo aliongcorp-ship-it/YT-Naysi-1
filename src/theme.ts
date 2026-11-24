@@ -26,7 +26,7 @@ export const F = {
   serif: 'Fraunces',
 };
 
-export const SAFE = {left: 156, right: 1344, top: 200, caption: 1800};
+export const SAFE = {left: 156, right: 1344, top: 200, caption: 1720, captionFloor: 1960};
 
 export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

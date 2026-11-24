@@ -15,15 +15,15 @@ const RidgeProfile: React.FC<{p: number; t: number}> = ({p, t}) => {
     const pts: string[] = [];
     for (let x = 0; x <= Wv; x += 10) {
       const n = fbm(x / 130, 1.7, 41, 4);
-      const spike = Math.pow(Math.abs(Math.sin(x / 96)), 6) * 54;
-      const y = Hv * 0.52 - n * 120 - spike;
+      const spike = Math.pow(Math.abs(Math.sin(x / 96)), 6) * 30;
+      const y = Hv * 0.5 - n * 88 - spike;
       pts.push(`${x === 0 ? 'M' : 'L'} ${x} ${y}`);
     }
     return pts.join(' ');
   }, []);
   const vents = [180, 470, 760, 1040];
   return (
-    <div style={{position: 'absolute', left: SAFE.left - 20, top: 780, width: Wv, height: Hv}}>
+    <div style={{position: 'absolute', left: SAFE.left - 20, top: 700, width: Wv, height: Hv}}>
       <svg viewBox={`0 0 ${Wv} ${Hv}`} width={Wv} height={Hv} style={{overflow: 'visible'}}>
         <defs>
           <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
@@ -42,20 +42,20 @@ const RidgeProfile: React.FC<{p: number; t: number}> = ({p, t}) => {
         {vents.map((vx, i) => {
           const vp = clamp((p * 1.15 - i * 0.18) / 0.3);
           if (vp <= 0) return null;
-          const baseY = Hv * 0.52 - fbm(vx / 130, 1.7, 41, 4) * 120 - Math.pow(Math.abs(Math.sin(vx / 96)), 6) * 54;
+          const baseY = Hv * 0.5 - fbm(vx / 130, 1.7, 41, 4) * 88 - Math.pow(Math.abs(Math.sin(vx / 96)), 6) * 30;
           return (
             <g key={vx} opacity={vp}>
               {/* plume */}
               <path
-                d={`M ${vx} ${baseY} C ${vx - 16} ${baseY - 60} ${vx + 22} ${baseY - 110} ${vx - 4} ${baseY - 170}`}
+                d={`M ${vx} ${baseY} C ${vx - 16} ${baseY - 60} ${vx + 22} ${baseY - 110} ${vx - 4} ${baseY - 120}`}
                 stroke={C.magma}
-                strokeWidth={5}
+                strokeWidth={4}
                 fill="none"
                 opacity={0.5}
                 strokeLinecap="round"
               />
               <path
-                d={`M ${vx} ${baseY} C ${vx + 18} ${baseY - 70} ${vx - 20} ${baseY - 120} ${vx + 6} ${baseY - 190}`}
+                d={`M ${vx} ${baseY} C ${vx + 18} ${baseY - 70} ${vx - 20} ${baseY - 120} ${vx + 6} ${baseY - 138}`}
                 stroke={C.ember}
                 strokeWidth={3}
                 fill="none"
@@ -127,7 +127,7 @@ export const Ridge: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
 
       <RidgeProfile p={grow} t={t} />
 
-      <div style={{position: 'absolute', left: SAFE.left, top: 1330, display: 'flex', gap: 54, opacity: eOut(clamp((t - 6.4) / 0.8))}}>
+      <div style={{position: 'absolute', left: SAFE.left, top: 1270, display: 'flex', gap: 54, opacity: eOut(clamp((t - 6.4) / 0.8))}}>
         {[
           ['HIMALAYA', '2.400 KM'],
           ['ANDES', '7.000 KM'],
@@ -146,7 +146,7 @@ export const Ridge: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
         style={{
           position: 'absolute',
           left: SAFE.left,
-          top: 1540,
+          top: 1430,
           fontFamily: F.display,
           fontSize: 44,
           fontWeight: 500,

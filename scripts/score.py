@@ -13,7 +13,7 @@ rng = np.random.default_rng(2030)
 
 cues = json.load(open("src/data/cues.json"))
 DUR = cues["durationSec"]
-N = int((DUR + 3.0) * SR)
+N = int(DUR * SR)
 
 L = np.zeros(N)
 R = np.zeros(N)

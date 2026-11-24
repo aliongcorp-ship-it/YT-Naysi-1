@@ -70,6 +70,7 @@ SEGMENTS.forEach((seg, i) => {
     id: seg.id,
     slate: seg.slate,
     chapter: seg.chapter,
+    em: seg.em ?? [],
     vo: `vo_fx/s${i + 1}.wav`,
     voStart: +t.toFixed(4),
     voEnd: +(t + dur).toFixed(4),

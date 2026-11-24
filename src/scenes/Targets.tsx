@@ -136,11 +136,35 @@ export const Targets: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
         </div>
       </div>
 
+      {/* resolution scale — the whole point of the chapter */}
+      <div style={{position: 'absolute', left: SAFE.left, top: 990, width: 1180, opacity: eOut(clamp((t - 4.6) / 0.9))}}>
+        <div style={{fontFamily: F.mono, fontSize: 16, letterSpacing: '0.26em', color: C.muted, marginBottom: 16}}>
+          SEBERAPA DETAIL KITA TAHU
+        </div>
+        <div style={{position: 'relative', height: 2, background: `${C.faint}`}}>
+          <div style={{position: 'absolute', left: 0, top: 0, height: 2, width: '100%', background: `linear-gradient(90deg, ${C.sonar}, ${C.iris} 52%, ${C.faint} 60%, transparent 100%)`}} />
+          {[
+            ['5 CM', 0.04, 'BENNU', C.sonar],
+            ['100 M', 0.5, 'MARS', C.ember],
+            ['800 M', 0.86, 'DASAR LAUT', C.iris],
+            ['?', 1.0, '72,7%', C.muted],
+          ].map(([v, p, who, col]) => (
+            <div key={who as string} style={{position: 'absolute', left: `${(p as number) * 100}%`, top: -8}}>
+              <div style={{width: 2, height: 18, background: col as string}} />
+              <div style={{position: 'absolute', left: -40, top: 24, width: 84, textAlign: 'center'}}>
+                <div style={{fontFamily: F.display, fontSize: 22, fontWeight: 600, color: col as string}}>{v}</div>
+                <div style={{fontFamily: F.mono, fontSize: 12, letterSpacing: '0.16em', color: C.muted, marginTop: 2}}>{who}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div
         style={{
           position: 'absolute',
           left: SAFE.left,
-          top: 1330,
+          top: 1180,
           width: 1150,
           fontFamily: F.mono,
           fontSize: 22,

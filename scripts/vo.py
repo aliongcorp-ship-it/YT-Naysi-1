@@ -1,4 +1,10 @@
-"""Trim, EQ and level the narration. Input: audio/vo/sN.wav  Output: audio/vo_fx/sN.wav + durations.json"""
+"""Trim, EQ and level the narration.
+
+Input  src/vo/sN.mp3   (the generated takes)
+Output audio/vo_fx/sN.wav + audio/vo_fx/durations.json
+
+Kept deterministic so a re-take only changes timings, never the mix chain.
+"""
 import glob
 import json
 import os
@@ -12,13 +18,14 @@ FF = "./node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
 os.makedirs("audio/vo_fx", exist_ok=True)
 
 durs = {}
-for src in sorted(glob.glob("audio/vo/*.wav"), key=lambda p: int(os.path.basename(p)[1:-4])):
+for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(p)[1:-4])):
     name = os.path.basename(src)[:-4]
-    with wave.open(src) as w:
+    # decode to exactly 48 kHz mono PCM before any sample work
+    subprocess.run([FF, "-y", "-v", "error", "-i", src, "-ar", str(SR), "-ac", "1", "-c:a", "pcm_s16le", f"/tmp/{name}.wav"], check=True)
+    with wave.open(f"/tmp/{name}.wav") as w:
         x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32) / 32768
         sr = w.getframerate()
-    if sr != SR:
-        raise SystemExit(f"{src}: expected {SR} Hz")
+    os.remove(f"/tmp/{name}.wav")
     # --- trim lead / tail silence (PCM 16 bit, -42 dBFS) ---
     win = int(0.01 * SR)
     frames = len(x) // win
