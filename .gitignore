@@ -5,5 +5,4 @@ audio/vo
 audio/vo_fx
 audio/mix
 public/audio
-src/vo
 *.log
