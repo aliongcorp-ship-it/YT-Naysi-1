@@ -19,15 +19,15 @@ export const Spectrum: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const {fps} = useVideoConfig();
   const t = f / fps - shot.start;
 
-  const dive = eOut(clamp((t - 0.4) / 6.4));
-  const depth = lerp(240, 1500, dive);
+  const dive = eOut(clamp((t + 0.1) / 6.0));
+  const depth = lerp(560, 1500, dive);
   const lightOut = 1 - clamp(depth / 380);
-  const stats = eOut(clamp((t - 3.4) / 0.9));
-  const line = eOut(clamp((t - 6.6) / 0.9));
+  const stats = eOut(clamp((t - 2.6) / 0.9));
+  const line = eOut(clamp((t - 5.8) / 0.9));
 
   return (
     <AbsoluteFill>
-      <WaterColumn depth={depth + 1600} intensity={0.42} rays={lightOut * 0.4} seed={29} />
+      <WaterColumn depth={depth + 2100} intensity={0.4} rays={lightOut * 0.28} seed={29} />
       <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(1,6,10,0.9) 0%, rgba(1,6,10,0.15) 16%, transparent 30%)'}} />
 
       <div
@@ -55,7 +55,7 @@ export const Spectrum: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       {/* analyser */}
       <div style={{position: 'absolute', left: SAFE.left, top: 620, width: 1180}}>
         {BANDS.map((b, i) => {
-          const p = eOutQuint(clamp((t - 1.5 - i * 0.7) / 0.8));
+          const p = eOutQuint(clamp((t + 0.05 - i * 0.5) / 0.7));
           if (p <= 0) return null;
           const amp = 0.6 + 0.4 * Math.sin(t * 2.2 + i * 2);
           return (

@@ -3,9 +3,10 @@
 import fs from 'node:fs';
 
 const FPS = 90;
-const LEAD = 0.55;            // room to breathe before the first word
-const GAP = 0.42;             // breath between acts
-const TAIL = 2.4;
+let LEAD = 0.30;              // room to breathe before the first word
+let GAP = 0.18;               // breath between acts
+const TAIL = 0.75;            // hold after the last word
+const SHORTS_MAX = 180;       // hard ceiling: a Shorts upload must be <= 180 s
 
 const wavDur = (p) => (fs.statSync(p).size - 44) / 96000; // 48k mono 16-bit
 
@@ -57,6 +58,19 @@ function phrase(words) {
   }
   flush();
   return out;
+}
+
+// Fit the ceiling automatically: if the cut runs long, buy seconds back from
+// the seams (gap first, then lead) instead of asking for a re-take.
+const speechTotal = SEGMENTS.reduce((a, _, i) => a + wavDur(`audio/vo_fx/s${i + 1}.wav`), 0);
+let projected = speechTotal + LEAD + GAP * (SEGMENTS.length - 1) + TAIL;
+while (projected > SHORTS_MAX && GAP > 0.1) {
+  GAP = +(GAP - 0.01).toFixed(2);
+  projected = speechTotal + LEAD + GAP * (SEGMENTS.length - 1) + TAIL;
+}
+while (projected > SHORTS_MAX && LEAD > 0.1) {
+  LEAD = +(LEAD - 0.05).toFixed(2);
+  projected = speechTotal + LEAD + GAP * (SEGMENTS.length - 1) + TAIL;
 }
 
 const ACTS = [];
@@ -149,6 +163,10 @@ fs.writeFileSync(
 );
 
 console.log(`duration ${durationSec.toFixed(2)}s | ${durationInFrames} frames | ${(durationSec / 60).toFixed(2)} min`);
+if (durationSec > SHORTS_MAX) {
+  console.error(`\n  WARNING  ${durationSec.toFixed(2)}s exceeds the ${SHORTS_MAX}s Shorts ceiling by ${(durationSec - SHORTS_MAX).toFixed(2)}s`);
+  console.error('           shorten the narration in scripts/script.json before rendering\n');
+}
 console.log('shots', shots.length);
 for (const s of shots) console.log('  ', s.scene.padEnd(12), s.start.toFixed(2).padStart(7), '->', s.end.toFixed(2).padStart(7), (s.frames / 90).toFixed(2) + 's');
 for (const a of ACTS) {

@@ -17,10 +17,10 @@ export const Descend: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const {fps} = useVideoConfig();
   const t = f / fps - shot.start;
 
-  const sink = eOutQuint(clamp((t - 1.0) / 9.6));
+  const sink = eOutQuint(clamp((t + 0.1) / 9.2));
   const depth = lerp(0, MAX, sink);
-  const stackP = clamp((t - 2.6) / 7.4);
-  const done = eOut(clamp((t - 10.2) / 0.7));
+  const stackP = clamp((t - 1.6) / 7.8);
+  const done = eOut(clamp((t - 9.0) / 0.7));
 
   const colX = 1010;
   const colTop = 620;

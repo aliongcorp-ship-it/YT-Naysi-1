@@ -38,9 +38,9 @@ export const Stakes: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const {fps} = useVideoConfig();
   const t = f / fps - shot.start;
 
-  const cable = eOutQuint(clamp((t - 1.6) / 1.4));
+  const cable = eOutQuint(clamp((t + 0.25) / 1.8));
   const quake = eOut(clamp((t - 5.6) / 0.7));
-  const heat = eOut(clamp((t - 8.0) / 1.0));
+  const heat = eOut(clamp((t - 6.4) / 1.0));
   const shake = quake > 0 && quake < 1 ? Math.sin(t * 120) * 6 * (1 - quake) : 0;
 
   return (
@@ -109,7 +109,7 @@ export const Stakes: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
           letterSpacing: '-0.028em',
           lineHeight: 1.12,
           color: C.ink,
-          opacity: eOut(clamp((t - 9.6) / 0.9)),
+          opacity: eOut(clamp((t - 8.4) / 0.9)),
         }}
       >
         Setiap garis di peta bawah laut

@@ -80,7 +80,7 @@ export const Ridge: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const {fps} = useVideoConfig();
   const t = f / fps - shot.start;
 
-  const grow = eOutQuint(clamp((t - 1.2) / 7.2));
+  const grow = eOutQuint(clamp((t + 0.2) / 7.8));
   const km = 78000 * grow;
 
   return (
@@ -152,7 +152,7 @@ export const Ridge: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
           fontWeight: 500,
           letterSpacing: '-0.025em',
           color: C.ink,
-          opacity: eOut(clamp((t - 9.2) / 0.9)),
+          opacity: eOut(clamp((t - 7.8) / 0.9)),
         }}
       >
         Di sana, kehidupan tidak butuh matahari. <span style={{color: C.ember}}>Ia butuh batu.</span>

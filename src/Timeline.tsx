@@ -105,7 +105,9 @@ export const Film: React.FC = () => {
   const depth = meta.depth(Math.max(0, localClamped), shot, act);
 
   const enter = eOut(clamp(local / 0.4));
-  const punch = 1 + 0.004 * (1 - enter);
+  // every shot opens on a push-in: wide -> settle. Nothing starts on a still.
+  const push = 1.075 - 0.075 * eOut(clamp(local / 1.5));
+  const punch = (1 + 0.004 * (1 - enter)) * push;
   const fadeIn = interpolate(t, [0, 0.45], [0, 1], {extrapolateRight: 'clamp'});
   const isLast = shot.index === tl.shots.length - 1;
   const fadeOut = isLast ? interpolate(t, [tl.durationSec - 1.2, tl.durationSec - 0.05], [1, 0], {extrapolateRight: 'clamp'}) : 1;
@@ -114,7 +116,7 @@ export const Film: React.FC = () => {
   return (
     <FontGate>
       <AbsoluteFill style={{background: C.void}}>
-        <AbsoluteFill style={{opacity: Math.min(fadeIn, fadeOut), transform: `scale(${punch})`, transformOrigin: '50% 46%'}}>
+        <AbsoluteFill style={{opacity: Math.min(fadeIn, fadeOut), transform: `scale(${punch})`, transformOrigin: '50% 52%'}}>
           <Comp act={act} shot={shot} />
           <Cut local={local} />
         </AbsoluteFill>

@@ -21,10 +21,10 @@ export const Column: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
   const {fps} = useVideoConfig();
   const t = f / fps - shot.start;
 
-  const sink = eOutQuint(clamp((t - 0.9) / 9.0));
+  const sink = eOutQuint(clamp((t + 0.15) / 7.4));
   const depth = lerp(0, 7100, sink);
   const bars = 36;
-  const hit = eOut(clamp((t - 2.0) / 0.7));
+  const hit = eOut(clamp((t + 0.05) / 0.5));
   const human = eOut(clamp((t - 4.6) / 0.9));
 
   return (
@@ -54,7 +54,7 @@ export const Column: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
       {/* stack of blocks */}
       <div style={{position: 'absolute', left: SAFE.left, top: 620, width: 420}}>
         {Array.from({length: bars}).map((_, i) => {
-          const p = clamp((sink * bars - i) / 2.0);
+          const p = clamp((sink * bars - i) / 3.2);
           if (p <= 0) return null;
           const heavy = i > bars * 0.55;
           const newest = sink * bars - i < 2.2;
