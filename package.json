@@ -1,0 +1,33 @@
+{
+  "name": "naysi-short",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup-browser.mjs",
+    "identity": "node scripts/identity.mjs",
+    "timeline": "node scripts/timeline.mjs",
+    "score": "python3 scripts/score.py",
+    "pack": "node scripts/pack.mjs",
+    "build": "node scripts/build.mjs",
+    "studio": "remotion studio src/index.ts"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/linux-x64": "^4.1.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@remotion/cli": "^4.0.546",
+    "@remotion/media-utils": "^4.0.546",
+    "@remotion/renderer": "^4.0.546",
+    "@sparticuz/chromium": "^153.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.546"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

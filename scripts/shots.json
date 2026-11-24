@@ -1,0 +1,23 @@
+[
+  {"act": "darkside",  "scene": "Maps",       "from": 0.00, "to": 0.47,   "label": "dua peta"},
+  {"act": "darkside",  "scene": "DepthTease", "from": 0.47, "to": "end",  "label": "jurang"},
+
+  {"act": "blindspot", "scene": "Grid",       "from": 0.00, "to": 0.56,   "label": "27,3%"},
+  {"act": "blindspot", "scene": "Targets",    "from": 0.56, "to": "end",  "label": "mars, venus, bennu"},
+
+  {"act": "depth",     "scene": "Descend",    "from": 0.00, "to": 0.60,   "label": "turun 7.440"},
+  {"act": "depth",     "scene": "Column",     "from": 0.60, "to": "end",  "label": "tekanan + cahaya"},
+
+  {"act": "detach",    "scene": "Peel",       "from": 0.00, "to": 0.62,   "label": "terkelupas"},
+  {"act": "detach",    "scene": "Slab",       "from": 0.62, "to": "end",  "label": "slab 150 km"},
+
+  {"act": "life",      "scene": "Specimens",  "from": 0.00, "to": "end",  "label": "tiga spesimen"},
+
+  {"act": "pressure",  "scene": "Column",     "from": 0.00, "to": 0.50,   "label": "tekanan"},
+  {"act": "pressure",  "scene": "Spectrum",   "from": 0.50, "to": "end",  "label": "spektrum"},
+
+  {"act": "ridge",     "scene": "Ridge",      "from": 0.00, "to": "end",  "label": "78.000 km"},
+
+  {"act": "close",     "scene": "Stakes",     "from": 0.00, "to": 0.62,   "label": "kabel + patahan"},
+  {"act": "close",     "scene": "Surface",    "from": 0.62, "to": "end",  "label": "kulit + penutup"}
+]
