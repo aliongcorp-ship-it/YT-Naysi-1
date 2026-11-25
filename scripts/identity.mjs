@@ -6,8 +6,7 @@
 // (scenes/<topic>.tsx) is now the only place an identity is defined; this script
 // exists to validate it and to emit the two artefacts other tools consume:
 //
-//   src/data/identity.json   machine-readable palette + type + motion
-//   out/identity.css         the palette as CSS custom properties
+//   out/identity.css         the palette as CSS custom properties, for docs
 //
 //   node scripts/identity.mjs [scenes/<topic>.tsx]
 //   node scripts/identity.mjs                 -> uses scenes/script.tsx EPISODE
@@ -47,9 +46,6 @@ if (!file) {
 
 const mod = await loadTsx(file);
 const identity = validate({schema: SCHEMA, ...mod.ID});
-fs.mkdirSync('src/data', {recursive: true});
-fs.writeFileSync('src/data/identity.json', JSON.stringify({schema: SCHEMA, ...identity}, null, 1));
-
 const css = [':root {', ...Object.entries(identity.palette).map(([k, v]) => `  --${k}: ${v};`), '}'].join('\n');
 fs.mkdirSync('out', {recursive: true});
 fs.writeFileSync('out/identity.css', css + '\n');

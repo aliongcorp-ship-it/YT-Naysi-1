@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {continueRender, delayRender, staticFile} from 'remotion';
 
 // The face list is passed in by the episode, not baked in here: the type
-// pairing is part of the visual identity, so `scenes/<topic>.mjs` owns it and
+// pairing is part of the visual identity, so `scenes/<topic>.tsx` owns it and
 // a new episode ships its own .woff2 files under public/fonts.
 export type Face = {family: string; file: string; weight: string; style: string};
 
