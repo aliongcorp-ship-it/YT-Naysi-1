@@ -24,7 +24,13 @@ if (!fs.existsSync(path.join(libsDir, 'libnss3.so'))) {
   fs.writeFileSync(path.join(work, 'al2023.tar'), brotliDecompressSync(br));
   execFileSync('tar', ['xf', path.join(work, 'al2023.tar'), '-C', work]);
   fs.mkdirSync(libsDir, {recursive: true});
-  fs.cpSync(path.join(work, 'lib'), libsDir, {recursive: true});
+  // The tarball unpacks into `work/lib`, which is already `libsDir`; copying a
+  // directory onto itself throws ERR_FS_CP_EINVAL. Only move it when the
+  // unpacked location really differs from the target.
+  const srcLibs = path.join(work, 'lib');
+  if (fs.existsSync(srcLibs) && path.resolve(srcLibs) !== path.resolve(libsDir)) {
+    fs.cpSync(srcLibs, libsDir, {recursive: true});
+  }
   console.log('libs ->', libsDir);
 }
 
