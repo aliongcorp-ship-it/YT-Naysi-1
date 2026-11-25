@@ -1,29 +1,44 @@
-# Render the film on GitHub's machines.
+# Render on GitHub's machines, not on a workstation.
 #
-# Nothing about the picture needs this repo's original sandbox: a runner with
-# Node, Chromium and ffmpeg is enough. So the render lives here, and the
-# workstation only ever pushes a script and collects an artifact.
+# Triggers, in order of how often they fire:
 #
-#   Actions ▸ Render ▸ Run workflow
+#   push (this branch)  → typecheck + master audio + 10 review stills   (~6 min)
+#   push (tag v*)       → the above, then the full film + a release     (~40 min)
+#   workflow_dispatch   → same as a tag push, with the tag as an input
 #
-# Outputs (kept 30 days, published as a release when you tag a run):
-#   out/naysi_master.mp4   the film, with audio muxed
-#   out/naysi_pack.zip     title / description / hashtags / tags
-#   out/still-<s>.png      12 stills, one per shot, for review without a player
+# The dispatch entry point only appears once this file is on the default branch
+# (GitHub's rule, not ours); a tag push works from any branch, today.
+#
+# Artifacts per run, kept 30 days:
+#   still-<frame>.png × 10   one per shot, for review without a player
+#   naysi_master.mp4         the film, audio muxed       (full runs only)
+#   naysi_pack.zip           title / description / tags  (full runs only)
+#   probe.txt, render.log    what came out, and how long it took
 name: Render
 
 on:
   workflow_dispatch:
     inputs:
       stills_only:
-        description: 'Only render review stills (no full film)'
+        description: 'Skip the film, render review stills only'
         type: boolean
         default: false
       release_tag:
-        description: 'If set, publish the render as a release with this tag'
+        description: 'Publish the render as a release with this tag (optional)'
         type: string
         default: ''
   push:
+    # Every push of work in progress gets a cheap, useful check; the expensive
+    # render waits for a tag. Editing the workflow itself must not trigger a
+    # 40-minute render, so `render.yml` alone does not match.
+    branches: ['**']
+    paths:
+      - 'scenes/**'
+      - 'src/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
     tags: ['v*']
 
 concurrency:
@@ -31,12 +46,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write # to publish a release when asked
+  contents: write # to publish a release on a tag
 
 jobs:
-  render:
+  stills:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -51,8 +66,7 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends ffmpeg
           ffmpeg -version | head -1
 
-      - name: python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -60,9 +74,9 @@ jobs:
         run: |
           npm ci
           python3 -m pip install --quiet --break-system-packages numpy
-          # Remotion downloads its own headless shell on first render; do it once
-          # here so the render step does not race on it.
-          npx remotion browser ensure || echo "note: using the runner's chrome"
+          # Fetch the headless shell once, here, rather than racing on it inside
+          # the render's worker tabs.
+          npx remotion browser ensure
 
       - name: typecheck
         run: npx tsc --noEmit
@@ -70,50 +84,93 @@ jobs:
       - name: narration + timeline + score + master bus
         run: node scripts/build.mjs --audio-only
 
-      - name: render stills
+      - name: ten review stills, one per shot
         run: |
           mkdir -p out
           node -e '
             const tl = require("./src/data/timeline.json");
-            const picks = tl.shots.map((s) => Math.round((s.startFrame + s.outFrame) / 2));
-            console.log(picks.join(" "));
-          ' > /tmp/frames.txt
-          for f in $(cat /tmp/frames.txt); do
-            npx remotion still src/index.ts Specimen "out/still-$f.png" --frame="$f"
-          done
-          ls -la out
+            for (const s of tl.shots) {
+              const f = Math.round((s.startFrame + s.outFrame) / 2);
+              console.log(f, s.file);
+            }
+          ' > /tmp/shots.txt
+          while read -r frame name; do
+            npx remotion still src/index.ts Specimen "out/still-${name}-${frame}.png" --frame="$frame"
+          done < /tmp/shots.txt
+          ls -l out
 
-      - name: render film
-        if: ${{ !inputs.stills_only }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stills-${{ github.run_number }}
+          path: |
+            out/still-*.png
+            out/naysi_pack.zip
+            src/data/timeline.json
+          if-no-files-found: error
+          retention-days: 30
+
+  render:
+    needs: stills
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: deps
+        run: |
+          npm ci
+          python3 -m pip install --quiet --break-system-packages numpy
+          npx remotion browser ensure
+
+      - name: audio
+        run: node scripts/build.mjs --audio-only
+
+      - name: film
+        # Four vCPUs on a standard runner; two tabs leave them idle. The picture
+        # is vector work, so more tabs than cores only thrashes.
+        env:
+          NAYSI_CONCURRENCY: '4'
         run: |
           set -o pipefail
           node scripts/build.mjs --render-only 2>&1 | tee out/render.log
 
-      - name: probe
-        if: ${{ !inputs.stills_only }}
+      - name: probe + decode
         run: |
           ffprobe -v error -show_entries \
             stream=codec_name,width,height,r_frame_rate,pix_fmt,bit_rate:format=duration,size \
             -of default=noprint_wrappers=1 out/naysi_master.mp4 | tee out/probe.txt
-          # A 76 s 1440x2560 film that comes out under 3 MB is a broken render,
-          # not a good encode: fail rather than ship a black rectangle.
+          # A 76 s 1440x2560 film below 3 MB is a broken render, not a good
+          # encode. Fail here rather than shipping a black rectangle.
           test "$(stat -c%s out/naysi_master.mp4)" -gt 3000000
-          ffmpeg -v error -i out/naysi_master.mp4 -f null - && echo "decode ok"
+          ffmpeg -v error -i out/naysi_master.mp4 -f null - && echo 'decode ok'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: naysi-${{ github.run_number }}
+          name: film-${{ github.run_number }}
           path: |
-            out/still-*.png
             out/naysi_master.mp4
             out/naysi_pack.zip
             out/probe.txt
             out/render.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
       - name: publish release
-        if: ${{ inputs.release_tag != '' || startsWith(github.ref, 'refs/tags/') }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag || github.ref_name }}
@@ -122,4 +179,4 @@ jobs:
             out/naysi_pack.zip
           body: |
             Rendered from `${{ github.sha }}` on a GitHub runner.
-            Duration and probe output are in the run's artifacts.
+            `probe.txt` and `render.log` are in the run's artifacts.

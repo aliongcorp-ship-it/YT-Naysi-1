@@ -22,6 +22,9 @@ const ffmpeg =
     : 'ffmpeg');
 
 const remotion = fs.existsSync('./node_modules/.bin/remotion') ? './node_modules/.bin/remotion' : 'npx';
+// A runner with 4 cores wants 4 tabs; the default 2 is for the small box the
+// film was cut on. NAYSI_CONCURRENCY overrides either.
+const concurrency = process.env.NAYSI_CONCURRENCY ?? '2';
 const remotionArgs = remotion === 'npx' ? ['remotion'] : [];
 
 // A sandbox with no system Chrome passes this; a normal machine leaves it unset
@@ -61,7 +64,7 @@ run(
   [
     ...remotionArgs,
     'render', 'src/index.ts', 'Specimen', 'out/naysi_master.mp4',
-    '--codec=h264', '--crf=18', '--concurrency=2',
+    '--codec=h264', '--crf=18', `--concurrency=${concurrency}`,
     '--image-format=jpeg', '--jpeg-quality=95', '--pixel-format=yuv420p',
     '--audio-codec=aac', '--audio-bitrate=320k',
     '--overwrite',

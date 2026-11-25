@@ -67,17 +67,21 @@ kanal.
 
 Semua render terjadi di GitHub Actions — mesin Anda hanya perlu `git push`.
 
-**Actions ▸ Render ▸ Run workflow**
-
-| input | artinya |
+| yang Anda lakukan | yang terjadi di GitHub |
 |---|---|
-| `stills_only` | hanya 10 still (satu per shot) untuk review cepat |
-| `release_tag` | isi mis. `bulan-01` untuk menerbitkan master sebagai release |
+| push ke branch mana pun yang menyentuh `scenes/`, `src/`, `scripts/`, `public/`, `package*.json` | cek tipe, master audio, **10 still** (satu per shot) — ±6 menit |
+| push tag `v*` | semua di atas, lalu **film penuh** + release — ±40 menit |
+| Actions ▸ Render ▸ Run workflow | sama seperti tag (muncul otomatis begitu file workflow ada di `main`) |
 
-Artefak tiap run (30 hari): `naysi_master.mp4`, `naysi_pack.zip`,
-`still-<frame>.png` × 10, `probe.txt`, `render.log`.
+```sh
+git tag v1.0-bulan && git push origin v1.0-bulan    # render + release
+```
+
+Artefak tiap run (30 hari): `still-<shot>-<frame>.png` × 10, dan pada render
+penuh `naysi_master.mp4`, `naysi_pack.zip`, `probe.txt`, `render.log`.
 Workflow menolak hasil < 3 MB dan melakukan decode penuh sebelum artefak
-diunggah, jadi render rusak tidak lolos.
+diunggah, jadi render rusak tidak lolos. `NAYSI_CONCURRENCY` (default 2 lokal,
+4 di runner) mengatur jumlah tab render.
 
 Setelah mengunggah ke YouTube, isi `ID video` di `scripts/pack.json` supaya
 deskripsi episode berikutnya bisa menautkannya.
