@@ -199,21 +199,30 @@ A = {a["id"]: a for a in acts}
 
 # D minor, wide and slow: open fifths low, suspended colour high. The film is
 # about a measurement, so the harmony resolves once and then holds.
-CHORDS = {
-    "hook":       ["D2", "A2", "D3", "F3"],
-    "mirror":     ["Bb2", "F2", "D3", "F3"],
-    "photon":     ["D2", "A2", "E3", "A3"],
-    "millimetre": ["F2", "C3", "F3", "A3"],
-    "tide":       ["C3", "G2", "E3", "G3"],
-    "day":        ["Bb2", "F2", "D3", "A3"],
-    "past":       ["G2", "D3", "Bb2", "F3"],
-    "end":        ["D2", "A2", "D3", "A3"],
-}
+#
+# The progression is by position, not by act id: an episode is free to name its
+# acts whatever its topic needs, and the score still lands on a different chord
+# each time and resolves on the last one.
+PROGRESSION = [
+    ["D2", "A2", "D3", "F3"],
+    ["Bb2", "F2", "D3", "F3"],
+    ["D2", "A2", "E3", "A3"],
+    ["F2", "C3", "F3", "A3"],
+    ["C3", "G2", "E3", "G3"],
+    ["Bb2", "F2", "D3", "A3"],
+    ["G2", "D3", "Bb2", "F3"],
+]
 
-DRONE_GAIN = {
-    "hook": 0.26, "mirror": 0.24, "photon": 0.30, "millimetre": 0.28,
-    "tide": 0.30, "day": 0.26, "past": 0.28, "end": 0.22,
-}
+_n = max(1, len(acts) - 1)
+CHORDS = {}
+DRONE_GAIN = {}
+for _i, _a in enumerate(acts):
+    _aid = _a["id"]
+    CHORDS[_aid] = PROGRESSION[0] if _i == _n else PROGRESSION[_i % len(PROGRESSION)]
+    DRONE_GAIN[_aid] = 0.30 if _i == 0 else round(0.22 + 0.02 * (_i % 4), 2)
+# the opening and closing act share the tonic: same measurement, another night
+CHORDS[acts[0]["id"]] = PROGRESSION[0]
+CHORDS[acts[-1]["id"]] = PROGRESSION[0]
 
 for a in acts:
     aid = a["id"]
@@ -228,17 +237,17 @@ for a in acts:
         place(whoosh(1.0, 0.2, up=True), st - 0.62, 1.0, -0.2)
         place(impact(0.34), st - 0.05, 1.0)
     # sonar pings on the opening chapter
-    if aid == "darkside":
-        for k, at in enumerate([0.7, 3.1, 6.4, 10.2, 14.0, 17.0]):
-            place(space(ping(NOTE["A5"], 0.13, 2.4)), at, 0.9, 0.35 if k % 2 else -0.35)
+    if a["index"] == 1:
+        for k, at in enumerate([0.7, 3.1, 6.4, 10.2]):
+            place(space(ping(NOTE["A5"], 0.12, 2.4)), at, 0.8, 0.35 if k % 2 else -0.35)
     # data ticks follow the narration in the numbers chapter
-    if aid in ("blindspot", "depth", "pressure"):
+    if aid in ("millimetre", "photon", "day"):
         for i, w in enumerate(a["words"]):
             if i % 2 == 0:
                 place(tick(0.05 + 0.03 * (aid == "pressure"), 2600 + (i % 5) * 380), w, 1.0, 0.3)
     # 16th pulse in the driving chapters
-    if aid in ("pressure", "ridge"):
-        bpm = 92 if aid != "ridge" else 100
+    if aid in ("tide", "past"):
+        bpm = 94 if aid != "past" else 100
         step = 60 / bpm / 4
         k = 0
         tt = st
@@ -249,7 +258,7 @@ for a in acts:
             tt += step
             k += 1
     # glassy arpeggio for the bioluminescence + spectrum chapters
-    if aid in ("life",):
+    if aid in ("mirror",):
         arp = [NOTE[k] for k in ("D4", "F4", "A4", "C5", "E5")]
         step = 0.52
         k = 0
@@ -271,21 +280,32 @@ def word_at(aid, idx):
 
 # The film opens on a single bell and closes on one, a fifth apart: the same
 # measurement, a different night.
+#
+# Hits are addressed by *position* in the act list, plus an optional word index,
+# so an episode with different act names still gets its accents on the words.
+HITS = [
+    (0, 0, impact(0.34)),        # the first word of the film
+    (1, 2, subhit(0.50, 58, 26, 2.2)),
+    (2, 2, impact(0.40)),
+    (3, 0, impact(0.38)),
+    (4, 8, impact(0.36)),
+    (6, 2, subhit(0.44, 52, 28, 1.8)),
+]
+for _i, _w, _sig in HITS:
+    if _i < len(acts):
+        _a = acts[_i]
+        _t = _a["words"][min(_w, len(_a["words"]) - 1)]
+        place(_sig, _t - 0.05)
+
 place(space(ping(NOTE["D5"], 0.2, 3.2), 0.5), 0.45, 1.0)
-place(impact(0.34), A["hook"]["words"][0] - 0.05)              # "Bulan"
-place(subhit(0.50, 58, 26, 2.2), word_at("mirror", 2) - 0.05)   # "cermin"
-place(impact(0.40), word_at("photon", 2) - 0.05)                # "laser"
-place(impact(0.38), word_at("millimetre", 0) - 0.02)            # "satu foton"
-place(impact(0.36), word_at("tide", 8) - 0.05)                  # "mendahului"
-place(subhit(0.44, 52, 28, 1.8), word_at("past", 2) - 0.05)     # "lebih dekat"
-place(space(ping(NOTE["A5"], 0.18, 3.4), 0.6), A["end"]["voStart"] + 1.4, 0.8)
-place(riser(3.0, 0.2), A["end"]["start"] - 2.8)
+place(space(ping(NOTE["A5"], 0.18, 3.4), 0.6), acts[-1]["voStart"] + 1.4, 0.8)
+place(riser(3.0, 0.2), max(0.0, acts[-1]["start"] - 2.8))
 
 # tide wash under the closing line: the thing that is doing the pushing
 nt = int(3.6 * SR)
 tt = np.arange(nt) / SR
 wash = lp(noise(3.6), 470) * np.sin(np.pi * np.arange(nt) / nt) ** 2 * 0.11
-place(wash, A["end"]["end"] - 3.8, 1.0)
+place(wash, max(0.0, acts[-1]["end"] - 3.8), 1.0)
 
 # ── room tone: filtered noise bed, so silence reads as depth, not as a dropout ─
 rt = lp(noise(DUR), 220) * 0.012

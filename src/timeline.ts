@@ -5,8 +5,6 @@ export type Phrase = {words: Word[]; start: number; end: number; index: number};
 export type Act = {
   index: number;
   id: string;
-  chapter: string;
-  slate: string;
   em: string[];
   vo: string;
   voStart: number;
@@ -22,7 +20,7 @@ export type Shot = {
   index: number;
   act: string;
   actIndex: number;
-  scene: string;
+  file: string;
   label: string;
   start: number;
   end: number;
@@ -38,11 +36,15 @@ export type Timeline = {
   height: number;
   durationInFrames: number;
   durationSec: number;
+  channel: string;
+  identity: string;
+  topic: string;
   acts: Act[];
   shots: Shot[];
 };
 
 export const tl = raw as unknown as Timeline;
+
 export const actAt = (t: number): Act => {
   let found = tl.acts[0];
   for (const a of tl.acts) if (t >= a.start - 0.0001) found = a;

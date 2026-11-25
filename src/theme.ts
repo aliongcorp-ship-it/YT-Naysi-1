@@ -1,60 +1,45 @@
+// Geometry, easings and colour maths only.
+//
+// The look of an episode lives in its topic file (scenes/<topic>.mjs), never
+// here: palette, type pairing and caption style are per-episode decisions.
+// This module is the shared measuring stick they all use.
+
 export const W = 1440;
 export const H = 2560;
 export const FPS = 90;
 
-// ── "LUNAR RANGING" identity ───────────────────────────────────────────────
-// Deep space at night, measured by hand. Navy-black void, bone-white type,
-// instrument gold for hardware, mint for verified data, coral for retreat.
-// Deliberately no glow / bloom: emphasis comes from weight and colour, not light.
-export const C = {
-  void: '#04060D',
-  abyss: '#070C18',
-  deep: '#0B1424',
-  mid: '#152134',
-  shallow: '#26374F',
-  ink: '#F6F2E8',
-  bone: '#F6F2E8',
-  muted: '#8B97A8',
-  faint: '#2B3547',
-  gold: '#E9B44C',
-  goldDim: '#A87B26',
-  coral: '#E2564A',
-  coralDim: '#8E332C',
-  mint: '#5FCFAA',
-  warm: '#FFD9A0',
-};
-
-export const F = {
-  display: 'SpaceGrotesk',
-  mono: 'PlexMono',
-  serif: 'Fraunces',
-};
-
-// Caption block sits above the Shorts UI shelf, centred like the reference.
+// Video-safe area. Nothing sits outside these edges; the Shorts shelf covers
+// the bottom 420 px on the right, so captions stop well above it.
 export const SAFE = {
-  left: 156,
-  right: 1344,
-  top: 200,
-  caption: 1790,
-  captionFloor: 2010,
-  captionWidth: 1180,
+  left: 132,
+  right: 1308,
+  top: 190,
+  caption: 1786,
+  captionFloor: 2000,
+  captionWidth: 1150,
 };
 
 export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+export const span = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
 export const eOut = (t: number) => 1 - Math.pow(1 - clamp(t), 3);
 export const eOutQuint = (t: number) => 1 - Math.pow(1 - clamp(t), 5);
+export const eIn = (t: number) => Math.pow(clamp(t), 3);
 export const eInOut = (t: number) => {
   const x = clamp(t);
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 };
-export const eIn = (t: number) => Math.pow(clamp(t), 3);
 export const smooth = (t: number) => {
   const x = clamp(t);
   return x * x * (3 - 2 * x);
 };
+export const mixN = (a: number, b: number, t: number) => a + (b - a) * clamp(t);
 
-const hex = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const hex = (h: string) => [
+  parseInt(h.slice(1, 3), 16),
+  parseInt(h.slice(3, 5), 16),
+  parseInt(h.slice(5, 7), 16),
+];
 export const mix = (a: string, b: string, t: number) => {
   const A = hex(a);
   const B = hex(b);
@@ -65,3 +50,14 @@ export const alpha = (h: string, a: number) => {
   const A = hex(h);
   return `rgba(${A[0]},${A[1]},${A[2]},${clamp(a)})`;
 };
+
+// Deterministic noise. The same frame always renders the same dots, so a
+// re-render is bit-identical and a still can be trusted as a preview.
+export const hash = (x: number, y: number, s = 0) => {
+  const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453;
+  return v - Math.floor(v);
+};
+
+// Indonesian number formatting: 384.400 km, 3,8 cm.
+export const idID = (n: number) => Math.round(n).toLocaleString('id-ID');
+export const dec = (n: number, d = 1) => n.toFixed(d).replace('.', ',');

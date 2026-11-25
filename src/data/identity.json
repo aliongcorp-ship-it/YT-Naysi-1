@@ -1,36 +1,36 @@
 {
  "schema": "naysi.identity/1",
- "id": "lrr",
- "name": "Lunar Ranging",
+ "id": "regolith",
+ "name": "Regolith Survey",
  "palette": {
-  "void": "#04060D",
-  "abyss": "#070C18",
-  "deep": "#0B1424",
-  "mid": "#152134",
-  "shallow": "#26374F",
-  "ink": "#F6F2E8",
-  "muted": "#8B97A8",
-  "faint": "#2B3547",
-  "accent": "#E9B44C",
-  "accentDim": "#A87B26",
-  "hot": "#E2564A",
+  "void": "#0C0805",
+  "abyss": "#140E09",
+  "deep": "#1D150E",
+  "mid": "#2B2016",
+  "shallow": "#3D2E20",
+  "ink": "#F2E7D5",
+  "muted": "#9C8A72",
+  "faint": "#4A3A29",
+  "accent": "#F0A63C",
+  "accentDim": "#A8701F",
+  "hot": "#C6533A",
   "warm": "#FFD9A0",
-  "alt": "#5FCFAA"
+  "alt": "#7FC8A9"
  },
  "type": {
-  "display": "SpaceGrotesk",
-  "mono": "PlexMono",
-  "editorial": "Fraunces"
+  "display": "Newsreader",
+  "mono": "JetBrains",
+  "editorial": "Newsreader"
  },
  "motion": {
-  "cut": "iris",
-  "punch": 1.003,
-  "grain": 0.045,
+  "cut": "cut",
+  "punch": 1.026,
+  "grain": 0.085,
   "ease": "quint"
  },
- "ui": {
-  "chrome": "instrument",
-  "rail": true,
-  "marks": true
+ "chrome": {
+  "watermark": true,
+  "marks": false,
+  "rail": false
  }
 }

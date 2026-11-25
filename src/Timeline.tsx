@@ -2,55 +2,53 @@ import React from 'react';
 import {AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {tl, actAt, type Act, type Shot} from './timeline';
 import {FontGate} from './Fonts';
-import {Grain, Vignette} from './ui/Atmosphere';
-import {Marks, Strap} from './ui/Hud';
-import {Caption, ChapterRule} from './ui/Caption';
-import {C, clamp, eOut} from './theme';
-import {Depart} from './scenes/Depart';
-import {Mirror} from './scenes/Mirror';
-import {Photon} from './scenes/Photon';
-import {Precision} from './scenes/Precision';
-import {Tide} from './scenes/Tide';
-import {SlowDay} from './scenes/SlowDay';
-import {Archive} from './scenes/Archive';
-import {Drift} from './scenes/Drift';
+import {Caption, Watermark} from './ui/Chrome';
+import {Grain, Vignette} from './ui/Texture';
+import {ID, fonts} from '../scenes/bulan.mjs';
+import y1 from '../scenes/y1.mjs';
+import y2 from '../scenes/y2.mjs';
+import y3 from '../scenes/y3.mjs';
+import y4 from '../scenes/y4.mjs';
+import y5 from '../scenes/y5.mjs';
+import y6 from '../scenes/y6.mjs';
+import y7 from '../scenes/y7.mjs';
+import y8 from '../scenes/y8.mjs';
+import y9 from '../scenes/y9.mjs';
+import y10 from '../scenes/y10.mjs';
+import {clamp, eOut, eOutQuint} from './theme';
 
-type SceneComp = React.FC<{act: Act; shot: Shot}>;
-const SCENES: Record<string, SceneComp> = {
-  Depart,
-  Mirror,
-  Photon,
-  Precision,
-  Tide,
-  SlowDay,
-  Archive,
-  Drift,
-};
+type SceneComp = React.FC<{act: Act; shot: Shot; t: number; local: number}>;
 
-const cutAt = (t: number) => {
+// The shot table: file name -> composition, exactly the names `script.mjs` uses.
+// A new episode replaces these ten imports and its own topic file; the rest of
+// this component is episode-agnostic. A shot named in the script but missing
+// here renders nothing rather than borrowing a neighbour's picture.
+const SCENES: Record<string, SceneComp> = {y1, y2, y3, y4, y5, y6, y7, y8, y9, y10} as unknown as Record<string, SceneComp>;
+
+const shotAt = (t: number): Shot => {
   let found = tl.shots[0];
   for (const s of tl.shots) if (t >= s.start - 0.0001) found = s;
   return found;
 };
 
-/* A designed cut, not an effect: one frame of the outgoing picture holding,
-   then a hard swap with a 2 px gold hairline that wipes left-to-right in 0.18 s.
-   No flash, no bloom — the reference cuts on a dissolve, so ours is a clean
-   replace with a measured rule. */
-const Cut: React.FC<{local: number}> = ({local}) => {
-  const d = clamp(local / 0.22);
+/* The cut. This identity replaces the picture hard, then lets a 1 px bone rule
+   sweep across the top third for 0.24 s — a printer's line, not a light leak.
+   `motion.cut` in the topic file decides whether it happens at all. */
+const Cut: React.FC<{local: number; index: number}> = ({local, index}) => {
+  if (ID.motion.cut !== 'cut' || index === 0) return null;
+  const d = clamp(local / 0.24);
   if (d >= 1) return null;
   return (
     <AbsoluteFill style={{pointerEvents: 'none'}}>
       <div
         style={{
           position: 'absolute',
+          top: 620,
           left: 0,
-          top: 0,
-          height: 2,
-          width: `${eOut(d) * 100}%`,
-          background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)`,
-          opacity: (1 - d) * 0.55,
+          height: 1,
+          width: `${eOutQuint(d) * 100}%`,
+          background: `linear-gradient(90deg, ${ID.palette.ink} 0%, ${ID.palette.ink} 70%, transparent 100%)`,
+          opacity: (1 - d) * 0.5,
         }}
       />
     </AbsoluteFill>
@@ -61,51 +59,41 @@ export const Film: React.FC = () => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const t = frame / fps;
-  const shot = cutAt(t);
+
+  const shot = shotAt(t);
   const act = actAt(t);
-  const Comp = SCENES[shot.scene] ?? Depart;
+  const Comp = SCENES[shot.file];
   const local = t - shot.start;
 
-  const enter = eOut(clamp(local / 0.4));
-  // every shot opens on a slow settle rather than a still frame
-  const push = 1.045 - 0.045 * eOut(clamp(local / 1.6));
-  const punch = (1 + 0.0025 * (1 - enter)) * push;
+  // Every shot opens on a settle rather than a freeze: a 2.6 % push that
+  // relaxes over the first 1.8 s. It is the only camera move in the film.
+  const enter = eOut(clamp(local / 0.42));
+  const push = 1 + (ID.motion.punch - 1) * (1 - eOut(clamp(local / 1.8)));
 
-  const fadeIn = interpolate(t, [0, 0.5], [0, 1], {extrapolateRight: 'clamp'});
+  const fadeIn = interpolate(t, [0, 0.55], [0, 1], {extrapolateRight: 'clamp'});
   const isLast = shot.index === tl.shots.length - 1;
   const fadeOut = isLast
-    ? interpolate(t, [tl.durationSec - 1.4, tl.durationSec - 0.05], [1, 0], {extrapolateRight: 'clamp'})
+    ? interpolate(t, [tl.durationSec - 1.1, tl.durationSec - 0.03], [1, 0], {extrapolateRight: 'clamp'})
     : 1;
-  const chrome = interpolate(t, [0.2, 0.9], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const veil = Math.min(fadeIn, fadeOut);
 
   return (
-    <FontGate>
-      <AbsoluteFill style={{background: C.void}}>
-        <AbsoluteFill
-          style={{
-            opacity: Math.min(fadeIn, fadeOut),
-            transform: `scale(${punch})`,
-            transformOrigin: '50% 50%',
-          }}
-        >
-          <Comp act={act} shot={shot} />
-          <Cut local={local} />
+    <FontGate faces={fonts}>
+      <AbsoluteFill style={{background: ID.palette.void}}>
+        <AbsoluteFill style={{opacity: veil, transform: `scale(${push})`, transformOrigin: '50% 52%'}}>
+          {Comp ? <Comp act={act} shot={shot} t={t} local={local} /> : null}
+          <Cut local={local} index={shot.index} />
         </AbsoluteFill>
 
-        {/* captions sit outside the shot so they never restart on a cut */}
-        <div style={{opacity: Math.min(fadeIn, fadeOut)}}>
+        {/* Captions live outside the shot so a cut never restarts the sentence. */}
+        <div style={{opacity: veil}}>
           <Caption act={act} t={t} />
-          <ChapterRule act={act} total={tl.acts.length} t={t} />
+          <Watermark t={t} total={tl.durationSec} />
         </div>
 
-        <div style={{opacity: chrome * (isLast ? fadeOut : 1)}}>
-          <Marks opacity={0.26} />
-          <Strap act={act} t={t} shot={shot} total={tl.shots.length} />
-        </div>
-
-        <Grain opacity={0.045} />
-        <Vignette strength={0.7} />
-        <AbsoluteFill style={{background: '#04060D', opacity: 1 - Math.min(fadeIn, fadeOut)}} />
+        <Grain opacity={ID.motion.grain} tint={ID.palette.warm} />
+        <Vignette strength={0.82} color={ID.palette.void} />
+        <AbsoluteFill style={{background: ID.palette.void, opacity: 1 - veil}} />
         <Audio src={staticFile('audio/master.wav')} />
       </AbsoluteFill>
     </FontGate>

@@ -9,7 +9,14 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "lib": ["DOM", "ES2020"]
+    "lib": [
+      "DOM",
+      "ES2020"
+    ],
+    "allowJs": true
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "scenes"
+  ]
 }

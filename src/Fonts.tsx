@@ -1,18 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {continueRender, delayRender, staticFile} from 'remotion';
 
-const faces = [
-  {family: 'SpaceGrotesk', file: 'fonts/space-grotesk.woff2', weight: '300 700', style: 'normal'},
-  {family: 'PlexMono', file: 'fonts/plex-400.woff2', weight: '400', style: 'normal'},
-  {family: 'PlexMono', file: 'fonts/plex-600.woff2', weight: '600', style: 'normal'},
-  {family: 'PlexMono', file: 'fonts/plex-700.woff2', weight: '700', style: 'normal'},
-  {family: 'Fraunces', file: 'fonts/fraunces.woff2', weight: '300 700', style: 'normal'},
-  {family: 'Fraunces', file: 'fonts/fraunces-italic.woff2', weight: '300 700', style: 'italic'},
-];
+// The face list is passed in by the episode, not baked in here: the type
+// pairing is part of the visual identity, so `scenes/<topic>.mjs` owns it and
+// a new episode ships its own .woff2 files under public/fonts.
+export type Face = {family: string; file: string; weight: string; style: string};
 
-export const FontGate: React.FC<{children: React.ReactNode}> = ({children}) => {
+export const FontGate: React.FC<{faces: Face[]; children: React.ReactNode}> = ({faces, children}) => {
   const [handle] = useState(() => delayRender('fonts'));
   const [ready, setReady] = useState(false);
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = faces
@@ -22,16 +19,15 @@ export const FontGate: React.FC<{children: React.ReactNode}> = ({children}) => {
       )
       .join('\n');
     document.head.appendChild(style);
-    Promise.all(
-      faces.map((f) => document.fonts.load(`${f.style === 'italic' ? 'italic ' : ''}600 100px '${f.family}'`))
-    )
+    Promise.all(faces.map((f) => document.fonts.load(`${f.style === 'italic' ? 'italic ' : ''}600 100px '${f.family}'`)))
       .then(() => document.fonts.ready)
       .then(() => {
         setReady(true);
         continueRender(handle);
       })
       .catch(() => continueRender(handle));
-  }, [handle]);
+  }, [faces, handle]);
+
   if (!ready) return null;
   return <>{children}</>;
 };
