@@ -1,6 +1,6 @@
 // Geometry, easings and colour maths only.
 //
-// The look of an episode lives in its topic file (scenes/<topic>.mjs), never
+// The look of an episode lives in its topic file (scenes/<topic>.tsx), never
 // here: palette, type pairing and caption style are per-episode decisions.
 // This module is the shared measuring stick they all use.
 

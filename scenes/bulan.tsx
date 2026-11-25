@@ -27,7 +27,7 @@ import {alpha} from '../src/theme';
 
 // The compositions are imported by the renderer, not here: this file is also
 // read by build scripts in Node, which cannot parse the JSX the shots contain.
-// `Timeline.tsx` owns the table, in the same order `script.mjs` lists.
+// `Timeline.tsx` owns the table, in the same order `script.tsx` lists.
 
 /* ───────────────────────────────  IDENTITY  ─────────────────────────────── */
 export type Palette = {
@@ -399,6 +399,6 @@ export const EarthDisc: React.FC<{
 
 /* ────────────────────────────────  shots  ───────────────────────────────── */
 // Nothing to export here: the compositions live in `src/Timeline.tsx`, which
-// imports them by name, in the order `script.mjs` lists.
+// imports them by name, in the order `script.tsx` lists.
 
 
