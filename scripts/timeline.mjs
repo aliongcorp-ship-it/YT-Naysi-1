@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const FPS = 90;
 let LEAD = 0.30;              // room to breathe before the first word
 let GAP = 0.18;               // breath between acts
-const TAIL = 0.75;            // hold after the last word
+const TAIL = 1.55;            // hold long enough for the closing line to land
 const SHORTS_MAX = 180;       // hard ceiling: a Shorts upload must be <= 180 s
 
 const wavDur = (p) => (fs.statSync(p).size - 44) / 96000; // 48k mono 16-bit

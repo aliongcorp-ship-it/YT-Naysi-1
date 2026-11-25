@@ -63,6 +63,15 @@ const cards = (words: Flat[]): Card[] => {
     //    and only if a single clause is still too long, at the word
     const groups = pack(sent, 52);
     for (const g of groups) {
+      const chars = g.reduce((a, w) => a + w.w.length + 1, 0);
+      const prev = out[out.length - 1];
+      // A card of one or two short words reads as a mistake on screen. Glue it
+      // onto the card that came before rather than letting it flash alone.
+      if (prev && (g.length <= 2 || chars < 22)) {
+        prev.words.push(...g.map(({w, t}) => ({w, t})));
+        prev.end = +(g[g.length - 1].t + g[g.length - 1].d).toFixed(3);
+        continue;
+      }
       out.push({
         start: g[0].t,
         end: +(g[g.length - 1].t + g[g.length - 1].d).toFixed(3),

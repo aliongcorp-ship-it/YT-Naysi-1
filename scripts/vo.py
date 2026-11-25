@@ -60,7 +60,10 @@ for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(
         # (107/176) — the same voice, a shade lower. One and a half semitones
         # up lands it at 141.6 Hz (114/186) without changing duration: asetrate
         # resamples, atempo cancels the resulting tempo change exactly.
-        "asetrate=48000*1.0905,aresample=48000,atempo=0.917011,"
+        # register up 1.5 semitones, then 4% quicker delivery — both folded in
+        # here, before the timeline is measured, so captions can never drift
+        # from the voice.
+        "asetrate=48000*1.0905,aresample=48000,atempo=0.917011,atempo=1.04,"
         "loudnorm=I=-16:TP=-1.5:LRA=9,"
         "aresample=48000"
     )

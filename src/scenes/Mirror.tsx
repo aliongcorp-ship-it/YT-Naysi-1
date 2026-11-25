@@ -31,9 +31,9 @@ export const Mirror: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
     <AbsoluteFill style={{background: C.void}}>
       <SpaceBackdrop from={C.abyss} to={C.void} />
       <StarField opacity={0.55} drift={0.35} seed={9} />
-      <MoonDisk cx={W / 2} cy={2320} r={1500} phase={0.55} seed={21} opacity={0.75} />
+      <MoonDisk cx={W / 2} cy={2380} r={1500} phase={0.42} seed={21} opacity={0.52} />
       {/* regolith haze: texture, not light */}
-      <AbsoluteFill style={{background: `linear-gradient(0deg, ${alpha('#0B0A08', 0.55)} 0%, transparent 46%)`}} />
+      <AbsoluteFill style={{background: `linear-gradient(0deg, ${alpha('#08080A', 0.80)} 0%, ${alpha('#08080A', 0.35)} 34%, transparent 58%)`}} />
 
       <AbsoluteFill style={{opacity: enter}}>
         {/* panel body */}
