@@ -359,15 +359,15 @@ export const EarthDisc: React.FC<{
         borderRadius: '50%',
         overflow: 'hidden',
         pointerEvents: 'none',
-        background: 'radial-gradient(circle at 32% 28%, #7E959D 0%, #5A7683 26%, #38525E 58%, #1C313A 84%, #0D1E25 100%)',
+        background: 'radial-gradient(circle at 32% 28%, #6F858C 0%, #4B6672 28%, #324A56 60%, #182B33 86%, #0C1A20 100%)',
       }}
     >
       <svg width={r * 2} height={r * 2} style={{position: 'absolute', left: 0, top: 0}}>
         <g
           transform={`translate(${r} ${r}) rotate(${spin}) scale(${r})`}
-          fill="rgba(56,74,52,0.9)"
-          stroke="rgba(214,206,170,0.5)"
-          strokeWidth={0.008}
+          fill="rgba(46,64,42,0.92)"
+          stroke="rgba(196,208,158,0.42)"
+          strokeWidth={0.006}
           strokeLinejoin="round"
         >
           {land.map((d, i) => (
