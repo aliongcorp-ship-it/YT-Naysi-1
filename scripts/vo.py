@@ -55,6 +55,12 @@ for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(
         "equalizer=f=3100:t=q:w=1.0:g=1.8,"
         "equalizer=f=7200:t=q:w=1.4:g=-1.2,"
         "acompressor=threshold=-19dB:ratio=3.2:attack=8:release=180:makeup=2,"
+        # Register match: the reference narration measures F0 median 146.8 Hz
+        # with a p25/p75 spread of 114/195. The selected take sits at 132.2 Hz
+        # (107/176) — the same voice, a shade lower. One and a half semitones
+        # up lands it at 141.6 Hz (114/186) without changing duration: asetrate
+        # resamples, atempo cancels the resulting tempo change exactly.
+        "asetrate=48000*1.0905,aresample=48000,atempo=0.917011,"
         "loudnorm=I=-16:TP=-1.5:LRA=9,"
         "aresample=48000"
     )

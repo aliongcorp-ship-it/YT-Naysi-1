@@ -1,112 +1,98 @@
 [
   {
-    "id": "darkside",
-    "chapter": "00 / MUKA YANG TERLIHAT",
-    "slate": "DUA PETA, DUA STANDAR",
-    "text": "Negara ini dua pertiga laut. Tapi kita memetakan permukaan Mars sampai detail seratus meter, sementara dasar laut kita sendiri masih gelap. Di bawah sana ada jurang yang lebih dalam dari apa pun di Indonesia. Dan kita baru tahu bentuk aslinya, delapan tahun lalu.",
+    "id": "hook",
+    "chapter": "01 / PERGI",
+    "slate": "3,8 CM PER TAHUN",
+    "text": "Bulan sedang menjauh dari kita, tiga koma delapan sentimeter tiap tahun, secepat kuku Anda tumbuh.",
     "em": [
-      "Mars",
-      "gelap",
-      "jurang",
-      "delapan",
-      "lalu"
-    ]
-  },
-  {
-    "id": "blindspot",
-    "chapter": "01 / TITIK BUTA",
-    "slate": "27,3% TERPETAKAN",
-    "text": "Baru dua puluh tujuh koma tiga persen dasar laut dunia terpetakan dengan standar modern. Tahun dua ribu tujuh belas, angkanya masih enam persen. Artinya, sekitar tiga per empat planet ini masih belum pernah diukur. Permukaan Venus, Bulan, bahkan asteroid, sudah kita potret. Dasar laut kita, belum.",
-    "em": [
-      "27,3",
-      "enam",
-      "belum",
-      "diukur",
-      "Venus",
       "Bulan",
-      "asteroid"
+      "menjauh",
+      "3,8",
+      "kuku"
     ]
   },
   {
-    "id": "depth",
-    "chapter": "02 / KEDALAMAN",
-    "slate": "7.440 METER",
-    "text": "Di timur Indonesia, di Laut Banda, ada lantai laut yang turun sampai tujuh ribu empat ratus empat puluh meter. Namanya, Palung Weber. Monas tingginya seratus tiga puluh dua meter. Artinya, lima puluh enam Monas bisa ditumpuk di situ, dan masih ada ruang. Di kedalaman itu, tekanan mencapai tujuh ratus kilogram per sentimeter persegi. Cahaya matahari sudah habis jauh sebelum dasarnya.",
+    "id": "mirror",
+    "chapter": "02 / CERMIN",
+    "slate": "100 PRISMA",
+    "text": "Tahun enam puluh sembilan astronot menaruh cermin di Bulan, seratus prisma seukuran koper, tanpa baterai, dan masih bekerja sampai sekarang.",
     "em": [
-      "7.440",
-      "Weber",
-      "lima",
-      "puluh",
-      "enam",
-      "Monas",
-      "tekanan",
-      "cahaya"
-    ]
-  },
-  {
-    "id": "detach",
-    "chapter": "03 / YANG TERLEPAS",
-    "slate": "bukan menunjam. terkelupas.",
-    "text": "Tapi yang bikin aneh, Palung Weber bukan palung biasa. Selama seratus tahun, para ahli mengira dia terbentuk oleh satu lempeng yang menunjam ke bawah. Tahun dua ribu delapan belas, sebuah survei mendeteksi batuan mantel di dinding bawah laut itu, terangkat ke permukaan. Lempengnya tidak menunjam. Lempengnya terkelupas. Satu slab sepanjang seratus lima puluh kilometer, terlepas, lalu tenggelam.",
-    "em": [
+      "cermin",
       "seratus",
-      "tahun",
-      "menunjam",
-      "terkelupas",
-      "150",
-      "tenggelam"
+      "koper",
+      "bekerja"
     ]
   },
   {
-    "id": "life",
-    "chapter": "04 / YANG HIDUP DI BAWAH",
-    "slate": "TANPA CAHAYA",
-    "text": "Dan di tempat yang seharusnya mati, ada kehidupan. Fangtooth, dengan gigi yang terlalu panjang untuk mulutnya sendiri. Viperfish, yang memancing dengan lampu di punggungnya. Anglerfish, yang membawa cahaya milik bakteri di kepalanya. Mereka bukan monster. Mereka cuma bekerja, di tempat tanpa cahaya.",
+    "id": "photon",
+    "chapter": "03 / SATU FOTON",
+    "slate": "384.400 KM",
+    "text": "Laser ditembakkan ke cermin itu, tiga ratus delapan puluh empat ribu kilometer jauhnya. Dari triliunan foton, mungkin satu yang pulang.",
     "em": [
-      "kehidupan",
-      "Fangtooth",
-      "Viperfish",
-      "Anglerfish",
-      "cahaya"
+      "laser",
+      "384",
+      "triliunan",
+      "satu"
     ]
   },
   {
-    "id": "pressure",
-    "chapter": "05 / TEKANAN",
-    "slate": "700 KG / CM²",
-    "text": "Di kedalaman tujuh ribu meter, air menekan setiap sentimeter tubuh. Manusia hancur dalam hitungan detik. Ikan di sana tidak melawan. Tubuhnya dibentuk oleh tekanan itu. Dan cahaya berhenti di dua ratus meter. Di bawahnya, semua lampu dibuat sendiri: biru, hijau, merah.",
+    "id": "millimetre",
+    "chapter": "04 / MILIMETER",
+    "slate": "1 MM",
+    "text": "Satu foton cukup. Waktu tempuhnya diukur sampai pikodetik, jaraknya terbaca sampai milimeter. Setiap malam, selama lima dekade.",
     "em": [
-      "tujuh",
-      "ribu",
-      "hancur",
-      "dibentuk",
-      "cahaya"
+      "satu",
+      "pikodetik",
+      "milimeter",
+      "dekade"
     ]
   },
   {
-    "id": "ridge",
-    "chapter": "06 / GUNUNG API BAWAH LAUT",
-    "slate": "78.000 KM",
-    "text": "Pegunungan terpanjang di Bumi tidak ada satu pun di darat. Punggungan tengah samudra membentang tujuh puluh delapan ribu kilometer. Di sana, gunung api memuntahkan panas ke air sedingin es. Kehidupan tidak butuh matahari. Ia butuh batu.",
+    "id": "tide",
+    "chapter": "05 / PASANG",
+    "slate": "DORONGAN",
+    "text": "Gravitasi Bulan menarik laut jadi pasang. Bumi berputar lebih cepat, jadi pasang selalu mendahului. Dorongan itu yang mendorong Bulan pergi.",
     "em": [
-      "78.000",
-      "gunung",
-      "api",
-      "batu",
-      "matahari"
+      "gravitasi",
+      "pasang",
+      "mendahului",
+      "pergi"
     ]
   },
   {
-    "id": "close",
-    "chapter": "07 / YANG BELUM TERLIHAT",
-    "slate": "KULIT, BUKAN ISI",
-    "text": "Peta ini bukan kemewahan. Kabel internet kita berbaring di dasar itu. Patahan di bawahnya bisa mengirim tsunami ke pantai. Jadi saat kamu melihat laut dari tepi pantai, ingat: yang kamu lihat cuma kulitnya. Indonesia masih punya wilayah yang belum pernah dilihat siapa pun.",
+    "id": "day",
+    "chapter": "06 / HARI",
+    "slate": "+1,8 MS PER ABAD",
+    "text": "Putaran Bumi melambat karenanya. Satu koma delapan milidetik per abad. Empat ratus juta tahun lalu, sehari cuma dua puluh dua jam.",
     "em": [
-      "asuransi",
-      "kabel",
-      "tsunami",
-      "kulitnya",
-      "belum"
+      "melambat",
+      "1,8",
+      "22",
+      "jam"
+    ]
+  },
+  {
+    "id": "past",
+    "chapter": "07 / DULU",
+    "slate": "18,7 JAM",
+    "text": "Dulu Bulan jauh lebih dekat, pasangnya jauh lebih ganas. Karang purba menyimpan hitungan harinya, seperti arsip yang ikut menua.",
+    "em": [
+      "dekat",
+      "ganas",
+      "karang",
+      "arsip"
+    ]
+  },
+  {
+    "id": "end",
+    "chapter": "08 / AKHIR",
+    "slate": "MASIH PERGI",
+    "text": "Bulan akan terus pergi, miliaran tahun lamanya. Malam ini, saat Anda menengadah, ia sudah lebih jauh daripada kemarin.",
+    "em": [
+      "pergi",
+      "miliaran",
+      "lebih jauh",
+      "kemarin"
     ]
   }
 ]

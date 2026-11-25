@@ -2,22 +2,26 @@ export const W = 1440;
 export const H = 2560;
 export const FPS = 90;
 
-// ── "ABBYSAL SURVEY" identity: light dies as the story descends ────────────
+// ── "LUNAR RANGING" identity ───────────────────────────────────────────────
+// Deep space at night, measured by hand. Navy-black void, bone-white type,
+// instrument gold for hardware, mint for verified data, coral for retreat.
+// Deliberately no glow / bloom: emphasis comes from weight and colour, not light.
 export const C = {
-  void: '#01060A',
-  abyss: '#03101A',
-  deep: '#062231',
-  mid: '#0B3B4C',
-  shallow: '#12657A',
-  foam: '#EAF7F7',
-  ink: '#F2FBFB',
-  muted: '#7FA2AC',
-  faint: '#254250',
-  sonar: '#5FF3E0',
-  sonarDim: '#2AA899',
-  magma: '#FF7A45',
-  ember: '#FFB88C',
-  iris: '#8C7BFF',
+  void: '#04060D',
+  abyss: '#070C18',
+  deep: '#0B1424',
+  mid: '#152134',
+  shallow: '#26374F',
+  ink: '#F6F2E8',
+  bone: '#F6F2E8',
+  muted: '#8B97A8',
+  faint: '#2B3547',
+  gold: '#E9B44C',
+  goldDim: '#A87B26',
+  coral: '#E2564A',
+  coralDim: '#8E332C',
+  mint: '#5FCFAA',
+  warm: '#FFD9A0',
 };
 
 export const F = {
@@ -26,7 +30,15 @@ export const F = {
   serif: 'Fraunces',
 };
 
-export const SAFE = {left: 156, right: 1344, top: 200, caption: 1720, captionFloor: 1960};
+// Caption block sits above the Shorts UI shelf, centred like the reference.
+export const SAFE = {
+  left: 156,
+  right: 1344,
+  top: 200,
+  caption: 1790,
+  captionFloor: 2010,
+  captionWidth: 1180,
+};
 
 export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -42,28 +54,14 @@ export const smooth = (t: number) => {
   return x * x * (3 - 2 * x);
 };
 
-// depth -> colour ramp (m). Used by the backdrop, the rail and every scene.
-const STOPS: [number, string][] = [
-  [0, '#0E4E63'],
-  [120, '#0A3746'],
-  [600, '#062230'],
-  [2000, '#041620'],
-  [4500, '#020B12'],
-  [7440, '#01060A'],
-];
 const hex = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-export const depthColor = (m: number) => {
-  const d = clamp(m, 0, 7440);
-  for (let i = 1; i < STOPS.length; i++) {
-    if (d <= STOPS[i][0]) {
-      const [a0, c0] = STOPS[i - 1];
-      const [a1, c1] = STOPS[i];
-      const p = (d - a0) / (a1 - a0);
-      const A = hex(c0);
-      const B = hex(c1);
-      const mix = A.map((v, k) => Math.round(lerp(v, B[k], p)));
-      return `rgb(${mix[0]},${mix[1]},${mix[2]})`;
-    }
-  }
-  return STOPS[STOPS.length - 1][1];
+export const mix = (a: string, b: string, t: number) => {
+  const A = hex(a);
+  const B = hex(b);
+  const p = clamp(t);
+  return `rgb(${Math.round(lerp(A[0], B[0], p))},${Math.round(lerp(A[1], B[1], p))},${Math.round(lerp(A[2], B[2], p))})`;
+};
+export const alpha = (h: string, a: number) => {
+  const A = hex(h);
+  return `rgba(${A[0]},${A[1]},${A[2]},${clamp(a)})`;
 };

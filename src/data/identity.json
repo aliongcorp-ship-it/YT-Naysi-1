@@ -1,21 +1,21 @@
 {
  "schema": "naysi.identity/1",
- "id": "abyss",
- "name": "Abbysal Survey",
+ "id": "lrr",
+ "name": "Lunar Ranging",
  "palette": {
-  "void": "#01060A",
-  "abyss": "#03101A",
-  "deep": "#062231",
-  "mid": "#0B3B4C",
-  "shallow": "#12657A",
-  "ink": "#F2FBFB",
-  "muted": "#7FA2AC",
-  "faint": "#254250",
-  "accent": "#5FF3E0",
-  "accentDim": "#2AA899",
-  "hot": "#FF7A45",
-  "warm": "#FFB88C",
-  "alt": "#8C7BFF"
+  "void": "#04060D",
+  "abyss": "#070C18",
+  "deep": "#0B1424",
+  "mid": "#152134",
+  "shallow": "#26374F",
+  "ink": "#F6F2E8",
+  "muted": "#8B97A8",
+  "faint": "#2B3547",
+  "accent": "#E9B44C",
+  "accentDim": "#A87B26",
+  "hot": "#E2564A",
+  "warm": "#FFD9A0",
+  "alt": "#5FCFAA"
  },
  "type": {
   "display": "SpaceGrotesk",
@@ -23,9 +23,9 @@
   "editorial": "Fraunces"
  },
  "motion": {
-  "cut": "bloom",
-  "punch": 1.004,
-  "grain": 0.05,
+  "cut": "iris",
+  "punch": 1.003,
+  "grain": 0.045,
   "ease": "quint"
  },
  "ui": {

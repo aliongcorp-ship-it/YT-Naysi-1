@@ -111,6 +111,33 @@ const IDENTITIES = {
     motion: {cut: 'iris', punch: 1.005, grain: 0.06, ease: 'quint'},
     ui: {chrome: 'telescope', rail: true, marks: true},
   },
+
+  // EP 04 — lunar laser ranging. Deep space at night, measured by hand:
+  // a navy-black void, one gold for instruments, mint for verified data and
+  // coral only when something is leaving or wrong. No glow, no bloom.
+  lrr: {
+    schema: SCHEMA,
+    id: 'lrr',
+    name: 'Lunar Ranging',
+    palette: {
+      void: '#04060D',     // near-black, cool
+      abyss: '#070C18',
+      deep: '#0B1424',
+      mid: '#152134',
+      shallow: '#26374F',
+      ink: '#F6F2E8',      // bone white, slightly warm
+      muted: '#8B97A8',
+      faint: '#2B3547',
+      accent: '#E9B44C',   // instrument gold
+      accentDim: '#A87B26',
+      hot: '#E2564A',      // coral: recession / alarm
+      warm: '#FFD9A0',
+      alt: '#5FCFAA',      // mint: verified measurement
+    },
+    type: {display: 'SpaceGrotesk', mono: 'PlexMono', editorial: 'Fraunces'},
+    motion: {cut: 'iris', punch: 1.003, grain: 0.045, ease: 'quint'},
+    ui: {chrome: 'instrument', rail: true, marks: true},
+  },
 };
 
 const REQUIRED = ['void', 'abyss', 'deep', 'mid', 'shallow', 'ink', 'muted', 'faint', 'accent', 'accentDim', 'hot', 'warm', 'alt'];

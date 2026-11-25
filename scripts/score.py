@@ -197,20 +197,22 @@ def bell(f, gain=0.1, dur=3.0):
 acts = cues["acts"]
 A = {a["id"]: a for a in acts}
 
+# D minor, wide and slow: open fifths low, suspended colour high. The film is
+# about a measurement, so the harmony resolves once and then holds.
 CHORDS = {
-    "darkside": ["D2", "A2", "F3", "C4"],
-    "blindspot": ["D2", "A2", "F3", "E4"],
-    "depth": ["Bb2", "F2", "D3", "A3"],
-    "detach": ["D2", "F2", "C3", "A3"],
-    "life": ["G2", "D3", "Bb2", "F3"],
-    "pressure": ["D2", "Bb2", "F2", "D3"],
-    "ridge": ["G2", "D3", "A3", "E4"],
-    "close": ["D2", "A2", "C3", "F3"],
+    "hook":       ["D2", "A2", "D3", "F3"],
+    "mirror":     ["Bb2", "F2", "D3", "F3"],
+    "photon":     ["D2", "A2", "E3", "A3"],
+    "millimetre": ["F2", "C3", "F3", "A3"],
+    "tide":       ["C3", "G2", "E3", "G3"],
+    "day":        ["Bb2", "F2", "D3", "A3"],
+    "past":       ["G2", "D3", "Bb2", "F3"],
+    "end":        ["D2", "A2", "D3", "A3"],
 }
 
 DRONE_GAIN = {
-    "darkside": 0.30, "blindspot": 0.24, "depth": 0.30, "detach": 0.34,
-    "life": 0.20, "pressure": 0.32, "ridge": 0.26, "close": 0.22,
+    "hook": 0.26, "mirror": 0.24, "photon": 0.30, "millimetre": 0.28,
+    "tide": 0.30, "day": 0.26, "past": 0.28, "end": 0.22,
 }
 
 for a in acts:
@@ -219,8 +221,8 @@ for a in acts:
     dur = en - st + 0.6
     chord = [NOTE[k] for k in CHORDS[aid]]
     # bed
-    place(pad(chord, dur, gain=0.26, cutoff=620 + 260 * (aid in ("ridge", "pressure"))), st, 0.9)
-    place(drone(NOTE["D1"], dur, gain=DRONE_GAIN[aid]), st, 1.0)
+    place(pad(chord, dur, gain=0.26, cutoff=620 + 260 * (aid in ("photon", "tide"))), st, 0.9)
+    place(drone(NOTE["D2"], dur, gain=DRONE_GAIN[aid]), st, 1.0)
     # act-entry whoosh + impact on the first word
     if a["index"] > 1:
         place(whoosh(1.0, 0.2, up=True), st - 0.62, 1.0, -0.2)
@@ -258,7 +260,7 @@ for a in acts:
             tt += step
             k += 1
     # reverse riser into the biggest reveals
-    if aid in ("detach", "depth", "close", "blindspot"):
+    if aid in ("tide", "photon", "millimetre", "end"):
         place(riser(min(3.4, dur * 0.35), 0.16), en - 3.4, 1.0)
 
 # ── moment-specific sound design ───────────────────────────────────────────
@@ -267,20 +269,23 @@ def word_at(aid, idx):
     return a["words"][min(idx, len(a["words"]) - 1)]
 
 
-place(space(ping(NOTE["D5"], 0.2, 3.2), 0.5), 0.55, 1.0)
-place(impact(0.5), word_at("detach", 24) - 0.05)          # "terkelupas"
-place(subhit(0.55, 58, 26, 2.2), word_at("depth", 6) - 0.05)
-place(impact(0.42), word_at("blindspot", 0) - 0.02)
-place(impact(0.36), word_at("pressure", 12) - 0.05)
-place(impact(0.4), A["close"]["words"][0] - 0.05)
-place(space(ping(NOTE["A5"], 0.18, 3.4), 0.6), A["close"]["voStart"] + 1.4, 0.8)
-place(riser(3.0, 0.2), A["close"]["start"] - 2.8)
+# The film opens on a single bell and closes on one, a fifth apart: the same
+# measurement, a different night.
+place(space(ping(NOTE["D5"], 0.2, 3.2), 0.5), 0.45, 1.0)
+place(impact(0.34), A["hook"]["words"][0] - 0.05)              # "Bulan"
+place(subhit(0.50, 58, 26, 2.2), word_at("mirror", 2) - 0.05)   # "cermin"
+place(impact(0.40), word_at("photon", 2) - 0.05)                # "laser"
+place(impact(0.38), word_at("millimetre", 0) - 0.02)            # "satu foton"
+place(impact(0.36), word_at("tide", 8) - 0.05)                  # "mendahului"
+place(subhit(0.44, 52, 28, 1.8), word_at("past", 2) - 0.05)     # "lebih dekat"
+place(space(ping(NOTE["A5"], 0.18, 3.4), 0.6), A["end"]["voStart"] + 1.4, 0.8)
+place(riser(3.0, 0.2), A["end"]["start"] - 2.8)
 
-# low tide wash under the last line
-nt = int(3.2 * SR)
+# tide wash under the closing line: the thing that is doing the pushing
+nt = int(3.6 * SR)
 tt = np.arange(nt) / SR
-wash = lp(noise(3.2), 480) * np.sin(np.pi * np.arange(nt) / nt) ** 2 * 0.1
-place(wash, A["close"]["end"] - 3.4, 1.0)
+wash = lp(noise(3.6), 470) * np.sin(np.pi * np.arange(nt) / nt) ** 2 * 0.11
+place(wash, A["end"]["end"] - 3.8, 1.0)
 
 # ── room tone: filtered noise bed, so silence reads as depth, not as a dropout ─
 rt = lp(noise(DUR), 220) * 0.012

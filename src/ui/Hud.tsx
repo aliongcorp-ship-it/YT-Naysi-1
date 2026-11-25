@@ -1,175 +1,237 @@
 import React from 'react';
-import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion';
-import {C, F, SAFE, H, clamp, eOut, lerp} from '../theme';
+import {AbsoluteFill, interpolate} from 'remotion';
+import {C, F, SAFE, alpha, clamp, eOut} from '../theme';
 import type {Act, Shot, Timeline} from '../timeline';
 
-/* Left rail: a bathymetric depth scale that physically tracks the narration. */
-export const DepthRail: React.FC<{depth: number; opacity?: number; max?: number}> = ({depth, opacity = 1, max = 7440}) => {
-  const f = useCurrentFrame();
-  const y0 = 320;
-  const y1 = 1700;
-  const p = clamp(depth / max);
-  const y = lerp(y0, y1, p);
-  const ticks = [0, 1000, 2000, 4000, 6000, 7440];
+/* Header: the reference's two ends — a squared amber dot with NAYSI on the
+   left, the series tag on the right. Nothing else lives up here. */
+export const Strap: React.FC<{act: Act; t: number; shot?: Shot; total: number}> = ({act, t, shot, total}) => {
+  const appear = interpolate(t, [0.1, 0.7], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const swap = eOut(clamp((t - act.start) / 0.42));
   return (
-    <AbsoluteFill style={{opacity}}>
-      <div style={{position: 'absolute', left: 52, top: y0, width: 2, height: y1 - y0, background: `linear-gradient(180deg, ${C.sonar}55, ${C.sonar}11)`}} />
-      {ticks.map((tk) => {
-        const ty = lerp(y0, y1, tk / max);
-        return (
-          <React.Fragment key={tk}>
-            <div style={{position: 'absolute', left: 40, top: ty, width: 26, height: 2, background: tk <= depth ? C.sonarDim : C.faint, opacity: tk <= depth ? 0.85 : 0.5}} />
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: ty - 10,
-                fontFamily: F.mono,
-                fontSize: 17,
-                letterSpacing: '0.02em',
-                color: tk <= depth ? C.sonar : C.faint,
-                opacity: tk <= depth ? 0.95 : 0.55,
-                width: 32,
-                textAlign: 'right',
-              }}
-            >
-              {tk === 0 ? '0' : `${(tk / 1000).toFixed(tk % 1000 === 0 ? 0 : 1)}k`}
-            </div>
-          </React.Fragment>
-        );
-      })}
-      {/* current depth marker */}
-      <div style={{position: 'absolute', left: 30, top: y - 7, width: 44, height: 14, borderRadius: 3, background: C.sonar, boxShadow: `0 0 24px ${C.sonar}`}} />
-      <div
-        style={{
-          position: 'absolute',
-          left: 40,
-          top: y + 18,
-          fontFamily: F.mono,
-          fontSize: 26,
-          fontWeight: 700,
-          color: C.foam,
-          letterSpacing: '-0.01em',
-          textShadow: `0 0 22px ${C.sonar}77`,
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 8,
-          opacity: 0.95,
-        }}
-      >
-        <span style={{fontVariantNumeric: 'tabular-nums'}}>{Math.round(depth).toLocaleString('id-ID')}</span>
-        <span style={{fontSize: 15, color: C.sonarDim, letterSpacing: '0.2em'}}>M</span>
+    <AbsoluteFill style={{opacity: appear, pointerEvents: 'none'}}>
+      <div style={{position: 'absolute', left: SAFE.left, top: 116, display: 'flex', alignItems: 'center', gap: 16}}>
+        <div style={{width: 13, height: 13, background: C.gold}} />
+        <div style={{fontFamily: F.mono, fontSize: 25, fontWeight: 600, letterSpacing: '0.34em', color: C.ink}}>NAYSI</div>
       </div>
-      <div style={{position: 'absolute', left: 40, top: y + 50, fontFamily: F.mono, fontSize: 13, letterSpacing: '0.28em', color: C.muted}}>
-        {f % 90 < 45 ? 'KEDALAMAN' : 'DEPTH  ·  MSL'}
-      </div>
-    </AbsoluteFill>
-  );
-};
 
-/* Top strap: episode identity, always small, always out of the way. */
-export const Strap: React.FC<{tl: Timeline; act: Act; t: number; accent?: string; shot?: Shot}> = ({tl, act, t, accent = C.sonar, shot}) => {
-  const appear = interpolate(t, [0.15, 0.85], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
-  const p = clamp((t - act.start) / 0.5);
-  return (
-    <AbsoluteFill style={{opacity: appear, fontFamily: F.mono, pointerEvents: 'none'}}>
-      <div style={{position: 'absolute', left: SAFE.left, top: 128, display: 'flex', alignItems: 'center', gap: 18}}>
-        <div style={{width: 9, height: 9, borderRadius: 9, background: accent, boxShadow: `0 0 18px ${accent}`}} />
-        <div style={{fontSize: 22, letterSpacing: '0.42em', color: C.foam, fontWeight: 600}}>NAYSI</div>
-        <div style={{width: 44, height: 1, background: `${C.foam}44`}} />
-        <div style={{fontSize: 20, letterSpacing: '0.3em', color: C.muted}}>DASAR YANG GELAP</div>
+      <div style={{position: 'absolute', right: 1440 - SAFE.right, top: 122, fontFamily: F.mono, fontSize: 20, letterSpacing: '0.30em', color: C.muted}}>
+        NAYSI · FISIKA
       </div>
-      {/* chapter, swaps with a wipe on every act boundary */}
-      <div style={{position: 'absolute', left: SAFE.left, top: 186, height: 30, overflow: 'hidden', width: 900}}>
-        <div style={{transform: `translateY(${(1 - eOut(p)) * 34}px)`, opacity: eOut(p)}}>
-          <span style={{fontSize: 21, letterSpacing: '0.26em', color: accent}}>{act.chapter}</span>
+
+      {/* chapter label, swapped on the act boundary with a vertical wipe */}
+      <div style={{position: 'absolute', left: SAFE.left, top: 168, height: 28, overflow: 'hidden', width: 760}}>
+        <div style={{transform: `translateY(${(1 - swap) * 30}px)`, opacity: swap}}>
+          <span style={{fontFamily: F.mono, fontSize: 19, letterSpacing: '0.28em', color: C.gold}}>{act.chapter}</span>
           {shot ? (
-            <span style={{fontSize: 16, letterSpacing: '0.24em', color: C.muted, marginLeft: 20}}>
-              {String(shot.index + 1).padStart(2, '0')}/{String(tl.shots.length).padStart(2, '0')}
+            <span style={{fontFamily: F.mono, fontSize: 17, letterSpacing: '0.22em', color: C.muted, marginLeft: 18}}>
+              {String(shot.index + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}
             </span>
           ) : null}
         </div>
       </div>
-      {/* right: running timecode + progress */}
-      <div style={{position: 'absolute', right: 1440 - SAFE.right, top: 128, textAlign: 'right'}}>
-        <div style={{fontSize: 20, letterSpacing: '0.24em', color: C.muted, fontVariantNumeric: 'tabular-nums'}}>
-          {String(Math.floor(t / 60)).padStart(2, '0')}:{String(Math.floor(t % 60)).padStart(2, '0')} /{' '}
-          {String(Math.floor(tl.durationSec / 60)).padStart(2, '0')}:{String(Math.floor(tl.durationSec % 60)).padStart(2, '0')}
-        </div>
-        <div style={{marginTop: 14, width: 190, height: 2, background: `${C.foam}22`, marginLeft: 'auto', position: 'relative'}}>
-          <div style={{position: 'absolute', inset: 0, width: `${clamp(t / tl.durationSec) * 100}%`, background: accent, boxShadow: `0 0 14px ${accent}`}} />
-        </div>
-      </div>
     </AbsoluteFill>
   );
 };
 
-/* Slate: the number/fact stamp that lands when a claim is made. */
-export const Slate: React.FC<{text: string; at: number; t: number; accent?: string; top?: number}> = ({
-  text,
-  at,
-  t,
-  accent = C.sonar,
-  top = 1652,
-}) => {
-  const {fps} = useVideoConfigSafe();
-  const local = t - at;
-  if (local < -0.01) return null;
-  const inP = eOut(clamp(local / 0.45));
-  const out = eOut(clamp((local - 4.4) / 0.4));
-  const chars = text.length;
-  const size = chars > 26 ? 44 : chars > 16 ? 56 : 68;
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: SAFE.left,
-        top,
-        opacity: inP * (1 - out),
-        transform: `translateY(${(1 - inP) * 22 - out * 16}px)`,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 22,
-      }}
-    >
-      <div style={{width: 4, height: size * 1.05, background: accent, boxShadow: `0 0 22px ${accent}`}} />
-      <div
-        style={{
-          fontFamily: F.mono,
-          fontSize: size,
-          fontWeight: 600,
-          letterSpacing: '0.02em',
-          color: C.foam,
-          whiteSpace: 'nowrap',
-          textShadow: `0 0 40px ${accent}44`,
-        }}
-      >
-        {text}
-      </div>
-      <div style={{fontFamily: F.mono, fontSize: 18, letterSpacing: '0.3em', color: C.muted, marginLeft: 8}}>
-        {String(Math.round((local * fps) / fps)).padStart(2, '0')}
-      </div>
-    </div>
-  );
-};
-
-// tiny indirection so Slate doesn't need the hook import in its signature
-import {useVideoConfig} from 'remotion';
-const useVideoConfigSafe = () => useVideoConfig();
-
-/* Corner registration marks — the "survey instrument" tell. */
-export const Marks: React.FC<{opacity?: number; color?: string}> = ({opacity = 0.34, color = C.foam}) => {
+/* Corner registration marks. Hairlines, 1 px, low opacity — the only "camera"
+   tell in the film. */
+export const Marks: React.FC<{opacity?: number}> = ({opacity = 0.30}) => {
   const mark = (rot: number, x: number, y: number) => (
-    <div key={`${x}-${y}`} style={{position: 'absolute', left: x, top: y, width: 40, height: 40, transform: `rotate(${rot}deg)`, opacity}}>
-      <div style={{position: 'absolute', inset: 0, borderTop: `2px solid ${color}`, borderLeft: `2px solid ${color}`}} />
+    <div key={`${x}-${y}`} style={{position: 'absolute', left: x, top: y, width: 34, height: 34, transform: `rotate(${rot}deg)`, opacity}}>
+      <div style={{position: 'absolute', inset: 0, borderTop: `1px solid ${C.muted}`, borderLeft: `1px solid ${C.muted}`}} />
     </div>
   );
   return (
     <AbsoluteFill style={{pointerEvents: 'none'}}>
       {mark(0, 44, 44)}
-      {mark(90, 1440 - 84, 44)}
-      {mark(180, 1440 - 84, H - 84)}
-      {mark(270, 44, H - 84)}
+      {mark(90, 1440 - 78, 44)}
+      {mark(180, 1440 - 78, 2560 - 78)}
+      {mark(270, 44, 2560 - 78)}
     </AbsoluteFill>
+  );
+};
+
+/* A right-hand rail that measures the thing the episode is actually about:
+   lunar distance in kilometres, from 384 400 down/up as the story needs. */
+export const DistanceRail: React.FC<{km: number; opacity?: number; min?: number; max?: number}> = ({
+  km,
+  opacity = 0.85,
+  min = 360000,
+  max = 406000,
+}) => {
+  const y0 = 520;
+  const y1 = 1580;
+  const p = clamp((km - min) / (max - min));
+  const y = y1 - p * (y1 - y0);
+  const ticks = [360000, 380000, 384400, 400000];
+  return (
+    <AbsoluteFill style={{opacity, pointerEvents: 'none'}}>
+      <div style={{position: 'absolute', right: 86, top: y0, width: 1, height: y1 - y0, background: alpha(C.muted, 0.35)}} />
+      {ticks.map((tk) => {
+        const ty = y1 - clamp((tk - min) / (max - min)) * (y1 - y0);
+        const on = tk === 384400;
+        return (
+          <React.Fragment key={tk}>
+            <div style={{position: 'absolute', right: 72, top: ty, width: on ? 28 : 16, height: 1, background: on ? C.gold : alpha(C.muted, 0.5)}} />
+            <div
+              style={{
+                position: 'absolute',
+                right: 108,
+                top: ty - 11,
+                fontFamily: F.mono,
+                fontSize: 16,
+                letterSpacing: '0.05em',
+                color: on ? C.gold : C.muted,
+                textAlign: 'right',
+                width: 110,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {(tk / 1000).toFixed(1)}k
+            </div>
+          </React.Fragment>
+        );
+      })}
+      <div style={{position: 'absolute', right: 60, top: y - 5, width: 40, height: 10, background: C.gold}} />
+      <div
+        style={{
+          position: 'absolute',
+          right: 108,
+          top: y + 20,
+          fontFamily: F.mono,
+          fontSize: 24,
+          fontWeight: 600,
+          color: C.ink,
+          textAlign: 'right',
+          width: 160,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {Math.round(km).toLocaleString('id-ID')}
+      </div>
+      <div style={{position: 'absolute', right: 108, top: y + 52, fontFamily: F.mono, fontSize: 14, letterSpacing: '0.26em', color: C.muted, textAlign: 'right', width: 160}}>
+        KM
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/* Instrument panel: a bordered plate with a label strip, a big value, and an
+   optional note. This is the reference's "SELISIH WAKTU" card and it is the
+   single most reused object in the film, so it lives here. */
+export const Panel: React.FC<{
+  label: string;
+  value: string;
+  unit?: string;
+  sub?: string;
+  at: number;
+  t: number;
+  y?: number;
+  color?: string;
+  size?: number;
+  width?: number;
+  accentRight?: string;
+}> = ({label, value, unit, sub, at, t, y = 380, color = C.gold, size = 108, width = 1060, accentRight}) => {
+  const local = t - at;
+  if (local < -0.01) return null;
+  const inP = eOut(clamp(local / 0.5));
+  const out = clamp((local - 8.6) / 0.7);
+  const x = (1440 - width) / 2;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        width,
+        padding: '26px 34px 30px',
+        border: `1px solid ${alpha(C.shallow, 0.9)}`,
+        background: alpha(C.abyss, 0.92),
+        opacity: inP * (1 - out),
+        transform: `translateY(${(1 - inP) * 20}px)`,
+      }}
+    >
+      {/* label strip */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <span style={{fontFamily: F.mono, fontSize: 19, letterSpacing: '0.26em', color: C.muted}}>{label}</span>
+        {accentRight ? (
+          <span style={{fontFamily: F.mono, fontSize: 19, letterSpacing: '0.24em', color}}>{accentRight}</span>
+        ) : null}
+      </div>
+      <div style={{display: 'flex', alignItems: 'baseline', gap: 16, marginTop: 14}}>
+        <span
+          style={{
+            fontFamily: F.display,
+            fontSize: size,
+            fontWeight: 700,
+            letterSpacing: '-0.035em',
+            color,
+            lineHeight: 1,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {value}
+        </span>
+        {unit ? <span style={{fontFamily: F.display, fontSize: size * 0.34, fontWeight: 600, color: C.ink, letterSpacing: '-0.01em'}}>{unit}</span> : null}
+      </div>
+      {sub ? (
+        <div style={{marginTop: 14, fontFamily: F.mono, fontSize: 20, letterSpacing: '0.1em', color: C.muted}}>{sub}</div>
+      ) : null}
+    </div>
+  );
+};
+
+/* The big measured readout: a value, a unit, and a caption under it. This is
+   the workhorse of the reference's visual language, so it is shared. */
+export const Readout: React.FC<{
+  value: string;
+  unit?: string;
+  note?: string;
+  at: number;
+  t: number;
+  y?: number;
+  color?: string;
+  size?: number;
+  align?: 'center' | 'left';
+}> = ({value, unit, note, at, t, y = 560, color = C.gold, size = 132, align = 'center'}) => {
+  const local = t - at;
+  if (local < -0.01) return null;
+  const inP = eOut(clamp(local / 0.5));
+  const dim = clamp(1 - (local - 9) / 0.8);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: align === 'center' ? 120 : SAFE.left,
+        width: align === 'center' ? 1200 : 1100,
+        top: y,
+        textAlign: align,
+        opacity: inP * dim,
+        transform: `translateY(${(1 - inP) * 24}px)`,
+      }}
+    >
+      <div style={{display: 'flex', alignItems: 'baseline', justifyContent: align === 'center' ? 'center' : 'flex-start', gap: 14}}>
+        <span
+          style={{
+            fontFamily: F.display,
+            fontSize: size,
+            fontWeight: 700,
+            letterSpacing: '-0.035em',
+            color,
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1,
+          }}
+        >
+          {value}
+        </span>
+        {unit ? (
+          <span style={{fontFamily: F.display, fontSize: size * 0.36, fontWeight: 600, letterSpacing: '-0.01em', color: C.ink}}>{unit}</span>
+        ) : null}
+      </div>
+      {note ? (
+        <div style={{marginTop: 18, fontFamily: F.serif, fontStyle: 'italic', fontSize: 38, color: C.muted, letterSpacing: '-0.01em'}}>{note}</div>
+      ) : null}
+    </div>
   );
 };
