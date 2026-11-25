@@ -9,7 +9,7 @@
 import React from 'react';
 import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan';
+import {P, T, EarthDisc} from './bulan';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, lerp, smooth} from '../src/theme';
 
@@ -42,7 +42,7 @@ export const Compo: React.FC<SceneProps> = ({local, act}) => {
 
       {/* the water, under the land so the coast overlaps it */}
       <Bulge axis={axis} amount={bulge} />
-      <Earth />
+      <EarthDisc cx={EX} cy={EY} r={ER} spin={-14} meridian />
       <MoonDisc />
 
       <EarthMoonLine lead={lead} />
@@ -115,53 +115,6 @@ const Bulge: React.FC<{axis: number, amount: number}> = ({axis, amount}) => {
 /* The Earth: solid rock, continents in flat bone-grey, a terminator on the far
    side. Same engraving rules as the Moon, cool instead of warm, because water
    and rock are the only cool things on this plate. */
-const Earth = () => (
-  <div style={{position: 'absolute', left: EX - ER, top: EY - ER, width: ER * 2, height: ER * 2}}>
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        background: 'radial-gradient(circle at 34% 30%, #7C949C 0%, #597785 28%, #38535F 60%, #1D333C 86%, #0F2128 100%)',
-      }}
-    >
-      <svg width={ER * 2} height={ER * 2} style={{position: 'absolute', left: 0, top: 0}}>
-        <g fill="rgba(58,68,52,0.78)" stroke="rgba(196,184,152,0.42)" strokeWidth={1.2} strokeLinejoin="round">
-          <polygon points="58,112 86,82 128,72 156,86 176,80 190,100 182,124 196,138 170,150 140,142 118,152 92,140 70,132" />
-          <polygon points="190,168 216,150 246,154 258,146 282,158 292,182 280,196 290,214 268,226 254,244 226,246 210,232 186,222 176,198" />
-          <polygon points="104,252 132,244 158,256 166,278 152,300 126,308 104,296 96,272" />
-          <polygon points="292,86 316,76 340,86 348,106 334,124 310,126 292,110" />
-          <polygon points="222,306 246,298 262,308 258,324 236,330 222,320" />
-        </g>
-        <g stroke={alpha(P.ink, 0.08)} strokeWidth={1}>
-          {Array.from({length: 16}).map((_, i) => (
-            <line key={i} x1={0} y1={i * 30} x2={ER * 2} y2={i * 30 - 60} />
-          ))}
-        </g>
-      </svg>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '50%',
-          background: 'linear-gradient(84deg, rgba(6,14,18,0) 40%, rgba(6,14,18,0.62) 74%, rgba(6,14,18,0.94) 100%)',
-        }}
-      />
-    </div>
-    {/* the rotation mark: one meridian that turns, so the spin is visible */}
-    <div
-      style={{
-        position: 'absolute',
-        left: ER - 1,
-        top: 0,
-        width: 1,
-        height: ER * 2,
-        background: alpha(P.warm, 0.18),
-      }}
-    />
-  </div>
-);
 
 const MoonDisc = () => (
   <div style={{position: 'absolute', left: MX - MR, top: MY - MR, width: MR * 2, height: MR * 2}}>

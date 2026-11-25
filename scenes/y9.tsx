@@ -7,7 +7,7 @@
 import React from 'react';
 import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Metric} from './bulan';
+import {P, T, Metric, EarthDisc} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eOutQuint, hash} from '../src/theme';
@@ -31,7 +31,7 @@ export const Compo: React.FC<SceneProps> = ({local}) => {
       <Dust n={480} seed={99} opacity={0.34} color={P.ink} />
 
       {/* the two bodies, small, at the ends of the rule */}
-      <EarthDisc on={earth} />
+      <EarthDisc cx={EX} cy={EY} r={ER} on={earth} />
       <div style={{opacity: moon}}>
         <MoonDisc cx={MX} cy={MY} r={MR} detail={0.85} lit={0.9} tilt={-8} seed={17} opacity={0.95} />
       </div>
@@ -49,32 +49,6 @@ export const Compo: React.FC<SceneProps> = ({local}) => {
       <Years on={years} />
       <Footer />
     </AbsoluteFill>
-  );
-};
-
-const EarthDisc: React.FC<{on: number}> = ({on}) => {
-  if (on <= 0) return null;
-  return (
-    <div style={{position: 'absolute', left: EX - ER, top: EY - ER, width: ER * 2, height: ER * 2, opacity: on}}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '50%',
-          overflow: 'hidden',
-          background: 'radial-gradient(circle at 32% 28%, #7E959D 0%, #5A7683 26%, #38525E 58%, #1C313A 84%, #0D1E25 100%)',
-        }}
-      >
-        <svg width={ER * 2} height={ER * 2} style={{position: 'absolute', left: 0, top: 0}}>
-          <g fill="rgba(52,62,46,0.8)" stroke="rgba(200,190,158,0.34)" strokeWidth={1} strokeLinejoin="round">
-            <polygon points="34,62 52,44 76,40 92,52 104,46 110,60 100,74 82,76 68,86 52,80 40,72" />
-            <polygon points="108,92 126,82 146,86 152,100 142,112 126,116 112,110" />
-            <polygon points="62,124 80,118 92,128 88,142 72,146 60,136" />
-          </g>
-        </svg>
-        <div style={{position: 'absolute', inset: 0, borderRadius: '50%', background: 'linear-gradient(84deg, rgba(5,12,16,0) 40%, rgba(5,12,16,0.6) 74%, rgba(5,12,16,0.95) 100%)'}} />
-      </div>
-    </div>
   );
 };
 

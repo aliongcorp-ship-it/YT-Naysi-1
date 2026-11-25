@@ -8,7 +8,7 @@
 import React from 'react';
 import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Metric} from './bulan';
+import {P, T, Metric, Stars} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eIn, lerp} from '../src/theme';
@@ -40,7 +40,7 @@ export const Compo: React.FC<SceneProps> = ({local, act}) => {
       <Dust n={620} seed={52} opacity={0.44} color={P.ink} />
 
       {/* stars, thin here: near the telescope the sky is a working sky */}
-      <Stars />
+      <Stars n={150} h={1700} seed={4} />
 
       {/* the Moon, small but unmistakable, at the far end of the line */}
       <MoonDisc cx={MX} cy={MY} r={MR} detail={0.9} lit={0.88} tilt={18} seed={9} opacity={0.95} />
@@ -266,24 +266,5 @@ const Observatory = () => (
     />
   </div>
 );
-
-const Stars = () => {
-  const stars = React.useMemo(
-    () =>
-      Array.from({length: 150}, (_, i) => {
-        const a = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
-        const b = Math.abs(Math.sin(i * 78.233) * 12345.6789) % 1;
-        return {x: a * 1440, y: b * 1700, s: 1 + (a * 1.6), o: 0.14 + b * 0.5};
-      }),
-    []
-  );
-  return (
-    <AbsoluteFill style={{pointerEvents: 'none'}}>
-      {stars.map((s, i) => (
-        <div key={i} style={{position: 'absolute', left: s.x, top: s.y, width: s.s, height: s.s, background: P.ink, opacity: s.o * 0.7}} />
-      ))}
-    </AbsoluteFill>
-  );
-};
 
 export default Compo;

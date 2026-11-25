@@ -1,4 +1,6 @@
+import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import React from 'react';
+import {alpha} from '../src/theme';
 /* =============================================================================
    scenes/bulan.tsx — the topic file. "bulan" is the subject of this episode.
 
@@ -210,6 +212,187 @@ export const Finder: React.FC<FinderProps> = ({opacity = 0.34, inset = 78, color
       <div style={corner('r', 't')} />
       <div style={corner('l', 'b')} />
       <div style={corner('r', 'b')} />
+    </div>
+  );
+};
+
+
+/* ─────────────────────────────  the night sky  ───────────────────────────── */
+// Two shots need stars and two need a horizon, and a third needs the horizon
+// again with a different profile. They are the same three ideas drawn at
+// different densities, so they live here rather than being copied per shot:
+// a copy drifts, and a drifted sky is worse than a dull one.
+export const Stars: React.FC<{
+  n?: number; h?: number; seed?: number; twinkle?: boolean; opacity?: number;
+}> = ({n = 240, h = 2050, seed = 1, twinkle = false, opacity = 1}) => {
+  const field = React.useMemo(() => {
+    const rnd = (i: number, k: number) => {
+      const v = Math.sin(i * (12.9898 + seed * 2.17) + k * (78.233 + seed * 1.31)) * 43758.5453;
+      return v - Math.floor(v);
+    };
+    return Array.from({length: n}, (_, i) => ({
+      x: rnd(i, 1) * 1440,
+      y: rnd(i, 2) * h,
+      s: 1.1 + rnd(i, 3) * 1.9,
+      o: 0.16 + rnd(i, 4) * 0.6,
+      ph: rnd(i, 5) * 6.28,
+    }));
+  }, [n, h, seed]);
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill style={{pointerEvents: 'none', opacity}}>
+      {field.map((s, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: s.x,
+            top: s.y,
+            width: s.s,
+            height: s.s,
+            background: P.ink,
+            opacity: twinkle ? s.o * (0.72 + 0.28 * Math.sin(frame * 0.07 + s.ph)) : s.o * 0.72,
+          }}
+        />
+      ))}
+    </AbsoluteFill>
+  );
+};
+
+// A horizon is one SVG polygon per layer, plus a handful of window lights and
+// an optional warm band on the sky above it. The lights are the whole point:
+// without them a ridge is a shape, with them it is somewhere people are.
+export const Ridge: React.FC<{
+  layers: {points: string; fill: string; stroke?: string; strokeWidth?: number}[];
+  lights?: [number, number][];
+  lightSize?: number;
+  band?: {top: number; height: number; from: string; to: string} | null;
+  opacity?: number;
+}> = ({layers, lights = [], lightSize = 5, band = null, opacity = 1}) => {
+  if (opacity <= 0) return null;
+  return (
+    <div style={{position: 'absolute', inset: 0, opacity, pointerEvents: 'none'}}>
+      {band ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: band.top,
+            width: 1440,
+            height: band.height,
+            background: `linear-gradient(180deg, ${band.from} 0%, ${band.to} 100%)`,
+          }}
+        />
+      ) : null}
+      <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
+        {layers.map((l, i) => (
+          <polygon
+            key={i}
+            points={`${l.points} 1440,2560 0,2560`}
+            fill={l.fill}
+            stroke={l.stroke}
+            strokeWidth={l.strokeWidth}
+          />
+        ))}
+      </svg>
+      {lights.map(([x, y], i) => (
+        <div
+          key={`w${i}`}
+          style={{
+            position: 'absolute',
+            left: x,
+            top: y,
+            width: lightSize,
+            height: lightSize,
+            borderRadius: '50%',
+            background: P.warm,
+            opacity: 0.58,
+            boxShadow: '0 0 7px 1px rgba(255,217,160,0.34)',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ────────────────────────────────  the Earth  ────────────────────────────── */
+// Two shots show the Earth and they must be the same planet: same ocean, same
+// hard-edged continents, same terminator, same rim. Drawn in unit space and
+// scaled, so it holds at r = 132 and at r = 288 without being redrawn.
+//
+// The light is fixed (upper left) — a planet that changes its sun between cuts
+// reads as two different planets.
+export const EarthDisc: React.FC<{
+  cx: number;
+  cy: number;
+  r: number;
+  on?: number;
+  /** rotation of the land, in degrees; the terminator does not turn with it */
+  spin?: number;
+  /** a single meridian at the centre, so a still frame still reads as turning */
+  meridian?: boolean;
+}> = ({cx, cy, r, on = 1, spin = 0, meridian = false}) => {
+  if (on <= 0) return null;
+  // Coarse coastlines: many short segments with uneven angles, because a land
+  // mass drawn with four corners reads as a hexagon, not as a continent. Ocean
+  // stays the majority of the disc — the Earth is a water planet.
+  const land = [
+    // the Americas, west side
+    'M -0.66 -0.44 L -0.52 -0.52 L -0.40 -0.46 L -0.34 -0.34 L -0.38 -0.24 L -0.30 -0.14 L -0.33 -0.02 L -0.24 0.06 L -0.20 0.18 L -0.10 0.24 L -0.06 0.36 L -0.14 0.44 L -0.24 0.40 L -0.30 0.30 L -0.40 0.26 L -0.46 0.14 L -0.52 0.02 L -0.58 -0.10 L -0.62 -0.22 L -0.70 -0.30 Z',
+    // Africa + Europe, centre
+    'M 0.02 -0.52 L 0.14 -0.44 L 0.10 -0.32 L 0.20 -0.24 L 0.18 -0.10 L 0.28 0.00 L 0.26 0.14 L 0.34 0.24 L 0.28 0.38 L 0.18 0.46 L 0.10 0.40 L 0.06 0.28 L -0.02 0.20 L -0.06 0.06 L -0.02 -0.06 L -0.08 -0.18 L -0.04 -0.30 L 0.00 -0.40 Z',
+    // Asia, east
+    'M 0.30 -0.50 L 0.46 -0.54 L 0.60 -0.46 L 0.66 -0.32 L 0.58 -0.22 L 0.64 -0.12 L 0.54 -0.02 L 0.44 0.02 L 0.36 -0.06 L 0.28 -0.16 L 0.24 -0.30 L 0.26 -0.42 Z',
+    // a southern fragment, so the sphere is not all in one hemisphere
+    'M 0.34 0.30 L 0.46 0.26 L 0.54 0.34 L 0.50 0.44 L 0.38 0.44 L 0.32 0.38 Z',
+  ];
+  const uid = `earth-${Math.round(cx)}-${Math.round(cy)}-${Math.round(r)}`;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: cx - r,
+        top: cy - r,
+        width: r * 2,
+        height: r * 2,
+        opacity: on,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        background: 'radial-gradient(circle at 32% 28%, #7E959D 0%, #5A7683 26%, #38525E 58%, #1C313A 84%, #0D1E25 100%)',
+      }}
+    >
+      <svg width={r * 2} height={r * 2} style={{position: 'absolute', left: 0, top: 0}}>
+        <g
+          transform={`translate(${r} ${r}) rotate(${spin}) scale(${r})`}
+          fill="rgba(56,74,52,0.9)"
+          stroke="rgba(214,206,170,0.5)"
+          strokeWidth={0.008}
+          strokeLinejoin="round"
+        >
+          {land.map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+        </g>
+        {/* graticule: two lines are enough to say "sphere", more is noise */}
+        <g stroke={alpha(P.warm, 0.10)} strokeWidth={1}>
+          <line x1={0} y1={r} x2={r * 2} y2={r} />
+          <line x1={r} y1={0} x2={r} y2={r * 2} />
+        </g>
+      </svg>
+      {/* the terminator, on the disc, not on the land */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(84deg, rgba(6,14,18,0) 38%, rgba(6,14,18,0.62) 74%, rgba(6,14,18,0.95) 100%)',
+        }}
+      />
+      {meridian ? (
+        <div style={{position: 'absolute', left: r - 1, top: 0, width: 1, height: r * 2, background: alpha(P.warm, 0.18)}} />
+      ) : null}
+      <div style={{position: 'absolute', inset: 0, borderRadius: '50%', boxShadow: `inset 0 0 0 1.4px rgba(255,232,200,0.30)`}} />
     </div>
   );
 };
