@@ -5,8 +5,9 @@
    moves except the measure being drawn, because the number is the picture. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Metric} from './bulan.mjs';
+import {P, T, Metric} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eOutQuint, hash} from '../src/theme';
@@ -18,7 +19,7 @@ const MX = 1204;
 const MY = 1010;
 const MR = 154;
 
-export const Compo = ({local}) => {
+export const Compo: React.FC<SceneProps> = ({local}) => {
   const draw = eOutQuint(clamp(local / 1.6));
   const earth = eOut(clamp((local - 0.1) / 0.9));
   const moon = eOut(clamp((local - 0.35) / 0.9));
@@ -51,7 +52,7 @@ export const Compo = ({local}) => {
   );
 };
 
-const EarthDisc = ({on}) => {
+const EarthDisc: React.FC<{on: number}> = ({on}) => {
   if (on <= 0) return null;
   return (
     <div style={{position: 'absolute', left: EX - ER, top: EY - ER, width: ER * 2, height: ER * 2, opacity: on}}>
@@ -79,7 +80,7 @@ const EarthDisc = ({on}) => {
 
 /* A long rule with ticks: ten thousand kilometres per major tick, a thousand per
    minor. Drawn by clipping, so the drawing motion is a reveal and not a redraw. */
-const Rule = ({draw}) => {
+const Rule: React.FC<{draw: number}> = ({draw}) => {
   const x0 = EX + ER + 26;
   const x1 = MX - MR - 26;
   const y = MY;
@@ -116,7 +117,7 @@ const Headline = () => (
 
 /* A hundred years of recession, as a row of marks that marches off the right
    edge: the point is that it does not stop. */
-const Years = ({on}) => {
+const Years: React.FC<{on: number}> = ({on}) => {
   if (on <= 0) return null;
   const x0 = 168;
   const y = 1288;

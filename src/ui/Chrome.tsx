@@ -2,7 +2,7 @@ import React from 'react';
 import {interpolate} from 'remotion';
 import type {Act} from '../timeline';
 import {SAFE, clamp, eOut} from '../theme';
-import {P, T} from '../../scenes/bulan.mjs';
+import {P, T} from '../../scenes/bulan';
 
 /* ───────────────────────────────  watermark  ─────────────────────────────── */
 // The only chrome in the film: the channel name, set small, in the top-right

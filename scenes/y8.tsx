@@ -6,8 +6,9 @@
    year, before the Moon had finished moving out. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, hash, lerp} from '../src/theme';
 
@@ -17,7 +18,7 @@ const Y0 = 486;
 const COLS = 27; // one column = one day
 const YEARS = 6;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
 
   // The core is read from the bottom up: the oldest days first, the newest at
@@ -41,7 +42,7 @@ export const Compo = ({local, act}) => {
 
 /* The section: a coral slab, cut and polished, with one hairline per day. The
    bands are not decorative — their count is the argument. */
-const Section = ({read}) => {
+const Section: React.FC<{read: number}> = ({read}) => {
   const rowH = 124;
   return (
     <AbsoluteFill style={{pointerEvents: 'none'}}>
@@ -115,7 +116,7 @@ const Section = ({read}) => {
 
 /* A scale in days along the top of the slab, so the hairlines are legible as
    data and not as texture. */
-const Scale = ({read}) => {
+const Scale: React.FC<{read: number}> = ({read}) => {
   const e = clamp(read * 3);
   if (e <= 0) return null;
   return (
@@ -130,7 +131,7 @@ const Scale = ({read}) => {
   );
 };
 
-const Headline = ({old}) => {
+const Headline: React.FC<{old: number}> = ({old}) => {
   if (old <= 0) return null;
   return (
     <div style={{position: 'absolute', left: 132, top: 196, opacity: old, pointerEvents: 'none'}}>
@@ -144,7 +145,7 @@ const Headline = ({old}) => {
 
 /* The counter: 400 days, brought to the screen one at a time. It is the only
    number the act needs, so it is the only one allowed to be this big. */
-const Counter = ({count}) => {
+const Counter: React.FC<{count: number}> = ({count}) => {
   if (count <= 0) return null;
   const n = Math.round(lerp(0, 400, count));
   return (

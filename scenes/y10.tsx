@@ -6,13 +6,14 @@
    the picture is left. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eOutQuint, lerp} from '../src/theme';
 
-export const Compo = ({local, total}) => {
+export const Compo: React.FC<SceneProps> = ({local, total}) => {
   const settle = eOut(clamp(local / 1.8));
   const ridge = eOutQuint(clamp(local / 1.4));
   const line = eOut(clamp((local - 2.2) / 1.2));
@@ -67,7 +68,7 @@ export const Compo = ({local, total}) => {
   );
 };
 
-const Ridge = ({on}) => {
+const Ridge: React.FC<{on: number}> = ({on}) => {
   if (on <= 0) return null;
   const near = '0,2150 130,2124 280,2140 450,2112 620,2136 800,2110 970,2140 1140,2118 1300,2142 1440,2126';
   return (

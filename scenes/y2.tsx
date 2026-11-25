@@ -5,15 +5,16 @@
    middle. The ruler does the arguing, so the caption does not have to. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Finder} from './bulan.mjs';
+import {P, T, Finder} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, lerp} from '../src/theme';
 
 const YEARS = 10;
 
-export const Compo = ({local}) => {
+export const Compo: React.FC<SceneProps> = ({local}) => {
   const wake = eOut(clamp(local / 1.0));
 
   return (
@@ -46,7 +47,7 @@ export const Compo = ({local}) => {
 
 /* A graduated centimetre rule, vertical, on the left. A tick every millimetre,
    a number every centimetre, and the 3,8 line carried in amber. */
-const Ruler = ({local}) => {
+const Ruler: React.FC<{local: number}> = ({local}) => {
   const e = eOut(clamp((local - 0.1) / 1.0));
   const x = 176;
   const y0 = 560;
@@ -101,7 +102,7 @@ const Ruler = ({local}) => {
 
 /* The value. Arrives on "tiga koma delapan", then stays put for the rest of the
    act so the eye can leave it and come back. */
-const Number = ({local}) => {
+const Number: React.FC<{local: number}> = ({local}) => {
   const at = 0.5;
   const e = eOut(clamp((local - at) / 0.55));
   if (local < at - 0.01) return null;
@@ -130,7 +131,7 @@ const Number = ({local}) => {
 
 /* Ten year-marks, each 3,8 cm (scaled to 26 px) further out than the last, read
    as a flight of steps rather than a bar: the point is that it keeps going. */
-const YearMarks = ({local}) => {
+const YearMarks: React.FC<{local: number}> = ({local}) => {
   const e = eOut(clamp((local - 1.0) / 1.2));
   if (e <= 0) return null;
   const x0 = 348;
@@ -186,7 +187,7 @@ const YearMarks = ({local}) => {
 
 /* "Secepat kuku Anda tumbuh": a nail with the same 3,8 cm marked along it. The
    one warm, human object in an episode about instruments. */
-const Fingernail = ({local}) => {
+const Fingernail: React.FC<{local: number}> = ({local}) => {
   const at = 1.6;
   const e = eOut(clamp((local - at) / 0.7));
   if (local < at - 0.01) return null;

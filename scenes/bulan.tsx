@@ -1,5 +1,6 @@
+import React from 'react';
 /* =============================================================================
-   scenes/bulan.mjs — the topic file. "bulan" is the subject of this episode.
+   scenes/bulan.tsx — the topic file. "bulan" is the subject of this episode.
 
    One episode, one file: this is where the episode decides how it looks. A
    different topic gets a different file with a different palette, a different
@@ -27,7 +28,23 @@
 // `Timeline.tsx` owns the table, in the same order `script.mjs` lists.
 
 /* ───────────────────────────────  IDENTITY  ─────────────────────────────── */
-export const ID = {
+export type Palette = {
+  void: string; abyss: string; deep: string; mid: string; shallow: string;
+  ink: string; muted: string; faint: string;
+  accent: string; accentDim: string; hot: string; warm: string; alt: string;
+};
+export type Identity = {
+  id: string;
+  name: string;
+  palette: Palette;
+  type: {display: string; mono: string; editorial: string};
+  motion: {cut: 'bloom' | 'paper' | 'cut' | 'iris'; punch: number; grain: number; ease: string};
+  chrome: {watermark: boolean; marks: boolean; rail: boolean};
+};
+export type Face = {family: string; file: string; weight: string; style: string};
+export type Dust = {x: number; y: number; r: number; a: number};
+
+export const ID: Identity = {
   id: 'regolith',
   name: 'Regolith Survey',
 
@@ -68,7 +85,7 @@ export const P = ID.palette;
 /* The font files this episode loads. A new topic ships its own list (and its
    own .woff2 files in public/fonts): the type pairing is part of the identity,
    so it is declared here and handed to the font gate by the timeline. */
-export const fonts = [
+export const fonts: Face[] = [
   {family: 'Newsreader', file: 'fonts/newsreader.woff2', weight: '200 800', style: 'normal'},
   {family: 'Newsreader', file: 'fonts/newsreader-italic.woff2', weight: '200 800', style: 'italic'},
   {family: 'JetBrains', file: 'fonts/jetbrains-400.woff2', weight: '400', style: 'normal'},
@@ -86,7 +103,7 @@ export const T = {
 
 // A printed plate: a hairline frame inset from the safe area, with a tiny
 // register tick at each corner. It is drawn from CSS, never an image.
-export const plate = (opacity = 0.5) => ({
+export const plate = (opacity = 0.5): React.CSSProperties => ({
   position: 'absolute',
   left: 92,
   top: 150,
@@ -98,8 +115,11 @@ export const plate = (opacity = 0.5) => ({
 
 // Dust: the surface of the Moon is the actual subject of several scenes, so it
 // gets a reusable field rather than being redrawn per shot.
-export const dustField = (n, {seed = 1, w = 1440, h = 2100, min = 1, max = 3.4} = {}) => {
-  const rnd = (i, k) => {
+export const dustField = (
+  n: number,
+  {seed = 1, w = 1440, h = 2100, min = 1, max = 3.4}: {seed?: number; w?: number; h?: number; min?: number; max?: number} = {}
+): Dust[] => {
+  const rnd = (i: number, k: number) => {
     const v = Math.sin(i * 127.1 + k * 311.7 + seed * 47.3) * 43758.5453;
     return v - Math.floor(v);
   };
@@ -113,7 +133,14 @@ export const dustField = (n, {seed = 1, w = 1440, h = 2100, min = 1, max = 3.4} 
 
 // A measured interval with serifed end ticks — the episode's way of saying
 // "this distance was measured" instead of "this is a graphic".
-export const Metric = ({x0, x1, y, label, sub, opacity = 1, color = P.accent, fg = P.ink, up = true}) => {
+type MetricProps = {
+  x0: number; x1: number; y: number;
+  label: string; sub?: string; opacity?: number;
+  color?: string; fg?: string; up?: boolean;
+};
+export const Metric: React.FC<MetricProps> = ({
+  x0, x1, y, label, sub, opacity = 1, color = P.accent, fg = P.ink, up = true,
+}) => {
   const w = Math.max(2, x1 - x0);
   const tick = 14;
   return (
@@ -161,13 +188,16 @@ export const Metric = ({x0, x1, y, label, sub, opacity = 1, color = P.accent, fg
 // Four L-corners, 44 px, 1 px hairline, sitting well inside the safe area. Read
 // as "this is being looked through a viewfinder", which is a property of the
 // shot, not an overlay of information about the episode.
-export const Finder = ({opacity = 0.34, inset = 78, color = P.ink, tick = 46}) => {
-  const corner = (h, v) => ({
+type FinderProps = {opacity?: number; inset?: number; color?: string; tick?: number};
+export const Finder: React.FC<FinderProps> = ({opacity = 0.34, inset = 78, color = P.ink, tick = 46}) => {
+  const corner = (h: 'l' | 'r', v: 't' | 'b'): React.CSSProperties => ({
     position: 'absolute',
     width: tick,
     height: tick,
-    [h === 'l' ? 'left' : 'right']: inset,
-    [v === 't' ? 'top' : 'bottom']: inset + 96,
+    left: h === 'l' ? inset : undefined,
+    right: h === 'r' ? inset : undefined,
+    top: v === 't' ? inset + 96 : undefined,
+    bottom: v === 'b' ? inset + 96 : undefined,
     borderTop: v === 't' ? `1px solid ${color}` : undefined,
     borderBottom: v === 'b' ? `1px solid ${color}` : undefined,
     borderLeft: h === 'l' ? `1px solid ${color}` : undefined,

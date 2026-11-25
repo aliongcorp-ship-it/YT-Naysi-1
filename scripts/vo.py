@@ -8,13 +8,20 @@ Kept deterministic so a re-take only changes timings, never the mix chain.
 import glob
 import json
 import os
+import shutil
 import subprocess
 import wave
 
 import numpy as np
 
 SR = 48000
-FF = "./node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
+# ffmpeg: the system binary when there is one (Linux/CI), otherwise the pinned
+# npm build that the original sandbox needed. Both are the same CLI.
+FF = (
+    os.environ.get("NAYSI_FFMPEG")
+    or shutil.which("ffmpeg")
+    or "./node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
+)
 os.makedirs("audio/vo_fx", exist_ok=True)
 
 durs = {}

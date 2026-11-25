@@ -1,7 +1,7 @@
 // Single source of truth: narration duration -> acts -> word timings -> frames.
 // Picture, captions and score are all generated from the files this writes.
 //
-//   scenes/script.mjs   narration + shot list (per episode)
+//   scenes/script.tsx   narration + shot list (per episode)
 //   audio/vo_fx/sN.wav  the measured take for each act, in array order
 //
 // Outputs
@@ -9,6 +9,7 @@
 //   src/data/cues.json       flattened timing for the score
 import fs from 'node:fs';
 import path from 'node:path';
+import {loadTsx} from './load.mjs';
 
 const FPS = 90;
 let LEAD = 0.34; // room to breathe before the first word
@@ -18,7 +19,7 @@ const SHORTS_MAX = 180; // hard ceiling: a Shorts upload must be <= 180 s
 
 const wavDur = (p) => (fs.statSync(p).size - 44) / 96000; // 48k mono 16-bit
 
-const {acts: ACT_SPEC, CHANNEL, EPISODE} = await import(path.resolve('scenes/script.mjs'));
+const {acts: ACT_SPEC, CHANNEL, EPISODE} = await loadTsx('scenes/script.tsx');
 
 const VOWELS = /[aeiouy]+/g;
 const syllables = (w) => (w.toLowerCase().replace(/[^a-z]/g, '').match(VOWELS) || ['x']).length;
@@ -128,7 +129,7 @@ for (const seg of ACT_SPEC) {
 // every composition named by the script must exist, or the render fails here
 // rather than silently showing the previous episode's picture
 for (const s of shots) {
-  const p = `scenes/${s.file}.mjs`;
+  const p = `scenes/${s.file}.tsx`;
   if (!fs.existsSync(p)) throw new Error(`shot ${s.file} has no composition: ${p} is missing`);
 }
 shots.forEach((s, i) => {
@@ -185,7 +186,7 @@ console.log(`episode ${EPISODE?.slug ?? '?'} (${EPISODE?.identity ?? '?'}) — $
 console.log(`duration ${durationSec.toFixed(2)}s | ${durationInFrames} frames | ${(durationSec / 60).toFixed(2)} min`);
 if (durationSec > SHORTS_MAX) {
   console.error(`\n  WARNING  ${durationSec.toFixed(2)}s exceeds the ${SHORTS_MAX}s Shorts ceiling by ${(durationSec - SHORTS_MAX).toFixed(2)}s`);
-  console.error('           shorten the narration in scenes/script.mjs before rendering\n');
+  console.error('           shorten the narration in scenes/script.tsx before rendering\n');
 }
 console.log('shots', shots.length);
 for (const s of shots) console.log('  ', s.file.padEnd(6), s.label.padEnd(22), s.start.toFixed(2).padStart(7), '->', s.end.toFixed(2).padStart(7), (s.frames / FPS).toFixed(2) + 's');

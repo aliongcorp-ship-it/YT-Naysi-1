@@ -6,8 +6,9 @@
    rest. Instrument dials, not neon rings. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, hash, lerp, smooth} from '../src/theme';
 
@@ -16,7 +17,7 @@ const LX = 392; // left dial centre
 const RX = 1052; // right dial centre
 const CY = 856;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
 
   const now = eOut(clamp((local - 0.3) / 1.6));
@@ -57,7 +58,10 @@ export const Compo = ({local, act}) => {
 
 /* One dial. The rim carries 24 (or 22) hour ticks; the sweep is a wedge of
    lit paper; the hand is a single line with a counterweight. */
-const Dial = ({cx, cy, r, hours, title, on, spin, accent}) => {
+const Dial: React.FC<{
+  cx: number; cy: number; r: number; hours: number;
+  title: string; on: number; spin: number; accent: string;
+}> = ({cx, cy, r, hours, title, on, spin, accent}) => {
   if (on <= 0) return null;
   const ticks = 24;
   return (
@@ -120,7 +124,7 @@ const Dial = ({cx, cy, r, hours, title, on, spin, accent}) => {
 
 /* The plate's headline. One word, serif, with the instrument label above it —
    typography doing the job a chapter card would otherwise do. */
-const Header = ({on}) => {
+const Header: React.FC<{on: number}> = ({on}) => {
   if (on <= 0) return null;
   return (
     <div style={{position: 'absolute', left: 132, top: 402, opacity: on, pointerEvents: 'none'}}>
@@ -130,8 +134,8 @@ const Header = ({on}) => {
   );
 };
 
-const arc = (cx, cy, r, a0, a1) => {
-  const p = (deg) => [cx + Math.cos((deg * Math.PI) / 180) * r, cy + Math.sin((deg * Math.PI) / 180) * r];
+const arc = (cx: number, cy: number, r: number, a0: number, a1: number) => {
+  const p = (deg: number) => [cx + Math.cos((deg * Math.PI) / 180) * r, cy + Math.sin((deg * Math.PI) / 180) * r];
   const [x0, y0] = p(a0);
   const [x1, y1] = p(a1);
   const large = a1 - a0 > 180 ? 1 : 0;
@@ -139,7 +143,7 @@ const arc = (cx, cy, r, a0, a1) => {
 };
 
 /* The two hours that are missing: a wedge between the dials, hatched. */
-const Difference = ({on}) => {
+const Difference: React.FC<{on: number}> = ({on}) => {
   if (on <= 0) return null;
   return (
     <div style={{position: 'absolute', left: 0, top: 0, opacity: on, pointerEvents: 'none'}}>
@@ -175,7 +179,7 @@ const Difference = ({on}) => {
 
 /* The slowdown, stated once, small, under everything: 1,8 ms per century is the
    number the whole act exists to deliver. */
-const Slowdown = ({on, ms}) => {
+const Slowdown: React.FC<{on: number, ms: number}> = ({on, ms}) => {
   if (on <= 0) return null;
   return (
     <AbsoluteFill style={{opacity: on, pointerEvents: 'none'}}>

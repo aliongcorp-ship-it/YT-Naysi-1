@@ -11,7 +11,10 @@
     "pack": "node scripts/pack.mjs",
     "build": "node scripts/build.mjs",
     "studio": "remotion studio src/index.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "render": "node scripts/build.mjs --render-only",
+    "audio": "node scripts/build.mjs --audio-only",
+    "still": "remotion still src/index.ts Specimen"
   },
   "dependencies": {
     "@ffmpeg-installer/linux-x64": "^4.1.0",

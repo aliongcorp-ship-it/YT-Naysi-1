@@ -6,8 +6,9 @@
    only light in the room is the trace. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eOutQuint, hash, lerp} from '../src/theme';
 
@@ -16,7 +17,7 @@ const GX1 = 1226;
 const GY0 = 520;
 const GY1 = 1104;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
   const sweep = eOutQuint(clamp((local - 0.15) / 2.3));
   const readout = eOut(clamp((local - 2.4) / 0.9));
@@ -39,7 +40,7 @@ export const Compo = ({local, act}) => {
 /* The scope graticule: a lattice of hairlines with a heavier centre cross.
    Ten divisions across, eight down — the same proportion as the reference
    instrument, drawn at 1 px so it never reads as a gradient. */
-const Graticule = ({opacity}) => {
+const Graticule: React.FC<{opacity: number}> = ({opacity}) => {
   const cols = 10;
   const rows = 8;
   return (
@@ -71,10 +72,10 @@ const Graticule = ({opacity}) => {
 /* The trace. A flat line that lifts into one narrow pulse and a decaying echo:
    the shape a single photon makes after 2,56 seconds of silence. The pulse is
    drawn by clipping the path to the sweep position. */
-const Trace = ({sweep, local}) => {
+const Trace: React.FC<{sweep: number, local: number}> = ({sweep, local}) => {
   const w = GX1 - GX0;
   const h = GY1 - GY0;
-  const pt = (u) => {
+  const pt = (u: number) => {
     // u: 0..1 across the screen
     const x = GX0 + u * w;
     const base = GY0 + h * 0.72;
@@ -111,7 +112,7 @@ const Trace = ({sweep, local}) => {
   );
 };
 
-const AxisLabels = ({readout}) => (
+const AxisLabels: React.FC<{readout: number}> = ({readout}) => (
   <AbsoluteFill style={{opacity: readout, pointerEvents: 'none'}}>
     <div style={{position: 'absolute', left: GX0, top: GY1 - 40, fontFamily: T.mono, fontSize: 17, letterSpacing: '0.3em', color: alpha(P.ink, 0.5)}}>PULANG</div>
     <div style={{position: 'absolute', left: GX0 + 0.42 * (GX1 - GX0) - 60, top: GY1 - 40, width: 120, textAlign: 'center', fontFamily: T.mono, fontSize: 18, letterSpacing: '0.24em', color: P.accent}}>PUNCAK</div>
@@ -123,7 +124,7 @@ const AxisLabels = ({readout}) => (
 
 /* Two numbers, one for each axis of the same measurement. The big one is the
    distance; the small one is the clock that makes it possible. */
-const Readouts = ({readout}) => {
+const Readouts: React.FC<{readout: number}> = ({readout}) => {
   if (readout <= 0) return null;
   return (
     <AbsoluteFill style={{opacity: readout, pointerEvents: 'none'}}>
@@ -149,7 +150,7 @@ const Readouts = ({readout}) => {
 
 /* Fifty-five years of nightly ranging. Each year is a tick with a small upward
    offset; the composite is the drift itself, drawn as data rather than said. */
-const Decades = ({years}) => {
+const Decades: React.FC<{years: number}> = ({years}) => {
   if (years <= 0) return null;
   const x0 = 240;
   const x1 = 1200;

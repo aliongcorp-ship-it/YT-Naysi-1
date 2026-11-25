@@ -1,0 +1,94 @@
+# NAYSI — satu episode, satu folder
+
+Video vertikal 1440×2560, 90 fps, ±76 detik, digambar sepenuhnya dengan kode
+(Remotion + React). Tidak ada rekaman, tidak ada stok, tidak ada efek glow.
+
+## Struktur
+
+```
+scenes/
+  script.tsx     300 baris: yang diucapkan, penekanan kata, daftar shot
+  bulan.tsx      2000–3000 baris: identitas episode + pustaka gambar topik ini
+  y1.tsx … yN.tsx  satu komposisi per shot (sesuai kebutuhan, saat ini 10)
+  types.ts        props yang diterima setiap shot
+src/             Timeline, caption, watermark, grain, font gate
+scripts/         timeline, skor, narasi, pack, render
+.github/workflows/render.yml   render penuh di GitHub Actions
+```
+
+Aturannya cuma satu: **topik yang berbeda = file topik yang berbeda**. Salin
+bentuknya, jangan salin kulitnya. Setiap episode punya palet, pasangan huruf,
+tekstur, dan tata bahasa kamera sendiri.
+
+### `scenes/script.tsx`
+
+```ts
+export const acts: ActSpec[] = [
+  {id: 'hook', em: ['Bulan', '3,8'],
+   text: 'Bulan sedang menjauh …',
+   shots: [{file: 'y1', label: 'cakrawala', from: 0, to: 0.54},
+           {file: 'y2', label: '3,8 cm', from: 0.54, to: 'end'}]},
+];
+```
+
+`text` dibacakan satu file per act ke `src/vo/sN.mp3` sesuai urutan array.
+`from`/`to` adalah pecahan dari durasi act **yang terukur**, jadi mengambil
+ulang narasi hanya menggeser potongan, tidak merusaknya. Tipe `ActSpec`/`ShotSpec`
+membuat salah nama shot jadi error kompilasi, bukan gambar hilang saat render.
+
+### `scenes/bulan.tsx`
+
+Tempat episode memutuskan rupanya: `ID` (palet 13 token, pasangan huruf,
+gerak kamera, chrome), `fonts`, `T`, lalu primitif yang topik ini butuhkan
+(`MoonDisc`, `Dust`, `Metric`, `Finder`, …). Timeline mengimpor `ID` dan
+`fonts` dari sini, bukan dari tema global.
+
+### `scenes/yN.tsx`
+
+```tsx
+export const Compo: React.FC<SceneProps> = ({act, shot, t, local, total}) => (
+  <AbsoluteFill>…</AbsoluteFill>
+);
+```
+
+Selalu pakai `local` (detik sejak shot ini mulai). Shot harus benar di
+`local = 0` dan di `local = akhir`. Tanpa chrome: tidak ada slate, nomor bab,
+garis bab, atau label seri — satu-satunya overlay tetap adalah watermark nama
+kanal.
+
+## Menambah shot
+
+1. Tulis `scenes/y11.tsx` dengan `Compo`.
+2. Daftarkan di `src/Timeline.tsx` (satu baris import + satu entri tabel).
+3. Sebut di `script.tsx` pada act yang sesuai.
+4. `node scripts/timeline.mjs` akan gagal kalau file yang disebut tidak ada.
+
+## Render
+
+Semua render terjadi di GitHub Actions — mesin Anda hanya perlu `git push`.
+
+**Actions ▸ Render ▸ Run workflow**
+
+| input | artinya |
+|---|---|
+| `stills_only` | hanya 10 still (satu per shot) untuk review cepat |
+| `release_tag` | isi mis. `bulan-01` untuk menerbitkan master sebagai release |
+
+Artefak tiap run (30 hari): `naysi_master.mp4`, `naysi_pack.zip`,
+`still-<frame>.png` × 10, `probe.txt`, `render.log`.
+Workflow menolak hasil < 3 MB dan melakukan decode penuh sebelum artefak
+diunggah, jadi render rusak tidak lolos.
+
+Setelah mengunggah ke YouTube, isi `ID video` di `scripts/pack.json` supaya
+deskripsi episode berikutnya bisa menautkannya.
+
+## Lokal (opsional)
+
+```sh
+npm ci
+python3 -m pip install numpy
+node scripts/build.mjs --audio-only   # narasi, timeline, skor, master.wav
+node scripts/build.mjs --render-only  # out/naysi_master.mp4
+npx remotion studio src/index.ts      # pratinjau
+npx tsc --noEmit                      # cek tipe (scenes/ ikut)
+```

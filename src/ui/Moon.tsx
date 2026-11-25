@@ -1,5 +1,5 @@
 import React from 'react';
-import {P, T, dustField} from '../../scenes/bulan.mjs';
+import {P, T, dustField} from '../../scenes/bulan';
 import {clamp, hash} from '../theme';
 
 /* ────────────────────────────  the Moon  ─────────────────────────────────── */

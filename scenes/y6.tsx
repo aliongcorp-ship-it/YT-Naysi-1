@@ -7,8 +7,9 @@
    No glow, no neon: water is hatched, rock is solid, force is a single arrow. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, lerp, smooth} from '../src/theme';
 
@@ -19,7 +20,7 @@ const MX = 1192; // Moon's centre
 const MY = 806;
 const MR = 96;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
 
   // Beats: the bulge appears on "pasang"; the lead appears on "mendahului";
@@ -66,7 +67,7 @@ const Plate = () => (
 
 /* The Moon's orbit, as an arc behind everything: it explains why the bulge is
    late without a single word. */
-const OrbitGuide = ({opacity}) => (
+const OrbitGuide: React.FC<{opacity: number}> = ({opacity}) => (
   <div style={{position: 'absolute', left: 0, top: 0, opacity}}>
     <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
       <circle cx={EX} cy={EY} r={Math.hypot(MX - EX, MY - EY)} fill="none" stroke={alpha(P.ink, 0.12)} strokeWidth={1} strokeDasharray="3 10" />
@@ -77,7 +78,7 @@ const OrbitGuide = ({opacity}) => (
 /* The tidal envelope: two lobes, drawn as one closed path that swells along the
    bulge axis. The water is picked out with fine hatching lines clipped to the
    lobe, so it reads as a body of water and not as a bar of colour. */
-const Bulge = ({axis, amount}) => {
+const Bulge: React.FC<{axis: number, amount: number}> = ({axis, amount}) => {
   if (amount <= 0) return null;
   const a = ER * lerp(1.02, 1.62, amount);
   const b = ER * lerp(1.02, 0.94, amount);
@@ -192,7 +193,7 @@ const MoonDisc = () => (
 
 /* The line between the two centres: the direction the water would point if the
    Earth stood still. The lead is measured against it. */
-const EarthMoonLine = ({lead}) => (
+const EarthMoonLine: React.FC<{lead: number}> = ({lead}) => (
   <div style={{position: 'absolute', left: 0, top: 0, opacity: lead, pointerEvents: 'none'}}>
     <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
       <line x1={EX} y1={EY} x2={MX} y2={MY} stroke={alpha(P.ink, 0.34)} strokeWidth={1} strokeDasharray="6 8" />
@@ -202,12 +203,12 @@ const EarthMoonLine = ({lead}) => (
 
 /* The measured lead: an arc from the Christ–Moon line to the bulge axis, with
    the angle written on it. */
-const LeadAngle = ({lead, axis}) => {
+const LeadAngle: React.FC<{lead: number, axis: number}> = ({lead, axis}) => {
   if (lead <= 0) return null;
   const r = ER + 74;
   const a1 = (Math.atan2(MY - EY, MX - EX) * 180) / Math.PI;
   const a2 = a1 + axis;
-  const p = (deg) => [EX + Math.cos((deg * Math.PI) / 180) * r, EY + Math.sin((deg * Math.PI) / 180) * r];
+  const p = (deg: number) => [EX + Math.cos((deg * Math.PI) / 180) * r, EY + Math.sin((deg * Math.PI) / 180) * r];
   const [x1, y1] = p(a1);
   const [x2, y2] = p(a2);
   const large = Math.abs(axis) > 180 ? 1 : 0;
@@ -239,7 +240,7 @@ const LeadAngle = ({lead, axis}) => {
 /* The force: the leading bulge hauls the Moon forward along its orbit. Drawn as
    one tangential arrow at the Moon, in the direction of travel — the only arrow
    in the film, and the point of the whole episode. */
-const PushArrow = ({push}) => {
+const PushArrow: React.FC<{push: number}> = ({push}) => {
   if (push <= 0) return null;
   // tangent to the orbit at the Moon, counter-clockwise (the way it moves)
   const ux = MX - EX;
@@ -298,7 +299,7 @@ const PushArrow = ({push}) => {
 };
 
 /* Plate labels: three short ones, each attached to the thing it names. */
-const Labels = ({bulge, lead, push}) => (
+const Labels: React.FC<{bulge: number, lead: number, push: number}> = ({bulge, lead, push}) => (
   <AbsoluteFill style={{pointerEvents: 'none'}}>
     <div style={{position: 'absolute', left: 96 + 24, top: 330 + 22, opacity: bulge, fontFamily: T.mono, fontSize: 19, letterSpacing: '0.36em', color: alpha(P.ink, 0.5)}}>
       POTONGAN BUMI &nbsp;·&nbsp; PASANG

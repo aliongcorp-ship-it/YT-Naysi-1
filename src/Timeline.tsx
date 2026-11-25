@@ -4,26 +4,25 @@ import {tl, actAt, type Act, type Shot} from './timeline';
 import {FontGate} from './Fonts';
 import {Caption, Watermark} from './ui/Chrome';
 import {Grain, Vignette} from './ui/Texture';
-import {ID, fonts} from '../scenes/bulan.mjs';
-import y1 from '../scenes/y1.mjs';
-import y2 from '../scenes/y2.mjs';
-import y3 from '../scenes/y3.mjs';
-import y4 from '../scenes/y4.mjs';
-import y5 from '../scenes/y5.mjs';
-import y6 from '../scenes/y6.mjs';
-import y7 from '../scenes/y7.mjs';
-import y8 from '../scenes/y8.mjs';
-import y9 from '../scenes/y9.mjs';
-import y10 from '../scenes/y10.mjs';
+import {ID, fonts} from '../scenes/bulan';
+import y1 from '../scenes/y1';
+import y2 from '../scenes/y2';
+import y3 from '../scenes/y3';
+import y4 from '../scenes/y4';
+import y5 from '../scenes/y5';
+import y6 from '../scenes/y6';
+import y7 from '../scenes/y7';
+import y8 from '../scenes/y8';
+import y9 from '../scenes/y9';
+import y10 from '../scenes/y10';
+import type {SceneProps} from '../scenes/types';
 import {clamp, eOut, eOutQuint} from './theme';
 
-type SceneComp = React.FC<{act: Act; shot: Shot; t: number; local: number}>;
-
-// The shot table: file name -> composition, exactly the names `script.mjs` uses.
+// The shot table: file name -> composition, exactly the names `script.tsx` uses.
 // A new episode replaces these ten imports and its own topic file; the rest of
 // this component is episode-agnostic. A shot named in the script but missing
 // here renders nothing rather than borrowing a neighbour's picture.
-const SCENES: Record<string, SceneComp> = {y1, y2, y3, y4, y5, y6, y7, y8, y9, y10} as unknown as Record<string, SceneComp>;
+const SCENES: Record<string, React.FC<SceneProps>> = {y1, y2, y3, y4, y5, y6, y7, y8, y9, y10};
 
 const shotAt = (t: number): Shot => {
   let found = tl.shots[0];
@@ -81,7 +80,7 @@ export const Film: React.FC = () => {
     <FontGate faces={fonts}>
       <AbsoluteFill style={{background: ID.palette.void}}>
         <AbsoluteFill style={{opacity: veil, transform: `scale(${push})`, transformOrigin: '50% 52%'}}>
-          {Comp ? <Comp act={act} shot={shot} t={t} local={local} /> : null}
+          {Comp ? <Comp act={act} shot={shot} t={t} local={local} total={tl.durationSec} /> : null}
           <Cut local={local} index={shot.index} />
         </AbsoluteFill>
 

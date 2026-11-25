@@ -6,13 +6,14 @@
    getting further away, so it looks smaller every year. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
-import {P, T} from './bulan.mjs';
+import {P, T} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {clamp, eOut, lerp} from '../src/theme';
 
-export const Compo = ({local}) => {
+export const Compo: React.FC<SceneProps> = ({local}) => {
   const e = eOut(clamp(local / 1.6));
 
   // The sky turns slowly: the whole field rotates 0.8° over the shot, as if the

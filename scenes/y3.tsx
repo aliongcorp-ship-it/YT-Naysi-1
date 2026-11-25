@@ -7,8 +7,9 @@
    "explainer" in the film, and it is drawn, not labelled. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Finder} from './bulan.mjs';
+import {P, T, Finder} from './bulan';
 import {MoonGround} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, hash} from '../src/theme';
@@ -16,7 +17,7 @@ import {alpha, clamp, eOut, hash} from '../src/theme';
 const COLS = 10;
 const ROWS = 10;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
 
   // The array fills in over the first third of the act: 100 cubes, 100 small
@@ -65,9 +66,9 @@ export const Compo = ({local, act}) => {
    One panel, 1 m across, tilted 26° so it catches the light. Each cube is a
    small hexagon with a bright edge on the sunward side and a dark floor: the
    same trick as the Moon's craters, at a different scale. */
-const phase2 = (fill) => clamp(fill * 2);
+const phase2 = (fill: number) => clamp(fill * 2);
 
-const Array = ({fill, local}) => {
+const Array: React.FC<{fill: number, local: number}> = ({fill, local}) => {
   const cx = 690;
   const cy = 1438;
   const w = 860; // panel width in px
@@ -144,7 +145,7 @@ const Array = ({fill, local}) => {
    The three-mirror diagram: a triangle with its three inner faces and a ray
    that comes in, bounces three times and leaves along the same line. Drawn as
    SVG so the geometry can be exact. */
-const CornerCube = ({local}) => {
+const CornerCube: React.FC<{local: number}> = ({local}) => {
   const e = eOut(clamp((local - 1.1) / 0.9));
   if (e <= 0) return null;
   const ox = 1012;
@@ -204,7 +205,7 @@ const CornerCube = ({local}) => {
 };
 
 /* ── the plate's label block ──────────────────────────────────────────────── */
-const PanelHead = ({local}) => {
+const PanelHead: React.FC<{local: number}> = ({local}) => {
   const e = eOut(clamp((local - 0.5) / 0.9));
   const e2 = eOut(clamp((local - 2.6) / 0.9));
   return (

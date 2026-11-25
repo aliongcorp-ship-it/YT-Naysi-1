@@ -1,18 +1,39 @@
 /* =============================================================================
-   scenes/script.mjs — the episode's script and edit decision list.
+   scenes/script.tsx — the episode's script and edit decision list.
 
-   This file is the only source of truth for *what is said* and *where it cuts*.
-   It is plain data (no JSX, no imports) so both the Node build scripts and the
-   Remotion bundler can read it.
+   This is the only source of truth for *what is said* and *where it cuts*. It
+   is data, but typed: a typo in a shot name or a stray `to` is a compile error
+   instead of a missing picture at render time.
 
-     scenes/script.mjs        narration, emphasis, shot list          <- you are here
-     scenes/bulan.mjs         topic file: identity + the visual library
-     scenes/y1.mjs … y10.mjs  one composition per shot, in order
+     scenes/script.tsx         narration, emphasis, shot list      <- you are here
+     scenes/bulan.tsx          topic file: identity + visual library
+     scenes/y1.tsx … yN.tsx    one composition per shot, in order
+     scenes/types.ts           the props every shot receives
 
    `text` feeds the voice takes in src/vo/sN.mp3 one-for-one, in array order.
-   Never re-order or edit a line without re-recording, because the caption
-   timings are measured from that take.
+   Never re-order or edit a line without re-recording, because caption timings
+   are measured from that take.
    ========================================================================== */
+
+export type ShotSpec = {
+  /** file name under scenes/, without extension */
+  file: string;
+  /** shown in the build log and on the shot list */
+  label: string;
+  /** fraction of the act's measured span, 0..1 */
+  from: number;
+  /** fraction of the act's measured span, or 'end' */
+  to: number | 'end';
+};
+
+export type ActSpec = {
+  id: string;
+  /** words the caption may colour — one beat each, in spoken order */
+  em: string[];
+  /** the narration, exactly as it should be spoken */
+  text: string;
+  shots: ShotSpec[];
+};
 
 // The watermark is the channel name and nothing else. No slate, no chapter
 // number, no series tag: the picture has to carry itself.
@@ -22,14 +43,15 @@ export const EPISODE = {
   slug: 'bulan',
   identity: 'regolith',
   topic: 'Bulan menjauh 3,8 cm tiap tahun',
-  file: 'scenes/bulan.mjs',
+  /** the topic file that owns this episode's look */
+  file: 'scenes/bulan.tsx',
 };
 
 /* A shot is one continuous piece of picture. `from`/`to` are fractions of the
    act's measured span, so a re-take only moves the cut, never breaks it. Two
    shots may share an act — that is how the opening gets its establishing frame
    and its number without the narration pausing. */
-export const acts = [
+export const acts: ActSpec[] = [
   {
     id: 'hook',
     em: ['Bulan', 'menjauh', '3,8', 'kuku'],

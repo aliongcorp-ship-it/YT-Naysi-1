@@ -6,8 +6,9 @@
    that one dot the whole way home. */
 
 import React from 'react';
+import type {SceneProps} from './types';
 import {AbsoluteFill} from 'remotion';
-import {P, T, Metric} from './bulan.mjs';
+import {P, T, Metric} from './bulan';
 import {MoonDisc} from '../src/ui/Moon';
 import {Dust} from '../src/ui/Texture';
 import {alpha, clamp, eOut, eIn, lerp} from '../src/theme';
@@ -18,7 +19,7 @@ const MX = 1082; // the Moon's near limb
 const MY = 620;
 const MR = 196;
 
-export const Compo = ({local, act}) => {
+export const Compo: React.FC<SceneProps> = ({local, act}) => {
   const D = act.end - act.start;
 
   // Beat map, in fractions of the act: the beam leaves at "ditembakkan", the
@@ -140,7 +141,7 @@ export const Compo = ({local, act}) => {
 
 /* From the telescope: a single hairline for the first metre, opening into a
    translucent wedge. Both are one element each — a rotated gradient. */
-const OutgoingBeam = ({out, spread}) => {
+const OutgoingBeam: React.FC<{out: number, spread: number}> = ({out, spread}) => {
   const dx = MX - TX;
   const dy = MY - TY;
   const len = Math.sqrt(dx * dx + dy * dy);
@@ -189,7 +190,7 @@ const OutgoingBeam = ({out, spread}) => {
 
 /* 20 km at the Moon is the reason the return is one photon in a trillion. The
    label sits at the far end where the spread is widest. */
-const SpreadLabel = ({spread}) => {
+const SpreadLabel: React.FC<{spread: number}> = ({spread}) => {
   const e = eOut(clamp(spread));
   if (e <= 0) return null;
   const x = MX + 40;
@@ -205,7 +206,7 @@ const SpreadLabel = ({spread}) => {
 
 /* A telescope drawn in section: a tube, a fork, a pier, and a stub of light.
    Nothing photographic — it is a diagram that happens to sit in the dark. */
-const Telescope = ({landed}) => (
+const Telescope: React.FC<{landed: number}> = ({landed}) => (
   <div style={{position: 'absolute', left: TX - 118, top: TY - 130, width: 260, height: 240}}>
     <svg width={260} height={240} style={{position: 'absolute', left: 0, top: 0}}>
       {/* tube, aimed along the beam */}
