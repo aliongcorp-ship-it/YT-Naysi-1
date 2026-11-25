@@ -2,7 +2,7 @@
 // Picture, captions and score are all generated from the files this writes.
 //
 //   scenes/script.tsx   narration + shot list (per episode)
-//   audio/vo_fx/sN.wav  the measured take for each act, in array order
+//   audio/vo_fx/sN.flac the measured take for each act, in array order
 //
 // Outputs
 //   src/data/timeline.json   acts, shots, word timings, channel name
@@ -17,7 +17,21 @@ let GAP = 0.16; // breath between acts
 const TAIL = 1.65; // hold long enough for the closing line to land
 const SHORTS_MAX = 180; // hard ceiling: a Shorts upload must be <= 180 s
 
-const wavDur = (p) => (fs.statSync(p).size - 44) / 96000; // 48k mono 16-bit
+// Duration of a measured take. scripts/vo.py writes these numbers as it finishes
+// each take (it counts the samples of the finished FLAC), so this step reads the
+// manifest instead of probing the same files again. One measurement, one source.
+const DURS = (() => {
+  const p = 'audio/vo_fx/durations.json';
+  if (!fs.existsSync(p)) throw new Error(`${p} is missing: run scripts/vo.py first`);
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
+})();
+
+const takeDur = (p) => {
+  const name = path.basename(p, path.extname(p));
+  const d = DURS[name];
+  if (!Number.isFinite(d) || d <= 0) throw new Error(`${p}: no measured duration in durations.json`);
+  return d;
+};
 
 const {acts: ACT_SPEC, CHANNEL, EPISODE} = await loadTsx('scenes/script.tsx');
 
@@ -68,7 +82,7 @@ function phrase(words) {
 
 // Fit the ceiling automatically: if the cut runs long, buy seconds back from
 // the seams (gap first, then lead) instead of asking for a re-take.
-const speechTotal = ACT_SPEC.reduce((a, _, i) => a + wavDur(`audio/vo_fx/s${i + 1}.wav`), 0);
+const speechTotal = ACT_SPEC.reduce((a, _, i) => a + takeDur(`audio/vo_fx/s${i + 1}.flac`), 0);
 let projected = speechTotal + LEAD + GAP * (ACT_SPEC.length - 1) + TAIL;
 while (projected > SHORTS_MAX && GAP > 0.1) {
   GAP = +(GAP - 0.01).toFixed(2);
@@ -82,13 +96,13 @@ while (projected > SHORTS_MAX && LEAD > 0.1) {
 const ACTS = [];
 let t = LEAD;
 ACT_SPEC.forEach((seg, i) => {
-  const dur = wavDur(`audio/vo_fx/s${i + 1}.wav`);
+  const dur = takeDur(`audio/vo_fx/s${i + 1}.flac`);
   const words = layout(seg.text, dur, t);
   ACTS.push({
     index: i + 1,
     id: seg.id,
     em: seg.em ?? [],
-    vo: `vo_fx/s${i + 1}.wav`,
+    vo: `vo_fx/s${i + 1}.flac`,
     voStart: +t.toFixed(4),
     voEnd: +(t + dur).toFixed(4),
     start: +(i === 0 ? 0 : ACTS[i - 1].end).toFixed(4),

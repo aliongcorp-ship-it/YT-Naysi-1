@@ -4,11 +4,15 @@ Reads src/data/cues.json (written by scripts/timeline.mjs) so every hit is on a 
 """
 import json
 import os
+import shutil
+import subprocess
 import wave
 
 import numpy as np
 
 SR = 48000
+# ffmpeg: system binary when there is one, else the pinned npm build.
+FFMPEG = os.environ.get("NAYSI_FFMPEG") or shutil.which("ffmpeg") or "./node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
 rng = np.random.default_rng(2030)
 
 cues = json.load(open("src/data/cues.json"))
@@ -315,13 +319,21 @@ rt *= np.sin(np.pi * np.clip(tt * 1.02, 0, 1)) ** 0.35
 place(rt, 0.0, 1.0)
 
 # ── VO-reactive ducking ────────────────────────────────────────────────────
+def decode(path):
+    """48 kHz mono float32 from any container ffmpeg can read (the takes are FLAC)."""
+    raw = subprocess.run(
+        [FFMPEG, "-v", "error", "-i", path, "-f", "f32le", "-ar", str(SR), "-ac", "1", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    return np.frombuffer(raw, dtype="<f4").astype(np.float32)
+
+
 vo = np.zeros(N)
 for a in acts:
-    p = f"audio/vo_fx/s{a['index']}.wav"
+    p = f"audio/vo_fx/s{a['index']}.flac"
     if not os.path.exists(p):
         continue
-    with wave.open(p) as w:
-        x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32) / 32768
+    x = decode(p)
     place(x, a["voStart"], 1.0)
     vo[int(a["voStart"] * SR): int(a["voStart"] * SR) + len(x)] += x
 
@@ -355,11 +367,11 @@ mix_l = limiter(mix_l)
 mix_r = limiter(mix_r)
 
 os.makedirs("audio/mix", exist_ok=True)
-stereo = np.stack([mix_l, mix_r], axis=1)
-with wave.open("audio/mix/raw.wav", "w") as w:
-    w.setnchannels(2)
-    w.setsampwidth(2)
-    w.setframerate(SR)
-    w.writeframes((np.clip(stereo, -1, 1) * 32767).astype(np.int16).tobytes())
+stereo = np.stack([mix_l, mix_r], axis=1).astype("<f4")
+subprocess.run(
+    [FFMPEG, "-y", "-v", "error", "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", "-",
+     "-c:a", "flac", "-sample_fmt", "s16", "audio/mix/raw.flac"],
+    input=np.clip(stereo, -1, 1).tobytes(), check=True,
+)
 
 print(f"score written: {N / SR:.1f}s  peak {max(np.max(np.abs(mix_l)), np.max(np.abs(mix_r))):.3f}")

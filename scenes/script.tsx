@@ -1,18 +1,20 @@
 /* =============================================================================
-   scenes/script.tsx — the episode's script and edit decision list.
+   scenes/script.tsx — the episode: what is said, in what order, and where it cuts.
 
-   This is the only source of truth for *what is said* and *where it cuts*. It
-   is data, but typed: a typo in a shot name or a stray `to` is a compile error
-   instead of a missing picture at render time.
+   This is a science-explainer, so the script is built as numbered findings, not
+   as a mood piece. Every act makes one claim, and the claim is on screens.
 
-     scenes/script.tsx         narration, emphasis, shot list      <- you are here
-     scenes/bulan.tsx          topic file: identity + visual library
-     scenes/y1.tsx … yN.tsx    one composition per shot, in order
-     scenes/types.ts           the props every shot receives
+     scenes/script.tsx        narration + shot list              <- you are here
+     scenes/bulan.tsx         identity + the whole visual library
+     scenes/y1.tsx … y17.tsx  one composition per shot
+     scenes/types.ts          the props every shot receives
 
-   `text` feeds the voice takes in src/vo/sN.mp3 one-for-one, in array order.
-   Never re-order or edit a line without re-recording, because caption timings
-   are measured from that take.
+   `text` is recorded one file per act into src/vo/sN.mp3, in array order.
+   Captions are timed from that take, so editing a line means re-recording it.
+
+   Timing rules that the build enforces:
+     · total runtime stays under 180 s (Shorts ceiling)
+     · every `file` named here must exist as scenes/<file>.tsx
    ========================================================================== */
 
 export type ShotSpec = {
@@ -20,7 +22,7 @@ export type ShotSpec = {
   file: string;
   /** shown in the build log and on the shot list */
   label: string;
-  /** fraction of the act's measured span, 0..1 */
+  /** fraction of the act's measured span */
   from: number;
   /** fraction of the act's measured span, or 'end' */
   to: number | 'end';
@@ -35,83 +37,157 @@ export type ActSpec = {
   shots: ShotSpec[];
 };
 
-// The watermark is the channel name and nothing else. No slate, no chapter
-// number, no series tag: the picture has to carry itself.
+// The watermark is the channel name and nothing else: no slate, no act number,
+// no chapter rule. The picture has to carry itself.
 export const CHANNEL = {name: 'NAYSI'};
 
 export const EPISODE = {
   slug: 'bulan',
-  identity: 'regolith',
+  identity: 'sidereal',
   topic: 'Bulan menjauh 3,8 cm tiap tahun',
-  /** the topic file that owns this episode's look */
   file: 'scenes/bulan.tsx',
 };
 
-/* A shot is one continuous piece of picture. `from`/`to` are fractions of the
-   act's measured span, so a re-take only moves the cut, never breaks it. Two
-   shots may share an act — that is how the opening gets its establishing frame
-   and its number without the narration pausing. */
+/* Six sections. The section name is not printed on screen; it exists so the
+   build log, the score and the shot list agree on the order of the argument. */
 export const acts: ActSpec[] = [
+  /* 01 ─ the claim ------------------------------------------------------- */
   {
-    id: 'hook',
+    id: 'claim',
     em: ['Bulan', 'menjauh', '3,8', 'kuku'],
     text:
-      'Bulan sedang menjauh dari kita, tiga koma delapan sentimeter tiap tahun, secepat kuku Anda tumbuh.',
+      'Bulan menjauh dari Bumi tiga koma delapan sentimeter setiap tahun. Secepat kuku Anda tumbuh.',
     shots: [
-      {file: 'y1', label: 'cakrawala & bulan', from: 0.0, to: 0.54},
-      {file: 'y2', label: '3,8 cm / tahun', from: 0.54, to: 'end'},
+      {file: 'y1', label: 'horizon', from: 0.0, to: 0.5},
+      {file: 'y2', label: '3,8 cm', from: 0.5, to: 'end'},
+    ],
+  },
+
+  /* 02 ─ how we know ----------------------------------------------------- */
+  {
+    id: 'mirror',
+    em: ['cermin', 'seratus', 'koper', '1969'],
+    text:
+      'Sejak 1969, lima misi menaruh cermin di Bulan. Seratus prisma seukuran koper, tanpa baterai, tanpa satu pun bagian bergerak.',
+    shots: [
+      {file: 'y3', label: 'ilustrasi & indeks', from: 0.0, to: 'end'},
     ],
   },
   {
-    id: 'mirror',
-    em: ['cermin', 'seratus', 'koper', 'bekerja'],
+    id: 'laser',
+    em: ['laser', '384.400', '2,56', 'triliunan'],
     text:
-      'Tahun enam puluh sembilan astronot menaruh cermin di Bulan, seratus prisma seukuran koper, tanpa baterai, dan masih bekerja sampai sekarang.',
-    shots: [{file: 'y3', label: 'seratus prisma', from: 0.0, to: 'end'}],
+      'Dari Bumi, laser ditembakkan ke prisma itu. Jaraknya 384.400 kilometer. Perjalanan pulang pergi memakan dua koma lima enam detik.',
+    shots: [
+      {file: 'y4', label: 'teleskop & pulsa', from: 0.0, to: 'end'},
+    ],
   },
   {
     id: 'photon',
-    em: ['laser', '384', 'triliunan', 'satu'],
+    em: ['foton', 'triliunan', 'satu', 'detik'],
     text:
-      'Laser ditembakkan ke cermin itu, tiga ratus delapan puluh empat ribu kilometer jauhnya. Dari triliunan foton, mungkin satu yang pulang.',
-    shots: [{file: 'y4', label: 'laser & satu foton', from: 0.0, to: 'end'}],
+      'Dari triliunan foton yang berangkat, hanya sekitar satu dari seratus juta yang kembali. Yang satu itu sudah cukup.',
+    shots: [
+      {file: 'y5', label: 'satu foton pulang', from: 0.0, to: 'end'},
+    ],
   },
   {
-    id: 'millimetre',
-    em: ['satu', 'pikodetik', 'milimeter', 'dekade'],
+    id: 'precision',
+    em: ['pikodetik', 'milimeter', 'tiga', 'milimeter'],
     text:
-      'Satu foton cukup. Waktu tempuhnya diukur sampai pikodetik, jaraknya terbaca sampai milimeter. Setiap malam, selama lima dekade.',
-    shots: [{file: 'y5', label: 'pikodetik', from: 0.0, to: 'end'}],
+      'Waktu tempuhnya diukur sampai pikodetik. Dari situ jarak terbaca sampai tiga milimeter, setiap malam, selama lebih dari lima dekade.',
+    shots: [
+      {file: 'y6', label: 'trace & angka', from: 0.0, to: 'end'},
+    ],
   },
+
+  /* 03 ─ why it happens -------------------------------------------------- */
   {
     id: 'tide',
-    em: ['gravitasi', 'pasang', 'mendahului', 'pergi'],
+    em: ['pasang', 'dua', 'mendahului', 'dorongan'],
     text:
-      'Gravitasi Bulan menarik laut jadi pasang. Bumi berputar lebih cepat, jadi pasang selalu mendahului. Dorongan itu yang mendorong Bulan pergi.',
-    shots: [{file: 'y6', label: 'pasang mendahului', from: 0.0, to: 'end'}],
-  },
-  {
-    id: 'day',
-    em: ['melambat', '1,8', '22', 'jam'],
-    text:
-      'Putaran Bumi melambat karenanya. Satu koma delapan milidetik per abad. Empat ratus juta tahun lalu, sehari cuma dua puluh dua jam.',
-    shots: [{file: 'y7', label: '22 vs 24 jam', from: 0.0, to: 'end'}],
-  },
-  {
-    id: 'past',
-    em: ['dekat', 'ganas', 'karang', 'arsip'],
-    text:
-      'Dulu Bulan jauh lebih dekat, pasangnya jauh lebih ganas. Karang purba menyimpan hitungan harinya, seperti arsip yang ikut menua.',
-    shots: [{file: 'y8', label: 'karang purba', from: 0.0, to: 'end'}],
-  },
-  {
-    id: 'end',
-    em: ['pergi', 'miliaran', 'lebih jauh', 'kemarin'],
-    text:
-      'Bulan akan terus pergi, miliaran tahun lamanya. Malam ini, saat Anda menengadah, ia sudah lebih jauh daripada kemarin.',
+      'Bulan menarik laut jadi dua pasang. Bumi berputar lebih cepat daripada Bulan mengorbit, jadi pasang selalu sedikit mendahului.',
     shots: [
-      {file: 'y9', label: '384.400 km', from: 0.0, to: 0.46},
-      {file: 'y10', label: 'malam ini', from: 0.46, to: 'end'},
+      {file: 'y7', label: 'dua pasang, satu poros', from: 0.0, to: 'end'},
+    ],
+  },
+  {
+    id: 'torque',
+    em: ['dorongan', 'pergi', 'tiga', 'delapan'],
+    text:
+      'Pasang yang mendahului itu menarik Bulan ke depan. Dorongan kecil itu yang membuat Bulan pergi, tiga koma delapan sentimeter tiap tahun.',
+    shots: [
+      {file: 'y8', label: 'dorongan & spiral', from: 0.0, to: 'end'},
+    ],
+  },
+  {
+    id: 'slowing',
+    em: ['melambat', '1,8', 'abad', 'jam'],
+    text:
+      'Sebaliknya, Bumi membayarnya. Putaran kita melambat satu koma delapan milidetik per abad. Empat ratus juta tahun lalu, sehari hanya dua puluh dua jam.',
+    shots: [
+      {file: 'y9', label: '24 vs 22 jam', from: 0.0, to: 0.52},
+      {file: 'y10', label: 'seribu detik', from: 0.52, to: 'end'},
+    ],
+  },
+
+  /* 04 ─ the evidence ---------------------------------------------------- */
+  {
+    id: 'coral',
+    em: ['karang', 'hari', '400', 'arsip'],
+    text:
+      'Bulan tidak mencatatnya. Karang yang mencatat. Karang purba menyimpan garis pertumbuhan harian, dan garisnya bisa dihitung.',
+    shots: [
+      {file: 'y11', label: 'karang & garis harian', from: 0.0, to: 'end'},
+    ],
+  },
+  {
+    id: 'archive',
+    em: ['400', '385', '400 juta', 'hari'],
+    text:
+      'Empat ratus juta tahun lalu, satu tahun berisi 400 hari. Sekarang 365. Tahunnya sama, harinya yang bertambah.',
+    shots: [
+      {file: 'y12', label: '400 vs 365 hari', from: 0.0, to: 'end'},
+    ],
+  },
+
+  /* 05 ─ the future ------------------------------------------------------ */
+  {
+    id: 'future',
+    em: ['besar', 'pasang', 'ratus', 'ganas'],
+    text:
+      'Karena Bulan menjauh, Bulan dulu tampak lebih besar dan pasangnya lebih ganas. Beberapa ratus juta tahun lagi, gerhana Matahari total akan berhenti terjadi.',
+    shots: [
+      {file: 'y13', label: 'busur & gerhana', from: 0.0, to: 'end'},
+    ],
+  },
+  {
+    id: 'locked',
+    em: ['terkunci', 'lima', 'puluh', 'berhenti'],
+    text:
+      'Sampai suatu hari nanti, Bumi dan Bulan saling mengunci. Bulan akan tergantung di satu titik langit, dan pasang berhenti bergerak.',
+    shots: [
+      {file: 'y14', label: 'bulan tergantung', from: 0.0, to: 'end'},
+    ],
+  },
+
+  /* 06 ─ tonight --------------------------------------------------------- */
+  {
+    id: 'tonight',
+    em: ['tahun', 'tiga', 'meter', 'hidup'],
+    text:
+      'Tiap tahun, Bulan tiga koma delapan sentimeter lebih jauh. Dalam satu masa hidup, jaraknya melebar sekitar tiga meter.',
+    shots: [
+      {file: 'y15', label: '384.400 km', from: 0.0, to: 'end'},
+    ],
+  },
+  {
+    id: 'farewell',
+    em: ['tengadah', 'lebih jauh', 'perlahan', 'kemarin'],
+    text:
+      'Malam ini, saat Anda menengadah, Bulan sudah lebih jauh daripada kemarin. Perpisahan paling lambat, dan paling tidak terasa.',
+    shots: [
+      {file: 'y16', label: 'langit malam', from: 0.0, to: 'end'},
     ],
   },
 ];

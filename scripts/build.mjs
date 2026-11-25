@@ -10,6 +10,7 @@
 // unless NAYSI_BROWSER is set.
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
+import {loadTsx} from './load.mjs';
 
 const args = new Set(process.argv.slice(2));
 const audioOnly = args.has('--audio-only');
@@ -32,6 +33,11 @@ const remotionArgs = remotion === 'npx' ? ['remotion'] : [];
 const browser = process.env.NAYSI_BROWSER ?? (fs.existsSync('./.bin/chrome') ? './.bin/chrome' : '');
 const browserArgs = browser ? [`--browser-executable=${browser}`] : [];
 
+// The composition id is the episode's identity slug (also in scenes/bulan.tsx),
+// so the renderer is never pointed at a previous episode's id.
+const {EPISODE} = await loadTsx('scenes/script.tsx');
+const COMP = EPISODE.identity;
+
 const run = (cmd, cmdArgs, label) => {
   process.stdout.write(`\n▸ ${label}\n`);
   execFileSync(cmd, cmdArgs, {stdio: 'inherit'});
@@ -45,16 +51,19 @@ if (!renderOnly) {
   run('node', ['scripts/timeline.mjs'], 'timeline: acts, shots, word timings');
   run('node', ['scripts/identity.mjs'], 'identity: validate the topic file');
   run('python3', ['scripts/score.py'], 'score: synth bed, SFX, ducking');
+  // FLAC at 24 bit: lossless, half the bytes of a WAV, and the muxer takes it
+  // straight into the AAC track. No uncompressed container in the pipeline.
   run(
     ffmpeg,
-    ['-y', '-v', 'error', '-i', 'audio/mix/raw.wav', '-af', 'loudnorm=I=-14:TP=-1.4:LRA=11',
-     '-ar', '48000', '-ac', '2', 'public/audio/master.wav'],
+    ['-y', '-v', 'error', '-i', 'audio/mix/raw.flac',
+     '-af', 'loudnorm=I=-14:TP=-1.4:LRA=11',
+     '-ar', '48000', '-ac', '2', '-c:a', 'flac', '-sample_fmt', 's32', 'public/audio/master.flac'],
     'master bus: -14 LUFS'
   );
   run('node', ['scripts/pack.mjs'], 'upload pack: title, description, hashtags, tags');
   run('python3', ['scripts/pack_zip.py'], 'upload pack: zip');
   if (audioOnly) {
-    console.log('\naudio ready: public/audio/master.wav');
+    console.log('\naudio ready: public/audio/master.flac');
     process.exit(0);
   }
 }
@@ -63,7 +72,7 @@ run(
   remotion,
   [
     ...remotionArgs,
-    'render', 'src/index.ts', 'Specimen', 'out/naysi_master.mp4',
+    'render', 'src/index.ts', COMP, 'out/naysi_master.mp4',
     '--codec=h264', '--crf=18', `--concurrency=${concurrency}`,
     '--image-format=jpeg', '--jpeg-quality=95', '--pixel-format=yuv420p',
     '--audio-codec=aac', '--audio-bitrate=320k',

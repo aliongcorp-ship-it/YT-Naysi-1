@@ -1,269 +1,326 @@
-/* y6 — pasang mendahului
-   The mechanism, drawn as a diagram on a dark plate: the Earth in section,
-   wrapped in the two tidal bulges, with the Moon off to the right. The bulge
-   axis is deliberately not on the Earth–Moon line — it leads it, because the
-   Earth turns faster than the Moon orbits. That lead is the whole story: the
-   offset pulls, the pull accelerates the Moon, and the Moon recedes.
-   No glow, no neon: water is hatched, rock is solid, force is a single arrow. */
+/* y6 — trace & angka
+   Precision, drawn as an instrument reading. An oscilloscope trace sweeps across
+   the plate; the return pulse lands at a marked time. Under it, the three numbers
+   that make the claim: the clock (pikodetik), the resolution (3 mm), and the
+   record (56 tahun).
+
+   The gauge is the honest part: 3 mm on a 384.400 km baseline is a needle that
+   barely moves, so the needle is shown barely moving. */
 
 import React from 'react';
 import type {SceneProps} from './types';
-import {AbsoluteFill} from 'remotion';
-import {P, T, EarthDisc} from './bulan';
-import {Dust} from '../src/ui/Texture';
-import {alpha, clamp, eOut, lerp, smooth} from '../src/theme';
+import {
+  Brackets, Counter, Figure, Gauge, Label, L, Note, P, SZ, Source, Stage, T, Ticks, Trace, alpha, clamp, lerp, rev,
+} from './bulan';
 
-const EX = 628; // Earth's centre
-const EY = 1120;
-const ER = 288; // Earth's radius
-const MX = 1192; // Moon's centre
-const MY = 806;
-const MR = 96;
+const GX0 = L.left + 620;
+const GX1 = L.right;
+const GY = 1150;
 
-export const Compo: React.FC<SceneProps> = ({local, act}) => {
-  const D = act.end - act.start;
+export const Compo: React.FC<SceneProps> = ({local}) => {
+  const frameOn = rev(local, 0, 0.7);
+  const sweep = clamp((local - 0.35) / 2.4);
+  const read = rev(local, 2.5, 0.9);
+  const numbers = rev(local, 3.0, 1.0);
+  const gauge = rev(local, 3.6, 1.4);
 
-  // Beats: the bulge appears on "pasang"; the lead appears on "mendahului";
-  // the tangential arrow appears on "dorongan".
-  const bulge = eOut(clamp((local - 0.4) / 2.0));
-  const lead = eOut(clamp((local - (D * 0.4)) / 2.2));
-  const push = eOut(clamp((local - (D * 0.72)) / 1.8));
-
-  // the bulge axis swings from "pointing at the Moon" to "leading it"
-  const axis = lerp(0, -38, lead);
+  // the needle creeps from 0 to the 3 mm mark over the last third
+  const needle = 3 * clamp((local - 3.6) / 2.6);
 
   return (
-    <AbsoluteFill style={{background: '#080605'}}>
-      <AbsoluteFill style={{background: 'linear-gradient(172deg, #0C0907 0%, #080605 58%, #050403 100%)'}} />
-      <Dust n={520} seed={71} opacity={0.4} color={P.ink} />
+    <Stage grid={0.3} gridCell={144} paper={0.4} dustSeed={6} shade={0.94}>
+      <Label text="OSILOSKOP · KEMBALIAN" y={L.top} on={frameOn} />
+      <Label text="SKALA 0,2 NS / PETAK" y={L.top + 222} on={frameOn * 0.8} rule={0} size={14} color={alpha(P.muted, 0.65)} />
 
-      <Plate />
-      <OrbitGuide opacity={0.5} />
-
-      {/* the water, under the land so the coast overlaps it */}
-      <Bulge axis={axis} amount={bulge} />
-      <EarthDisc cx={EX} cy={EY} r={ER} spin={-14} meridian />
-      <MoonDisc />
-
-      <EarthMoonLine lead={lead} />
-      <LeadAngle lead={lead} axis={axis} />
-      <PushArrow push={push} />
-
-      <Labels bulge={bulge} lead={lead} push={push} />
-    </AbsoluteFill>
-  );
-};
-
-/* A surveyor's plate: the frame, and the cross-hairs of the drawing field. */
-const Plate = () => (
-  <AbsoluteFill style={{pointerEvents: 'none'}}>
-    <div style={{position: 'absolute', left: 96, top: 330, width: 1248, height: 1420, border: `1px solid ${alpha(P.ink, 0.1)}`}} />
-    <div style={{position: 'absolute', left: 96, top: 330, width: 60, height: 1, background: alpha(P.ink, 0.3)}} />
-    <div style={{position: 'absolute', left: 96, top: 330, width: 1, height: 60, background: alpha(P.ink, 0.3)}} />
-    <div style={{position: 'absolute', left: 1284, top: 330, width: 60, height: 1, background: alpha(P.ink, 0.3), transform: 'translateX(-60px)'}} />
-    <div style={{position: 'absolute', left: 1343, top: 330, width: 1, height: 60, background: alpha(P.ink, 0.3)}} />
-  </AbsoluteFill>
-);
-
-/* The Moon's orbit, as an arc behind everything: it explains why the bulge is
-   late without a single word. */
-const OrbitGuide: React.FC<{opacity: number}> = ({opacity}) => (
-  <div style={{position: 'absolute', left: 0, top: 0, opacity}}>
-    <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
-      <circle cx={EX} cy={EY} r={Math.hypot(MX - EX, MY - EY)} fill="none" stroke={alpha(P.ink, 0.12)} strokeWidth={1} strokeDasharray="3 10" />
-    </svg>
-  </div>
-);
-
-/* The tidal envelope: two lobes, drawn as one closed path that swells along the
-   bulge axis. The water is picked out with fine hatching lines clipped to the
-   lobe, so it reads as a body of water and not as a bar of colour. */
-const Bulge: React.FC<{axis: number, amount: number}> = ({axis, amount}) => {
-  if (amount <= 0) return null;
-  const a = ER * lerp(1.02, 1.62, amount);
-  const b = ER * lerp(1.02, 0.94, amount);
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: EX,
-        top: EY,
-        width: 1,
-        height: 1,
-        transform: `rotate(${axis}deg)`,
-      }}
-    >
-      <svg width={1440} height={2560} style={{position: 'absolute', left: -EX, top: -EY, overflow: 'visible'}}>
-        <defs>
-          <clipPath id="bulgeClip">
-            <ellipse cx={EX} cy={EY} rx={a} ry={b} />
-          </clipPath>
-          <pattern id="water" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
-            <line x1="0" y1="0" x2="0" y2="10" stroke={alpha(P.alt, 0.62)} strokeWidth={1.3} />
-          </pattern>
-        </defs>
-        <ellipse cx={EX} cy={EY} rx={a} ry={b} fill="rgba(18,30,28,0.5)" stroke={alpha(P.alt, 0.55)} strokeWidth={1.4} />
-        <ellipse cx={EX} cy={EY} rx={a} ry={b} fill="url(#water)" clipPath="url(#bulgeClip)" opacity={0.72} />
-        {/* the two crests, marked */}
-        <circle cx={EX - a + 8} cy={EY} r={5} fill={P.alt} />
-        <circle cx={EX + a - 8} cy={EY} r={5} fill={P.alt} />
-      </svg>
-    </div>
-  );
-};
-
-/* The Earth: solid rock, continents in flat bone-grey, a terminator on the far
-   side. Same engraving rules as the Moon, cool instead of warm, because water
-   and rock are the only cool things on this plate. */
-
-const MoonDisc = () => (
-  <div style={{position: 'absolute', left: MX - MR, top: MY - MR, width: MR * 2, height: MR * 2}}>
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        borderRadius: '50%',
-        background: 'radial-gradient(circle at 32% 28%, #F2E8D2 0%, #DCCBA9 40%, #A89372 74%, #55472F 100%)',
-      }}
-    />
-    <div style={{position: 'absolute', inset: 0, borderRadius: '50%', background: 'linear-gradient(96deg, rgba(10,7,5,0) 44%, rgba(10,7,5,0.7) 80%, rgba(10,7,5,0.95) 100%)'}} />
-    {[[-0.35, -0.2, 0.1], [0.2, 0.1, 0.13], [-0.1, 0.35, 0.08]].map(([x, y, s], i) => (
+      {/* the instrument face */}
       <div
-        key={i}
         style={{
           position: 'absolute',
-          left: MR + x * MR - s * MR,
-          top: MR + y * MR - s * MR,
-          width: s * MR * 2,
-          height: s * MR * 2,
-          borderRadius: '50%',
-          border: `1.5px solid rgba(58,48,34,0.5)`,
+          left: L.left - 26,
+          top: 320,
+          width: L.measure + 52,
+          height: 620,
+          border: `1px solid ${alpha(P.ink, 0.16)}`,
+          background: `linear-gradient(180deg, ${alpha(P.deep, 0.6)} 0%, ${alpha(P.abyss, 0.28)} 100%)`,
+          opacity: frameOn,
         }}
       />
-    ))}
-  </div>
-);
-
-/* The line between the two centres: the direction the water would point if the
-   Earth stood still. The lead is measured against it. */
-const EarthMoonLine: React.FC<{lead: number}> = ({lead}) => (
-  <div style={{position: 'absolute', left: 0, top: 0, opacity: lead, pointerEvents: 'none'}}>
-    <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
-      <line x1={EX} y1={EY} x2={MX} y2={MY} stroke={alpha(P.ink, 0.34)} strokeWidth={1} strokeDasharray="6 8" />
-    </svg>
-  </div>
-);
-
-/* The measured lead: an arc from the Christ–Moon line to the bulge axis, with
-   the angle written on it. */
-const LeadAngle: React.FC<{lead: number, axis: number}> = ({lead, axis}) => {
-  if (lead <= 0) return null;
-  const r = ER + 74;
-  const a1 = (Math.atan2(MY - EY, MX - EX) * 180) / Math.PI;
-  const a2 = a1 + axis;
-  const p = (deg: number) => [EX + Math.cos((deg * Math.PI) / 180) * r, EY + Math.sin((deg * Math.PI) / 180) * r];
-  const [x1, y1] = p(a1);
-  const [x2, y2] = p(a2);
-  const large = Math.abs(axis) > 180 ? 1 : 0;
-  return (
-    <div style={{position: 'absolute', left: 0, top: 0, opacity: clamp(lead * 1.4), pointerEvents: 'none'}}>
-      <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
-        <path d={`M${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`} fill="none" stroke={P.accent} strokeWidth={2} />
-        <line x1={EX} y1={EY} x2={x2 * 1.0} y2={y2} stroke={alpha(P.accent, 0.3)} strokeWidth={1} />
+      <svg width={L.w} height={L.h} style={{position: 'absolute', left: 0, top: 0, opacity: frameOn}}>
+        {/* the graticule: 10 × 8 divisions, every fifth heavier */}
+        {Array.from({length: 11}).map((_, i) => (
+          <line
+            key={`v${i}`}
+            x1={L.left - 26 + ((L.measure + 52) / 10) * i}
+            y1={320}
+            x2={L.left - 26 + ((L.measure + 52) / 10) * i}
+            y2={940}
+            stroke={alpha(P.alt, i % 5 === 0 ? 0.2 : 0.075)}
+            strokeWidth={1}
+          />
+        ))}
+        {Array.from({length: 9}).map((_, i) => (
+          <line
+            key={`h${i}`}
+            x1={L.left - 26}
+            y1={320 + (620 / 8) * i}
+            x2={L.right + 26}
+            y2={320 + (620 / 8) * i}
+            stroke={alpha(P.alt, i % 4 === 0 ? 0.2 : 0.075)}
+            strokeWidth={1}
+          />
+        ))}
+        <line x1={L.left - 26} y1={710} x2={L.right + 26} y2={710} stroke={alpha(P.alt, 0.32)} strokeWidth={1} />
       </svg>
-      <div
-        style={{
-          position: 'absolute',
-          left: (x1 + x2) / 2 - 150,
-          top: (y1 + y2) / 2 - 66,
-          width: 300,
-          textAlign: 'center',
-          fontFamily: T.mono,
-          fontSize: 18,
-          letterSpacing: '0.26em',
-          color: P.accent,
-        }}
-      >
-        MENDAHULUI
-      </div>
-    </div>
-  );
-};
 
-/* The force: the leading bulge hauls the Moon forward along its orbit. Drawn as
-   one tangential arrow at the Moon, in the direction of travel — the only arrow
-   in the film, and the point of the whole episode. */
-const PushArrow: React.FC<{push: number}> = ({push}) => {
-  if (push <= 0) return null;
-  // tangent to the orbit at the Moon, counter-clockwise (the way it moves)
-  const ux = MX - EX;
-  const uy = MY - EY;
-  const l = Math.hypot(ux, uy);
-  const tx = uy / l;
-  const ty = -ux / l;
-  const x0 = MX + tx * (MR + 14);
-  const y0 = MY + ty * (MR + 14);
-  const ex = x0 + tx * 236 * push;
-  const ey = y0 + ty * 236 * push;
-  const head = 17;
-  return (
-    <div style={{position: 'absolute', left: 0, top: 0, pointerEvents: 'none'}}>
-      <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
-        <line x1={x0} y1={y0} x2={ex} y2={ey} stroke={P.hot} strokeWidth={3.2} />
-        <polygon
-          points={`${ex},${ey} ${ex - tx * head - ty * head * 0.62},${ey - ty * head + tx * head * 0.62} ${ex - tx * head + ty * head * 0.62},${ey - ty * head - tx * head * 0.62}`}
-          fill={P.hot}
-        />
-      </svg>
+      <Trace x0={L.left - 10} x1={L.right + 10} y={710} h={300} sweep={sweep} pulse={0.62} noise={1} color={P.accent} ghost={0.22} seed={6} />
+
+      {/* the grid readout, mono, in the corner of the face */}
       <div
         style={{
           position: 'absolute',
-          left: ex + tx * 26 - 210,
-          top: ey + ty * 26 - 20,
-          width: 210,
-          textAlign: 'right',
-          fontFamily: T.mono,
-          fontSize: 20,
-          letterSpacing: '0.18em',
-          color: P.hot,
-          opacity: clamp(push * 1.6),
-        }}
-      >
-        DORONGAN
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: ex + tx * 26 - 250,
-          top: ey + ty * 26 + 12,
-          width: 250,
-          textAlign: 'right',
+          left: L.left + 10,
+          top: 842,
           fontFamily: T.mono,
           fontSize: 16,
           letterSpacing: '0.22em',
-          color: alpha(P.hot, 0.72),
-          opacity: clamp(push * 1.6),
+          color: alpha(P.alt, 0.75),
+          opacity: frameOn,
         }}
       >
-        BULAN MAKIN CEPAT
+        CH1 · 2 mV/div · 62 ms/div
       </div>
-    </div>
+      <div
+        style={{
+          position: 'absolute',
+          right: L.w - L.right + 10,
+          top: 842,
+          fontFamily: T.mono,
+          fontSize: 16,
+          letterSpacing: '0.22em',
+          color: alpha(P.accent, 0.85),
+          opacity: read,
+        }}
+      >
+        t = 2,560000000 S
+      </div>
+
+      <Note
+        text="satu pulsa, satu angka."
+        x={L.left + 700}
+        y={392}
+        to={[L.left + L.measure * 0.62, 566]}
+        on={read}
+        width={300}
+        size={SZ.small}
+      />
+
+      {/* the three numbers, as a row of readings */}
+      <div style={{opacity: numbers}}>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1032,
+            width: L.measure,
+            height: 1,
+            background: alpha(P.ink, 0.22),
+          }}
+        />
+        <Figure value="PICO" x={L.left} y={1064} size={76} unit="DETIK" unitColor={alpha(P.accent, 0.9)} tracking={0.01} />
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1164,
+            width: 360,
+            fontFamily: T.italic,
+            fontStyle: 'italic',
+            fontSize: SZ.body,
+            lineHeight: 1.3,
+            color: alpha(P.muted, 0.92),
+          }}
+        >
+          10⁻¹² detik.
+          <br />
+          Satu pikodetik = 0,3 mm cahaya.
+        </div>
+      </div>
+
+      {/* the resolution, as a linear micrometer: 0–10 mm with the needle at 3.
+          A dial would hide the point — that 3 mm is a sliver of the baseline. */}
+      <div style={{opacity: gauge}}>
+        <svg width={L.w} height={L.h} style={{position: 'absolute', left: 0, top: 0}}>
+          <line x1={GX0} y1={GY} x2={GX1} y2={GY} stroke={alpha(P.ink, 0.4)} strokeWidth={1.2} />
+          {Array.from({length: 41}).map((_, i) => {
+            const x = GX0 + ((GX1 - GX0) * i) / 40;
+            const big = i % 10 === 0;
+            const mid = i % 5 === 0;
+            return (
+              <line
+                key={i}
+                x1={x}
+                y1={GY}
+                x2={x}
+                y2={GY - (big ? 30 : mid ? 20 : 11)}
+                stroke={alpha(P.ink, big ? 0.72 : mid ? 0.44 : 0.2)}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {/* the needle sits where the measurement lands */}
+          <g transform={`translate(${GX0 + ((GX1 - GX0) * needle) / 10} 0)`}>
+            <line x1={0} y1={GY - 62} x2={0} y2={GY + 34} stroke={P.accent} strokeWidth={2} />
+            <path d={`M-8 ${GY - 62} L8 ${GY - 62} L0 ${GY - 50} Z`} fill={P.accent} />
+          </g>
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            left: GX0,
+            top: GY + 52,
+            fontFamily: T.mono,
+            fontSize: 15,
+            letterSpacing: '0.26em',
+            color: alpha(P.muted, 0.68),
+          }}
+        >
+          0
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: GX1 - 80,
+            width: 80,
+            top: GY + 52,
+            textAlign: 'right',
+            fontFamily: T.mono,
+            fontSize: 15,
+            letterSpacing: '0.26em',
+            color: alpha(P.muted, 0.68),
+          }}
+        >
+          10 MM
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: GX0 + ((GX1 - GX0) * needle) / 10 - 120,
+            width: 240,
+            top: GY - 130,
+            textAlign: 'center',
+            fontFamily: T.display,
+            fontSize: 96,
+            fontWeight: 300,
+            letterSpacing: '-0.03em',
+            lineHeight: 1,
+            color: P.ink,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {needle.toFixed(1).replace('.', ',')}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: GX0,
+            top: GY + 104,
+            fontFamily: T.mono,
+            fontSize: 15,
+            letterSpacing: '0.3em',
+            color: alpha(P.accent, 0.9),
+          }}
+        >
+          KETELITIAN JARAK · MILIMETER
+        </div>
+      </div>
+
+      {/* the arithmetic that turns a clock into a ruler, stated once */}
+      <div style={{opacity: read}}>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1320,
+            width: L.measure,
+            height: 1,
+            background: alpha(P.ink, 0.14),
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1348,
+            fontFamily: T.display,
+            fontSize: 62,
+            fontWeight: 300,
+            letterSpacing: '-0.025em',
+            lineHeight: 1.1,
+            color: P.ink,
+          }}
+        >
+          1 mm pergi-pulang = <span style={{color: P.accent}}>6,7 pikodetik</span>
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1436,
+            fontFamily: T.mono,
+            fontSize: 16,
+            letterSpacing: '0.24em',
+            color: alpha(P.muted, 0.62),
+          }}
+        >
+          2 × 1 mm ÷ 299.792 km/s
+        </div>
+      </div>
+
+      {/* the baseline, for scale: 384.400 km with 3 mm marked */}
+      <div style={{opacity: read}}>
+        <Ticks
+          x0={L.left}
+          x1={L.right}
+          y={1596}
+          n={120}
+          major={20}
+          height={20}
+          reveal={1}
+          color={alpha(P.ink, 0.5)}
+          labels={['0', '64.000', '128.000', '192.000', '256.000', '320.000', '384.400']}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1658,
+            fontFamily: T.mono,
+            fontSize: 15,
+            letterSpacing: '0.26em',
+            color: alpha(P.muted, 0.7),
+          }}
+        >
+          KILOMETER
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.right - 300,
+            top: 1658,
+            fontFamily: T.italic,
+            fontStyle: 'italic',
+            fontSize: SZ.small,
+            color: alpha(P.accent, 0.9),
+          }}
+        >
+          3 mm dari 384.400 km = 1 : 10¹¹
+        </div>
+      </div>
+
+      <Brackets x0={L.left - 26} y0={314} x1={L.right + 26} y1={946} len={22} on={frameOn * 0.7} />
+      <Source text="LUNAR LASER RANGING · APOLLO 15 ARRAY · 1971–SEKARANG" on={rev(local, 4.4, 0.9)} y={1738} />
+    </Stage>
   );
 };
-
-/* Plate labels: three short ones, each attached to the thing it names. */
-const Labels: React.FC<{bulge: number, lead: number, push: number}> = ({bulge, lead, push}) => (
-  <AbsoluteFill style={{pointerEvents: 'none'}}>
-    <div style={{position: 'absolute', left: 96 + 24, top: 330 + 22, opacity: bulge, fontFamily: T.mono, fontSize: 19, letterSpacing: '0.36em', color: alpha(P.ink, 0.5)}}>
-      POTONGAN BUMI &nbsp;·&nbsp; PASANG
-    </div>
-    <div style={{position: 'absolute', left: MX - 96, top: MY + MR + 34, width: 192, textAlign: 'center', opacity: bulge, fontFamily: T.mono, fontSize: 18, letterSpacing: '0.3em', color: alpha(P.ink, 0.6)}}>
-      BULAN
-    </div>
-    <div style={{position: 'absolute', left: EX - 200, top: EY + ER + 96, width: 400, textAlign: 'center', opacity: bulge, fontFamily: T.italic, fontStyle: 'italic', fontSize: 32, color: alpha(P.ink, 0.62), letterSpacing: '-0.01em'}}>
-      laut naik, dan tertinggal
-    </div>
-  </AbsoluteFill>
-);
 
 export default Compo;

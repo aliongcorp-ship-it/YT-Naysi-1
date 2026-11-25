@@ -1,13 +1,17 @@
 """Trim, EQ and level the narration.
 
 Input  src/vo/sN.mp3   (the generated takes)
-Output audio/vo_fx/sN.wav + audio/vo_fx/durations.json
+Output audio/vo_fx/sN.flac + audio/vo_fx/durations.json
+
+Intermediates are FLAC, not WAV: the same 24-bit resolution at half the bytes,
+and the pipeline never touches an uncompressed container on disk.
 
 Kept deterministic so a re-take only changes timings, never the mix chain.
 """
 import glob
 import json
 import os
+import shutil
 import shutil
 import subprocess
 import wave
@@ -27,12 +31,13 @@ os.makedirs("audio/vo_fx", exist_ok=True)
 durs = {}
 for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(p)[1:-4])):
     name = os.path.basename(src)[:-4]
-    # decode to exactly 48 kHz mono PCM before any sample work
-    subprocess.run([FF, "-y", "-v", "error", "-i", src, "-ar", str(SR), "-ac", "1", "-c:a", "pcm_s16le", f"/tmp/{name}.wav"], check=True)
-    with wave.open(f"/tmp/{name}.wav") as w:
-        x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32) / 32768
-        sr = w.getframerate()
-    os.remove(f"/tmp/{name}.wav")
+    # decode straight to 48 kHz mono float32 on a pipe: no temp file on disk,
+    # and no uncompressed container anywhere in the chain
+    pcm = subprocess.run(
+        [FF, "-v", "error", "-i", src, "-f", "f32le", "-ar", str(SR), "-ac", "1", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    x = np.frombuffer(pcm, dtype="<f4").astype(np.float32)
     # --- trim lead / tail silence (PCM 16 bit, -42 dBFS) ---
     win = int(0.01 * SR)
     frames = len(x) // win
@@ -47,13 +52,14 @@ for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(
     if len(x) > 2 * f:
         x[:f] *= np.linspace(0, 1, f)
         x[-f:] *= np.linspace(1, 0, f)
-    raw = f"audio/vo_fx/{name}.raw.wav"
-    out = f"audio/vo_fx/{name}.wav"
-    with wave.open(raw, "w") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(SR)
-        w.writeframes((np.clip(x, -1, 1) * 32767).astype(np.int16).tobytes())
+    raw = f"audio/vo_fx/{name}.raw.flac"
+    out = f"audio/vo_fx/{name}.flac"
+    pcm = (np.clip(x, -1, 1) * 32767).astype("<i2").tobytes()
+    subprocess.run(
+        [FF, "-y", "-v", "error", "-f", "s16le", "-ar", str(SR), "-ac", "1", "-i", "-",
+         "-c:a", "flac", "-sample_fmt", "s16", raw],
+        input=pcm, check=True,
+    )
     # --- low shelf for chest, de-mud, presence, soft compression, loudness ---
     af = (
         "highpass=f=72:poles=2,"
@@ -74,10 +80,16 @@ for src in sorted(glob.glob("src/vo/*.mp3"), key=lambda p: int(os.path.basename(
         "loudnorm=I=-16:TP=-1.5:LRA=9,"
         "aresample=48000"
     )
-    subprocess.run([FF, "-y", "-v", "error", "-i", raw, "-af", af, "-c:a", "pcm_s16le", "-ar", "48000", "-ac", "1", out], check=True)
+    subprocess.run([FF, "-y", "-v", "error", "-i", raw, "-af", af, "-c:a", "flac", "-ar", "48000", "-ac", "1", out], check=True)
     os.remove(raw)
-    with wave.open(out) as w:
-        durs[name] = round(w.getnframes() / w.getframerate(), 4)
+    # exact duration: count the samples of the finished take. This is the number
+    # the timeline and the score both use, so measuring it here once removes any
+    # dependency on a probe binary being installed.
+    n = subprocess.run(
+        [FF, "-v", "error", "-i", out, "-f", "f32le", "-ar", str(SR), "-ac", "1", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    durs[name] = round(len(n) / 4 / SR, 4)
     print(f"{name}: {durs[name]:.2f}s")
 
 json.dump(durs, open("audio/vo_fx/durations.json", "w"), indent=1)

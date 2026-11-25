@@ -2,7 +2,7 @@
 #
 # Triggers, in order of how often they fire:
 #
-#   push (this branch)  → typecheck + master audio + 10 review stills   (~6 min)
+#   push (this branch)  → typecheck + master audio + one still per shot (~6 min)
 #   push (tag v*)       → the above, then the full film + a release     (~40 min)
 #   workflow_dispatch   → same as a tag push, with the tag as an input
 #
@@ -10,7 +10,7 @@
 # (GitHub's rule, not ours); a tag push works from any branch, today.
 #
 # Artifacts per run, kept 30 days:
-#   still-<frame>.png × 10   one per shot, for review without a player
+#   still-<shot>-<frame>.png  one per shot, for review without a player
 #   naysi_master.mp4         the film, audio muxed       (full runs only)
 #   naysi_pack.zip           title / description / tags  (full runs only)
 #   probe.txt, render.log    what came out, and how long it took
@@ -84,7 +84,7 @@ jobs:
       - name: narration + timeline + score + master bus
         run: node scripts/build.mjs --audio-only
 
-      - name: ten review stills, one per shot
+      - name: one review still per shot
         run: |
           mkdir -p out
           node -e '
@@ -95,7 +95,7 @@ jobs:
             }
           ' > /tmp/shots.txt
           while read -r frame name; do
-            npx remotion still src/index.ts Specimen "out/still-${name}-${frame}.png" --frame="$frame"
+            npx remotion still src/index.ts sidereal "out/still-${name}-${frame}.png" --frame="$frame"
           done < /tmp/shots.txt
           ls -l out
 

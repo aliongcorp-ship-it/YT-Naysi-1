@@ -1,125 +1,128 @@
-/* y9 — 384.400 km
-   The distance, laid out flat. Earth on the left edge, the Moon on the right,
-   and a measured rule between them with the number written on it. Under the
-   rule, the same distance cut into a hundred years: 3,8 cm each. Nothing else
-   moves except the measure being drawn, because the number is the picture. */
+/* y9 — 24 vs 22 jam
+   The bill. Two dials turn at the same rate — a day now, a day 400 million years
+   ago — and the wedge between them is the whole cost of the Moon's retreat.
+
+   The shot is built so the eye compares the two hands before it reads a word. */
 
 import React from 'react';
 import type {SceneProps} from './types';
-import {AbsoluteFill} from 'remotion';
-import {P, T, Metric, EarthDisc} from './bulan';
-import {MoonDisc} from '../src/ui/Moon';
-import {Dust} from '../src/ui/Texture';
-import {alpha, clamp, eOut, eOutQuint, hash} from '../src/theme';
+import {
+  Brackets, Counter, Dial, Figure, Label, L, Note, P, SZ, Source, Stage, T, alpha, breathe, clamp, rev,
+} from './bulan';
 
-const EX = 168;
-const EY = 1010;
-const ER = 132;
-const MX = 1204;
-const MY = 1010;
-const MR = 154;
+const CY = 830;
+const R = 268;
 
 export const Compo: React.FC<SceneProps> = ({local}) => {
-  const draw = eOutQuint(clamp(local / 1.6));
-  const earth = eOut(clamp((local - 0.1) / 0.9));
-  const moon = eOut(clamp((local - 0.35) / 0.9));
-  const years = eOut(clamp((local - 2.1) / 1.3));
+  const on = rev(local, 0, 0.9);
+  const turn = clamp((local - 0.35) / 4.6);        // one shared rotation
+  const wedge = rev(local, 2.7, 0.9);
+  const rate = rev(local, 3.1, 0.9);
+  const note = rev(local, 3.7, 0.9);
 
   return (
-    <AbsoluteFill style={{background: '#050403'}}>
-      <AbsoluteFill style={{background: 'linear-gradient(180deg, #080605 0%, #060504 58%, #040302 100%)'}} />
-      <Dust n={480} seed={99} opacity={0.34} color={P.ink} />
+    <Stage grid={0.3} gridCell={128} paper={0.42} dustSeed={9} shade={0.9}>
+      <Label text="HARI · SEKARANG & 400 JUTA TAHUN LALU" y={L.top} on={on} />
 
-      {/* the two bodies, small, at the ends of the rule */}
-      <EarthDisc cx={EX} cy={EY} r={ER} on={earth} />
-      <div style={{opacity: moon}}>
-        <MoonDisc cx={MX} cy={MY} r={MR} detail={0.85} lit={0.9} tilt={-8} seed={17} opacity={0.95} />
+      <Dial cx={L.left + 268} cy={CY} r={R} hours={24} turn={turn} title="SEKARANG" sub="24 JAM" on={on} color={P.ink} accent={P.accent} ticks={24} />
+      <Dial cx={L.right - 268} cy={CY} r={R} hours={22} turn={turn} title="400 JUTA TAHUN LALU" sub="22 JAM" on={on} color={alpha(P.ink, 0.72)} accent={P.hot} ticks={22} />
+
+      {/* the wedge: what the missing two hours look like on a dial */}
+      <div style={{opacity: wedge}}>
+        <svg width={L.w} height={L.h} style={{position: 'absolute', left: 0, top: 0}}>
+          <line x1={L.left + 268} y1={CY - R - 34} x2={L.left + 268} y2={CY - R + 46} stroke={alpha(P.accent, 0.8)} strokeWidth={1.6} />
+          <line x1={L.right - 268} y1={CY - R - 34} x2={L.right - 268} y2={CY - R + 46} stroke={alpha(P.hot, 0.8)} strokeWidth={1.6} />
+          <line x1={L.left + 268} y1={CY - R - 34} x2={L.right - 268} y2={CY - R - 34} stroke={alpha(P.ink, 0.3)} strokeWidth={1} strokeDasharray="4 8" />
+        </svg>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left + 268,
+            width: 640,
+            top: CY - R - 92,
+            textAlign: 'center',
+            fontFamily: T.mono,
+            fontSize: 15,
+            letterSpacing: '0.32em',
+            color: alpha(P.muted, 0.75),
+          }}
+        >
+          SELISIH 2 JAM PER HARI
+        </div>
       </div>
 
-      {/* the measured line: a rule with a tick every 10 000 km */}
-      <Rule draw={draw} />
-      <div style={{opacity: eOut(clamp((local - 0.9) / 1.0))}}>
-        <Metric x0={EX + ER + 26} x1={MX - MR - 26} y={MY} label="384.400 KM" sub="RATA-RATA, TIAP MALAM BERUBAH" color={P.accent} up={false} />
+      {/* the rate, quoted small, because it is the cause and not the headline */}
+      <div style={{opacity: rate}}>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1368,
+            width: L.measure,
+            height: 1,
+            background: alpha(P.ink, 0.22),
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left,
+            top: 1400,
+            fontFamily: T.display,
+            fontSize: 96,
+            fontWeight: 300,
+            letterSpacing: '-0.03em',
+            color: P.ink,
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1,
+          }}
+        >
+          <Counter from={0} to={1.8} at={3.1} dur={1.0} local={local} digits={1} sep={false} />
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left + 250,
+            top: 1412,
+            fontFamily: T.mono,
+            fontSize: 18,
+            letterSpacing: '0.3em',
+            color: alpha(P.accent, 0.95),
+          }}
+        >
+          MILIDETIK / ABAD
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            left: L.left + 250,
+            top: 1452,
+            width: 620,
+            fontFamily: T.italic,
+            fontStyle: 'italic',
+            fontSize: SZ.body,
+            lineHeight: 1.36,
+            color: alpha(P.muted, 0.9),
+          }}
+        >
+          Bumi melambat karena harus menyeret pasangnya sendiri.
+        </div>
       </div>
 
-      <Headline />
-      {/* a drop line from the middle of the rule down to the hundred years, so
-          the two scales are visibly the same distance */}
-      <div style={{position: 'absolute', left: 720, top: MY + 22, width: 1, height: 1288 - MY - 22, background: alpha(P.ink, 0.12), opacity: draw, pointerEvents: 'none'}} />
-      <Years on={years} />
-      <Footer />
-    </AbsoluteFill>
+      <Note
+        text="dua jam lebih pendek, bukan dua menit."
+        x={L.left}
+        y={1590}
+        on={note}
+        width={720}
+        size={SZ.body}
+        color={alpha(P.muted, 0.92)}
+      />
+
+      <Brackets x0={L.left - 12} y0={430} x1={L.right + 12} y1={1230} len={22} on={on * 0.5} />
+      <Source text="DARI REKAMAN PASANG & KARANG · LAJU 1,8 MS/ABAD" on={rev(local, 4.2, 0.9)} y={1738} />
+    </Stage>
   );
 };
-
-/* A long rule with ticks: ten thousand kilometres per major tick, a thousand per
-   minor. Drawn by clipping, so the drawing motion is a reveal and not a redraw. */
-const Rule: React.FC<{draw: number}> = ({draw}) => {
-  const x0 = EX + ER + 26;
-  const x1 = MX - MR - 26;
-  const y = MY;
-  const n = 38;
-  return (
-    <div style={{position: 'absolute', left: 0, top: 0, pointerEvents: 'none'}}>
-      <svg width={1440} height={2560} style={{position: 'absolute', left: 0, top: 0}}>
-        <defs>
-          <clipPath id="ruleClip">
-            <rect x={x0 - 4} y={y - 60} width={(x1 - x0 + 8) * draw} height={120} />
-          </clipPath>
-        </defs>
-        <g clipPath="url(#ruleClip)">
-          <line x1={x0} y1={y} x2={x1} y2={y} stroke={alpha(P.ink, 0.5)} strokeWidth={1.4} />
-          {Array.from({length: n + 1}).map((_, i) => {
-            const x = x0 + (i / n) * (x1 - x0);
-            const major = i % 10 === 0;
-            const mid = i % 5 === 0;
-            return <line key={i} x1={x} y1={y - (major ? 20 : mid ? 13 : 7)} x2={x} y2={y + (major ? 20 : mid ? 13 : 7)} stroke={alpha(P.ink, major ? 0.6 : 0.3)} strokeWidth={1} />;
-          })}
-          {/* the 3,8 cm step, drawn at real scale in the corner of the rule */}
-          <line x1={x0} y1={y + 62} x2={x0 + 0.9} y2={y + 62} stroke={P.hot} strokeWidth={6} />
-        </g>
-      </svg>
-    </div>
-  );
-};
-
-const Headline = () => (
-  <div style={{position: 'absolute', left: 0, width: 1440, top: 372, textAlign: 'center', pointerEvents: 'none'}}>
-    <div style={{fontFamily: T.mono, fontSize: 19, letterSpacing: '0.44em', color: alpha(P.ink, 0.46)}}>JARAK RATA-RATA</div>
-  </div>
-);
-
-/* A hundred years of recession, as a row of marks that marches off the right
-   edge: the point is that it does not stop. */
-const Years: React.FC<{on: number}> = ({on}) => {
-  if (on <= 0) return null;
-  const x0 = 168;
-  const y = 1288;
-  const n = 100;
-  const dx = 13.4;
-  return (
-    <AbsoluteFill style={{opacity: on, pointerEvents: 'none'}}>
-      {Array.from({length: n}).map((_, i) => {
-        const x = x0 + i * dx;
-        if (x > 1330) return null;
-        const on2 = clamp((on * 1.4 - i / n) * 3);
-        return <div key={i} style={{position: 'absolute', left: x, top: y, width: 1, height: 44, background: alpha(P.ink, 0.13), opacity: on2}} />;
-      })}
-      <div style={{position: 'absolute', left: x0, top: y + 62, fontFamily: T.mono, fontSize: 17, letterSpacing: '0.3em', color: alpha(P.ink, 0.4)}}>100 TAHUN</div>
-      <div style={{position: 'absolute', left: x0 + 3, top: y - 26, width: 100, fontFamily: T.mono, fontSize: 18, letterSpacing: '0.14em', color: P.hot}}>
-        +3,8 M
-      </div>
-      <div style={{position: 'absolute', left: x0, top: y + 118, fontFamily: T.italic, fontStyle: 'italic', fontSize: 34, color: alpha(P.ink, 0.5)}}>
-        satu abad, sepanjang lengan
-      </div>
-    </AbsoluteFill>
-  );
-};
-
-const Footer = () => (
-  <div style={{position: 'absolute', left: 0, width: 1440, top: 1790, textAlign: 'center', pointerEvents: 'none'}}>
-    <div style={{width: 1, height: 96, background: alpha(P.ink, 0.18), margin: '0 auto'}} />
-  </div>
-);
 
 export default Compo;

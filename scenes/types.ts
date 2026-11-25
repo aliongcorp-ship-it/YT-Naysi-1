@@ -1,12 +1,12 @@
 import type {Act, Shot} from '../src/timeline';
 
 /* What every shot receives. One shape for all of them, so the table in
-   `src/Timeline.tsx` can hold them without casts, and so a new shot knows what
-   is available before it is written.
+   `src/Timeline.tsx` holds them without casts, and a new shot knows exactly
+   what is available before it is written.
 
-   `local` is seconds since this shot started — the only clock a shot should
-   read. `t` is film time and exists for the rare thing that has to line up
-   across a cut (the closing fade, a date that runs over two shots). */
+   `local` is seconds since this shot started — the only clock a shot reads.
+   `act` carries the words and the measured span; `shot` carries the cut; `t` is
+   film time, for the rare thing that has to line up across a cut. */
 export type SceneProps = {
   act: Act;
   shot: Shot;
