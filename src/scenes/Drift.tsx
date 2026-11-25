@@ -101,7 +101,7 @@ export const Drift: React.FC<{act: Act; shot: Shot}> = ({act, shot}) => {
           letterSpacing: '-0.01em',
         }}
       >
-        ia sudah lebih jauh daripada kemarin
+        begitu pun besok malam
       </div>
     </AbsoluteFill>
   );

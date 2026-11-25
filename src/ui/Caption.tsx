@@ -107,7 +107,8 @@ export const Caption: React.FC<{act: Act; t: number}> = ({act, t}) => {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
-  const exitStart = next ? next.start - 0.20 : g.end + 0.6;
+  // the last card of the film holds for a beat instead of snapping away
+  const exitStart = next ? next.start - 0.20 : g.end + 1.1;
   const exit = interpolate(t, [exitStart, exitStart + 0.16], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
