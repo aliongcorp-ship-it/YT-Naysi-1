@@ -1,43 +1,42 @@
 {
-  "identity": "abyss",
-  "title": "Indonesia Punya Jurang 7.440 Meter — dan Kita Baru Tahu Bentuknya 8 Tahun Lalu",
-  "hook": "Dua pertiga Indonesia itu laut. Tapi kita memetakan Mars sampai detail 100 meter, sementara 72,7% dasar laut kita sendiri masih gelap. Di Laut Banda ada jurang 7.440 meter — dan bentuk aslinya baru ketahuan tahun 2018.",
+  "identity": "lrr",
+  "title": "Bulan Menjauh 3,8 Cm Tiap Tahun — dan Kita Tahu dari Cermin yang Ditinggal di Sana",
+  "hook": "Bulan diam-diam meninggalkan kita, tiga koma delapan sentimeter tiap tahun — secepat kuku tumbuh. Kita tahu itu bukan dari teleskop, tapi dari cermin yang ditanam astronot Apollo di Laut Ketenangan tahun 1969, dan masih memantulkan laser sampai sekarang.",
   "body": [
-    "Bab 1 — Titik buta. Baru 27,3% dasar laut dunia terpetakan dengan standar modern (Seabed 2030, Juni 2025). Tahun 2017 angkanya masih 6%. Permukaan Mars, Bulan, Venus, bahkan asteroid Bennu sudah dipotret sampai resolusi 5 cm. Dasar laut kita belum.",
-    "Bab 2 — Kedalaman. Palung Weber di Laut Banda, Maluku, turun sampai 7.440 meter. Monas 132 meter, jadi 56 Monas bisa ditumpuk di situ dan masih ada sisa. Tekanan di dasar sekitar 700 kg/cm². Cahaya matahari habis di 200 meter pertama.",
-    "Bab 3 — Yang terlepas. Selama hampir seabad Palung Weber dijelaskan sebagai lempeng yang menunjam. Survei 2018 menemukan batuan mantel terangkat di dinding palung: lempengnya tidak menunjam, cangkangnya terkelupas — satu slab sepanjang ±150 km terlepas lalu tenggelam.",
-    "Bab 4 — Yang hidup di bawah. Fangtooth dengan gigi yang terlalu panjang untuk mulutnya, viperfish yang memancing dengan lampu di punggung, anglerfish yang membawa koloni bakteri bercahaya di kepala. Bukan monster — cuma pekerja shift malam.",
-    "Bab 5 — Tekanan dan cahaya. Setiap 10 meter menambah satu atmosfer. Manusia tanpa perlindungan hancur di bawah 200 meter; ikan di 7.000 meter justru dibentuk oleh tekanan itu. Di bawah 200 meter cahaya berhenti, jadi 76% biota laut dalam membuat cahayanya sendiri.",
-    "Bab 6 — Pegunungan terpanjang di Bumi. Punggungan tengah samudra membentang 78.000 km — Himalaya cuma 2.400 km, Andes 7.000 km. Di sana gunung api memuntahkan panas ke air sedingin es, dan kehidupan tidak butuh matahari, hanya batu.",
-    "Bab 7 — Kenapa ini penting. Kabel internet antar benua berbaring di dasar laut, patahan di bawahnya bisa mengirim tsunami, dan laut menyerap sebagian besar panas yang kita lepaskan. Peta bawah laut bukan kemewahan, itu asuransi.",
-    "Jadi saat kamu melihat laut dari tepi pantai, ingat: yang kamu lihat cuma kulitnya. Indonesia masih punya wilayah yang belum pernah dilihat siapa pun — bukan karena tidak ada, tapi karena belum dicari."
+    "Bab 1 — Cermin. Apollo 11, 14, dan 15 masing-masing meninggalkan panel retroreflektor: seratus prisma kaca seukuran koper, tanpa baterai, tanpa listrik, tanpa bagian bergerak. Lima puluh tujuh tahun kemudian masih bekerja. Prisma sudut-tiga memantulkan cahaya tepat ke arah asalnya, dari sudut datang mana pun.",
+    "Bab 2 — Satu foton. Laser ditembakkan dari Bumi ke panel itu, 384.400 kilometer jauhnya. Berkasnya melebar jadi sekitar 20 kilometer saat tiba di Bulan. Dari 10^20 foton yang berangkat, teleskop di Bumi mungkin menangkap satu. Terkadang dua.",
+    "Bab 3 — Milimeter. Waktu pulang-pergi diukur sampai pikodetik, jadi jarak Bumi–Bulan terbaca sampai milimeter. APOLLO di Apache Point melaporkan ketelitian median 1,7 mm per malam. Itu setebal kartu kredit, diukur menyeberangi hampir 400 juta meter.",
+    "Bab 4 — Pasang yang mendorong. Gravitasi Bulan menarik laut membentuk pasang. Karena Bumi berputar lebih cepat daripada Bulan mengorbit, tonjolan pasang selalu sedikit mendahului Bulan. Tonjolan yang mendahului itu menarik Bulan ke depan, memberi energi pada orbitnya — dan Bulan naik menjauh. Energinya diambil dari putaran Bumi.",
+    "Bab 5 — Hari yang memanjang. Karena itu putaran Bumi melambat sekitar 1,8 milidetik per abad. Terdengar sepele, tapi menumpuk: pada periode Devonian 400 juta tahun lalu, karang dan endapan pasang merekam sekitar 400 hari dalam setahun, dengan panjang hari sekitar 22 jam.",
+    "Bab 6 — Bukan cuma sekali. Angka 3,8 cm/tahun adalah laju sekarang, bukan laju sepanjang sejarah. Laju reksesi berubah karena bentuk benua mengubah besarnya pasang. Data laser juga dipakai menguji prinsip ekuivalensi Einstein sampai 4 bagian per 10^14, dan menemukan inti cair Bulan dari goyangan kecil rotasinya.",
+    "Penutup. Kalau laju 3,8 cm/tahun diproyeksikan mundur, Bulan seolah menabrak Bumi 1,5 miliar tahun lalu — padahal Bulan terbentuk 4,5 miliar tahun lalu. Artinya laju itu dulu berbeda. Nanti, miliaran tahun lagi, pasang akan terkunci dan Bulan berhenti menjauh."
   ],
   "sources": [
-    "Nippon Foundation–GEBCO Seabed 2030 (27,3%, Juni 2025)",
-    "Pemerintah Hindia Belanda / HMS Snellius 1929–1930 (Palung Weber 7.440 m)",
-    "Survei geofisika Laut Banda 2018 (batuan mantel terangkat, slab ±150 km)",
-    "NOAA / Schmidt Ocean Institute (zona pelagik, bioluminesensi)",
-    "USGS (punggungan tengah samudra, aktivitas hidrotermal)"
+    "NASA JPL — Apollo 11 Laser Ranging Retroreflector, reksesi 3,8 cm/tahun, akurasi ~3 cm",
+    "APOLLO / Apache Point Observatory Lunar Laser-ranging Operation — ketelitian median 1,7 mm per malam, timing pikodetik",
+    "Eos (AGU), 'Seeing the Light', 2022 — prisma 3,8 cm, 100/300 prisma per panel, satu milimeter",
+    "Williams & Boggs, Lunar Laser Ranging — uji prinsip ekuivalensi 4 x 10^-14, inti cair Bulan",
+    "Stephenson, Morrison & Hohenkerk (2016), 'Measurement of the Earth's rotation: 720 BC to AD 2015' — 1,8 ms/abad",
+    "Runcorn / Rosenberg — pita pertumbuhan karang Devonian, ~400 hari per tahun, hari ~22 jam"
   ],
   "hashtags": [
-    "#Indonesia",
-    "#LautBanda",
-    "#PalungWeber",
+    "#Bulan",
+    "#Sains",
+    "#Fisika",
+    "#Astronomi",
+    "#Apollo11",
+    "#LaserRanging",
+    "#Einstein",
     "#SainsIndonesia",
     "#FaktaUnik",
-    "#Geografi",
-    "#LautDalam",
-    "#Seabed2030",
-    "#Edukasi",
     "#Shorts"
   ],
   "tags": [
-    "palung weber", "laut banda", "titik terdalam indonesia", "dasar laut", "seabed 2030",
-    "gebco", "peta dasar laut", "laut dalam indonesia", "fakta laut", "fakta sains",
-    "geografi indonesia", "oseanografi", "bioluminesensi", "fangtooth", "viperfish",
-    "anglerfish", "punggungan tengah samudra", "gunung api bawah laut", "palung jawa",
-    "monas", "sains indonesia", "edukasi sains", "fakta unik indonesia", "laut indonesia",
-    "maritim indonesia", "fakta menarik", "belajar sains", "dunia laut", "misteri laut",
-    "kedalaman laut"
+    "bulan menjauh", "lunar laser ranging", "retroreflektor apollo", "apollo 11", "cermin di bulan",
+    "jarak bumi bulan", "384400 km", "bulan 3,8 cm per tahun", "pasang surut", "tidal friction",
+    "hari makin panjang", "rotasi bumi melambat", "karang devonian", "400 hari setahun",
+    "relativitas umum", "prinsip ekuivalensi", "inti bulan", "apache point", "apollo", "nasa",
+    "sains indonesia", "fisika", "astronomi", "fakta sains", "fakta unik", "edukasi sains",
+    "bulan", "tata surya", "belajar fisika", "shorts sains"
   ]
 }
