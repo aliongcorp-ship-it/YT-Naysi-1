@@ -10,32 +10,32 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {transform} from 'esbuild';
+import {build} from 'esbuild';
 
 const CACHE = path.resolve('node_modules/.cache/naysi');
 
 export async function loadTsx(relPath) {
   const abs = path.resolve(relPath);
   if (!fs.existsSync(abs)) throw new Error(`missing module: ${relPath}`);
-  const src = fs.readFileSync(abs, 'utf8');
-  const {code} = await transform(src, {
-    loader: 'tsx',
+  // Bundle rather than transpile file-by-file: the scene files import
+  // `../src/theme` and `./bulan` without extensions (webpack resolves that,
+  // Node does not), so a per-file emit produces a graph Node cannot walk.
+  // Bundling inlines the local graph and leaves the packages to Node.
+  const {outputFiles} = await build({
+    entryPoints: [abs],
+    bundle: true,
+    write: false,
     format: 'esm',
+    platform: 'node',
     target: 'node20',
     jsx: 'automatic',
-    sourcefile: abs,
+    logLevel: 'silent',
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'remotion', '@remotion/*'],
   });
+  const code = outputFiles[0].text;
   const rel = path.relative(process.cwd(), abs).replace(/\.tsx?$/, '.mjs');
   const out = path.join(CACHE, rel);
   fs.mkdirSync(path.dirname(out), {recursive: true});
-  const stamp = `${code.length}`;
-  fs.writeFileSync(out, `// ${stamp}\n${patchAssets(code)}`);
+  fs.writeFileSync(out, code);
   return import(pathToFileURL(out).href);
-}
-
-// Node cannot import a .woff2 or a .json the way webpack can; the topic file
-// only reads these through `staticFile()` and a JSON import, so stub the JSON
-// case here and leave the rest alone.
-function patchAssets(code) {
-  return code;
 }
