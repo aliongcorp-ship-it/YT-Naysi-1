@@ -129,8 +129,11 @@ jobs:
           ffmpeg -y -v error -ss 7.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
           ffmpeg -y -v error -ss 15.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
           ffmpeg -y -v error -ss 32.10 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 39.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4a.jpg"
           ffmpeg -y -v error -ss 48.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
+          ffmpeg -y -v error -ss 55.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5a.jpg"
           ffmpeg -y -v error -ss 63.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 71.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6a.jpg"
           ffmpeg -y -v error -ss 79.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
           ffmpeg -y -v error -ss 94.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
           ffmpeg -y -v error -ss 110.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
@@ -234,8 +237,11 @@ jobs:
               "hi_ch1.jpg": "out/qa/hi_ch1.jpg",
               "hi_ch2.jpg": "out/qa/hi_ch2.jpg",
               "hi_ch3.jpg": "out/qa/hi_ch3.jpg",
+              "hi_ch4a.jpg": "out/qa/hi_ch4a.jpg",
               "hi_ch4.jpg": "out/qa/hi_ch4.jpg",
+              "hi_ch5a.jpg": "out/qa/hi_ch5a.jpg",
               "hi_ch5.jpg": "out/qa/hi_ch5.jpg",
+              "hi_ch6a.jpg": "out/qa/hi_ch6a.jpg",
               "hi_ch6.jpg": "out/qa/hi_ch6.jpg",
               "hi_ch7.jpg": "out/qa/hi_ch7.jpg",
               "hi_ch8.jpg": "out/qa/hi_ch8.jpg",
