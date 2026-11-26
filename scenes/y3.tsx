@@ -4,7 +4,6 @@ import {
   Audio,
   Composition,
   Sequence,
-  cancelRender,
   continueRender,
   delayRender,
   registerRoot,
@@ -74,7 +73,11 @@ const useLocalFonts = (): boolean => {
         }
       })
       .catch((err) => {
-        cancelRender(err);
+        console.error('Font load fallback:', err);
+        if (!cancelled) {
+          setLoaded(true);
+          continueRender(handle);
+        }
       });
 
     return () => {

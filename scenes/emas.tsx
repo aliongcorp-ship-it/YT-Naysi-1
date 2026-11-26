@@ -28,6 +28,15 @@ export const hash01 = (seed: number): number => {
   return x - Math.floor(x);
 };
 
+const strHash = (s: string): number => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) * 0.137;
+};
+
 export const fbm2 = (
   seed: string,
   x: number,
@@ -36,12 +45,13 @@ export const fbm2 = (
   lacunarity = 2.05,
   gain = 0.5,
 ): number => {
+  const off = strHash(seed);
   let amp = 0.5;
   let freq = 1;
   let sum = 0;
   let norm = 0;
   for (let i = 0; i < octaves; i++) {
-    sum += amp * noise2D(`${seed}-${i}`, x * freq, y * freq);
+    sum += amp * noise2D('naysi-simplex', x * freq + off + i * 37.3, y * freq - off + i * 61.9);
     norm += amp;
     amp *= gain;
     freq *= lacunarity;
@@ -55,12 +65,15 @@ export const ridgeFbm2 = (
   y: number,
   octaves = 4,
 ): number => {
+  const off = strHash(seed) + 113.7;
   let amp = 0.5;
   let freq = 1;
   let sum = 0;
   let norm = 0;
   for (let i = 0; i < octaves; i++) {
-    const n = 1 - Math.abs(noise2D(`${seed}-r-${i}`, x * freq, y * freq));
+    const n = 1 - Math.abs(
+      noise2D('naysi-simplex', x * freq - off + i * 43.1, y * freq + off + i * 79.7),
+    );
     sum += amp * n * n;
     norm += amp;
     amp *= 0.52;
