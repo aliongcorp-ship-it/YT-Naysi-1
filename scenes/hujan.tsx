@@ -651,7 +651,7 @@ export const HerbariumSpecimenCard: React.FC<{
         left: x,
         top: y,
         width,
-        padding: stampText ? '28px 34px 92px' : '28px 34px 30px',
+        padding: stampText ? '28px 34px 116px' : '28px 34px 30px',
         backgroundColor: IDENTITY.paperHerbarium,
         backgroundImage: paperUrl ? `url(${paperUrl})` : undefined,
         backgroundSize: 'cover',
@@ -898,7 +898,7 @@ export const GeosminBrassMedallion: React.FC<{
   rotationDeg?: number;
 }> = ({ cx, cy, radius, rotationDeg = 0 }) => {
   // Bicyclic trans-1,10-dimethyl-trans-9-decalol (Geosmin C12H22O) engraved brass token
-  const s = radius * 0.34;
+  const s = radius * 0.28;
   const hexA = Array.from({ length: 6 })
     .map((_, i) => {
       const a = (i * Math.PI) / 3 + Math.PI / 6;
@@ -913,12 +913,12 @@ export const GeosminBrassMedallion: React.FC<{
     .join(' ');
 
   return (
-    <g transform={`translate(${cx}, ${cy}) rotate(${rotationDeg})`}>
+    <g transform={`translate(${cx}, ${cy})`}>
       <circle
         cx={0}
         cy={0}
         r={radius}
-        fill="#1F1C16"
+        fill="#141915"
         stroke={IDENTITY.amberSpore}
         strokeWidth={3}
       />
@@ -931,37 +931,37 @@ export const GeosminBrassMedallion: React.FC<{
         strokeWidth={1.2}
         strokeDasharray="4 4"
       />
-      {/* Fused Bicyclic Decalin Rings of Geosmin */}
-      <g transform="translate(0, -8)">
+      {/* Fused Bicyclic Decalin Rings of Geosmin (rotates gently while text stays level) */}
+      <g transform={`translate(0, ${-radius * 0.14}) rotate(${rotationDeg})`}>
         <polygon
           points={hexA}
           fill="rgba(216, 161, 72, 0.14)"
           stroke={IDENTITY.amberLight}
-          strokeWidth={2.6}
+          strokeWidth={2.5}
           strokeLinejoin="round"
         />
         <polygon
           points={hexB}
           fill="rgba(122, 158, 115, 0.16)"
           stroke={IDENTITY.amberLight}
-          strokeWidth={2.6}
+          strokeWidth={2.5}
           strokeLinejoin="round"
         />
         {/* Methyl & Hydroxyl substituent pins (-OH & 2x -CH3) */}
-        <line x1={0} y1={-s * 0.5} x2={0} y2={-s * 1.28} stroke={IDENTITY.mossLight} strokeWidth={2.6} />
-        <circle cx={0} cy={-s * 1.36} r={5.5} fill={IDENTITY.mossSage} stroke="#F2EFE8" strokeWidth={1.4} />
-        <line x1={0} y1={s * 0.5} x2={-s * 0.45} y2={s * 1.22} stroke={IDENTITY.amberLight} strokeWidth={2.4} />
-        <line x1={-s * 1.73} y1={-s * 0.5} x2={-s * 2.28} y2={-s * 0.92} stroke={IDENTITY.amberLight} strokeWidth={2.4} />
+        <line x1={0} y1={-s * 0.5} x2={0} y2={-s * 1.24} stroke={IDENTITY.mossLight} strokeWidth={2.5} />
+        <circle cx={0} cy={-s * 1.32} r={5} fill={IDENTITY.mossSage} stroke="#F2EFE8" strokeWidth={1.3} />
+        <line x1={0} y1={s * 0.5} x2={-s * 0.45} y2={s * 1.18} stroke={IDENTITY.amberLight} strokeWidth={2.3} />
+        <line x1={-s * 1.73} y1={-s * 0.5} x2={-s * 2.22} y2={-s * 0.9} stroke={IDENTITY.amberLight} strokeWidth={2.3} />
       </g>
       <text
         x={0}
-        y={radius * 0.64}
+        y={radius * 0.56}
         textAnchor="middle"
         fill={IDENTITY.ivoryText}
         fontFamily={IDENTITY.fontMono}
-        fontSize={Math.max(13, Math.round(radius * 0.17))}
+        fontSize={Math.max(11, Math.round(radius * 0.135))}
         fontWeight={700}
-        letterSpacing="0.12em"
+        letterSpacing="0.08em"
       >
         GEOSMIN · C₁₂H₂₂O
       </text>
@@ -1364,7 +1364,7 @@ export const Scene01JebakanAroma: React.FC = () => {
         rows={[
           { label: 'SAMPEL KONTROL', value: 'AIR HUJAN MURNI (H₂O · 0% BAU)' },
           { label: 'ISTILAH ILMIAH', value: 'PETRIKOR ("DARAH BATU")' },
-          { label: 'SENYAWA UTAMA', value: 'GEOSMIN (ALKOHol BISIKLIK)' },
+          { label: 'SENYAWA UTAMA', value: 'GEOSMIN (ALKOHOL BISIKLIK)' },
           { label: 'SUMBER ASLI', value: 'JEBAKAN KIMIA BAKTERI TANAH', highlight: true },
         ]}
       />
@@ -1660,10 +1660,19 @@ export const Scene02PelontarAerosol: React.FC = () => {
                 );
               })}
 
-              {/* Wind Direction Callout Inside Upper-Right Viewport */}
+              {/* Wind Direction Callout Inside Upper-Right Viewport (Backed Plate) */}
+              <rect
+                x={844}
+                y={528}
+                width={470}
+                height={66}
+                fill="rgba(11, 17, 14, 0.9)"
+                stroke="rgba(216, 161, 72, 0.34)"
+                strokeWidth={1.2}
+              />
               <text
                 x={1296}
-                y={554}
+                y={555}
                 textAnchor="end"
                 fill={IDENTITY.amberLight}
                 fontFamily={IDENTITY.fontMono}
@@ -1675,7 +1684,7 @@ export const Scene02PelontarAerosol: React.FC = () => {
               </text>
               <text
                 x={1296}
-                y={578}
+                y={580}
                 textAnchor="end"
                 fill={IDENTITY.stoneText}
                 fontFamily={IDENTITY.fontMono}
@@ -2068,24 +2077,12 @@ export const Scene03PabrikStreptomyces: React.FC = () => {
             );
           })}
 
-          {/* Optical Microscope Crosshair & Magnification Scale */}
+          {/* Optical Microscope Crosshair & Calibration Bar Inside Lens */}
           <line x1={cx - 28} y1={cy} x2={cx + 28} y2={cy} stroke="rgba(242,239,232,0.22)" strokeWidth={1.2} />
           <line x1={cx} y1={cy - 28} x2={cx} y2={cy + 28} stroke="rgba(242,239,232,0.22)" strokeWidth={1.2} />
-          <line x1={620} y1={1252} x2={820} y2={1252} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-          <line x1={620} y1={1244} x2={620} y2={1260} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-          <line x1={820} y1={1244} x2={820} y2={1260} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-          <text
-            x={720}
-            y={1278}
-            textAnchor="middle"
-            fill={IDENTITY.ivoryText}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={15}
-            fontWeight={600}
-            letterSpacing="0.16em"
-          >
-            PERBESARAN 1.200× · 10 MIKROMETER
-          </text>
+          <line x1={640} y1={1224} x2={800} y2={1224} stroke={IDENTITY.ivoryText} strokeWidth={2} />
+          <line x1={640} y1={1216} x2={640} y2={1232} stroke={IDENTITY.ivoryText} strokeWidth={2} />
+          <line x1={800} y1={1216} x2={800} y2={1232} stroke={IDENTITY.ivoryText} strokeWidth={2} />
         </g>
 
         {/* Machined Brass Microscope Bezel Rim */}
@@ -2105,6 +2102,31 @@ export const Scene03PabrikStreptomyces: React.FC = () => {
           stroke="rgba(255, 246, 214, 0.35)"
           strokeWidth={1.4}
         />
+        {/* Engraved Brass Microscope Nameplate (Unclipped Over Lower Bezel) */}
+        <g transform="translate(476, 1262)">
+          <rect
+            x={0}
+            y={0}
+            width={488}
+            height={48}
+            rx={4}
+            fill="#141915"
+            stroke={IDENTITY.amberSpore}
+            strokeWidth={1.8}
+          />
+          <text
+            x={244}
+            y={30}
+            textAnchor="middle"
+            fill={IDENTITY.ivoryText}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={16}
+            fontWeight={700}
+            letterSpacing="0.14em"
+          >
+            PERBESARAN 1.200× · 10 MIKROMETER
+          </text>
+        </g>
 
         {/* ================================================================ */}
         {/* UPPER-LEFT ARTIFACT: AMBER GLASS ANTIBIOTIC APOTHECARY VIAL      */}
@@ -2309,9 +2331,23 @@ export const Scene04EmpatRatusKolam: React.FC = () => {
             {/* ACT 1: 1 TEASPOON OVER 400 OLYMPIC SWIMMING POOLS (20 x 20)  */}
             {/* ============================================================ */}
             <g opacity={1 - smoothstep(prog(panToShark, 0.55, 0.96))}>
+              {/* Level Horizontal Label Above Teaspoon (Never Clipped by Stage Top) */}
+              <text
+                x={720}
+                y={462}
+                textAnchor="middle"
+                fill={IDENTITY.amberLight}
+                fontFamily={IDENTITY.fontMono}
+                fontSize={17}
+                fontWeight={700}
+                letterSpacing="0.14em"
+              >
+                1 SENDOK TEH (5 mL GEOSMIN)
+              </text>
+
               {/* Illustrated Gleaming Silver Teaspoon (5 mL) */}
               <g
-                transform={`translate(720, 512) rotate(${interpolate(
+                transform={`translate(720, 536) rotate(${interpolate(
                   dropTip,
                   [0, 1],
                   [-4, 14],
@@ -2332,18 +2368,6 @@ export const Scene04EmpatRatusKolam: React.FC = () => {
                   strokeWidth={1.8}
                 />
                 <ellipse cx={22} cy={6} rx={42} ry={10} fill={IDENTITY.amberSpore} />
-                <text
-                  x={-165}
-                  y={-30}
-                  textAnchor="middle"
-                  fill={IDENTITY.amberLight}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={16}
-                  fontWeight={700}
-                  letterSpacing="0.14em"
-                >
-                  1 SENDOK TEH (5 mL GEOSMIN)
-                </text>
               </g>
 
               {/* Single Falling Amber Drop */}
@@ -2469,7 +2493,7 @@ export const Scene04EmpatRatusKolam: React.FC = () => {
             {/* ============================================================ */}
             {/* ACT 2: GREAT WHITE SHARK (1 PPM) VS HUMAN NOSE (5 PPT)       */}
             {/* ============================================================ */}
-            <g transform="translate(0, 1240)">
+            <g transform="translate(0, 1240)" opacity={smoothstep(prog(panToShark, 0.05, 0.45))}>
               {/* Upper Specimen Box: Great White Shark Blood Threshold */}
               <g transform="translate(116, 468)">
                 <rect

@@ -297,27 +297,27 @@ export const Scene05UmpanKutuPegas: React.FC = () => {
           <rect x={112} y={448} width={1216} height={638} fill="#101410" />
 
           {/* Scale Reference Top-Right: Sewing Needle Tip vs 1,5 mm Springtail */}
-          <g transform="translate(835, 488)" opacity={easeOutCubic(prog(localSec, 1.2, 2.2))}>
+          <g transform="translate(748, 488)" opacity={easeOutCubic(prog(localSec, 1.2, 2.2))}>
             <polygon
-              points="440,-10 115,6 440,22"
+              points="520,-10 195,6 520,22"
               fill="url(#s5-needle-steel)"
               stroke="rgba(242,246,246,0.45)"
               strokeWidth={1.2}
             />
-            <ellipse cx={385} cy={6} rx={26} ry={5} fill="#101410" />
+            <ellipse cx={465} cy={6} rx={26} ry={5} fill="#101410" />
             {/* 1.5 mm Caliper Bracket Matching Needle Point */}
-            <line x1={65} y1={36} x2={165} y2={36} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
-            <line x1={65} y1={28} x2={65} y2={44} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
-            <line x1={165} y1={28} x2={165} y2={44} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
+            <line x1={145} y1={36} x2={245} y2={36} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
+            <line x1={145} y1={28} x2={145} y2={44} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
+            <line x1={245} y1={28} x2={245} y2={44} stroke={IDENTITY.amberLight} strokeWidth={1.8} />
             <text
-              x={245}
-              y={58}
-              textAnchor="middle"
+              x={548}
+              y={60}
+              textAnchor="end"
               fill={IDENTITY.stoneText}
               fontFamily={IDENTITY.fontMono}
               fontSize={15}
               fontWeight={600}
-              letterSpacing="0.12em"
+              letterSpacing="0.11em"
             >
               SKALA ASLI: PANJANG ± 1,5 MM (SEUKURAN UJUNG JARUM)
             </text>
