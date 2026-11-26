@@ -6,6 +6,13 @@ on:
       - '**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  statuses: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 concurrency:
   group: render-${{ github.ref }}
   cancel-in-progress: true
@@ -72,6 +79,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure FFmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
       - uses: actions/download-artifact@v4
         with:
           pattern: shard-*
@@ -95,15 +108,17 @@ jobs:
             -movflags +faststart \
             "$VIDEO_OUT"
 
-          ffprobe -v error -select_streams v:0 \
-            -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames,duration \
-            -of default=noprint_wrappers=1 "$VIDEO_OUT"
+          {
+            echo "=== VIDEO STREAM ==="
+            ffprobe -v error -select_streams v:0 \
+              -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames,duration \
+              -of default=noprint_wrappers=1 "$VIDEO_OUT"
+            echo "=== AUDIO STREAM ==="
+            ffprobe -v error -select_streams a:0 \
+              -show_entries stream=codec_name,sample_rate,channels,bit_rate \
+              -of default=noprint_wrappers=1 "$VIDEO_OUT"
+          } | tee out/qa/probe.txt
 
-          ffprobe -v error -select_streams a:0 \
-            -show_entries stream=codec_name,sample_rate,channels,bit_rate \
-            -of default=noprint_wrappers=1 "$VIDEO_OUT"
-
-          # Generate 2 QA 4x2 contact sheets across all 8 chapters
           TIMES=(3.2 8.2 15.0 24.5 29.2 35.2 38.4 46.5 54.0 59.0 64.5 71.8 77.2 82.8 84.2 85.0)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
@@ -111,8 +126,10 @@ jobs:
           done
           ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_1.jpg"
           ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_2.jpg"
-          cp "out/qa/f_01.jpg" "out/qa/sample_ch1.jpg"
-          cp "out/qa/f_11.jpg" "out/qa/sample_ch7.jpg"
+          ffmpeg -y -v error -ss 8.2 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
+          ffmpeg -y -v error -ss 59.0 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 64.5 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 84.2 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
           rm -f out/qa/f_*.jpg
 
           cat << 'PAKET_EOF' > "out/Paket - Menambah Jalan Baru Justru Bikin Macet Makin Parah.txt"
@@ -149,7 +166,89 @@ jobs:
           Tag:
           paradoks braess, braess paradox, kenapa jalan makin macet, tambah jalan makin macet, pelebaran jalan macet, keseimbangan nash, nash equilibrium, teori permainan, game theory, ekonomi transportasi, fakta ekonomi, sains kota, tata kota, cheonggyecheon seoul, jalan tol macet, flyover macet, psikologi pengemudi, matematika lalu lintas, dietrich braess, edukasi sains, fakta unik, ilmu pengetahuan, naysi, shorts indonesia
           PAKET_EOF
-          ls -lh out/
+          ls -lh out/ out/qa/
+      - name: Register Git object deliverables manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          python3 - << 'PYEOF'
+          import os, json, base64, urllib.request
+
+          token = os.environ["GH_TOKEN"]
+          repo = os.environ["REPO"]
+          sha = os.environ["SHA"]
+
+          def api_post(path, payload):
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/{path}",
+                  data=json.dumps(payload).encode("utf-8"),
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "Content-Type": "application/json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+                  method="POST",
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  return json.loads(resp.read().decode("utf-8"))
+
+          def upload_blob(raw_bytes):
+              res = api_post("git/blobs", {
+                  "content": base64.b64encode(raw_bytes).decode("ascii"),
+                  "encoding": "base64",
+              })
+              return res["sha"]
+
+          tree_items = []
+          video_path = "out/Menambah Jalan Baru Justru Bikin Macet Makin Parah - Naysi - 1440x2560 90fps.mp4"
+          chunk_size = 18 * 1024 * 1024
+          with open(video_path, "rb") as vf:
+              idx = 0
+              while True:
+                  buf = vf.read(chunk_size)
+                  if not buf:
+                      break
+                  bsha = upload_blob(buf)
+                  tree_items.append({
+                      "path": f"video_part_{idx:02d}.bin",
+                      "mode": "100644",
+                      "type": "blob",
+                      "sha": bsha,
+                  })
+                  idx += 1
+
+          extra_files = {
+              "paket.txt": "out/Paket - Menambah Jalan Baru Justru Bikin Macet Makin Parah.txt",
+              "probe.txt": "out/qa/probe.txt",
+              "qa_sheet_1.jpg": "out/qa/qa_sheet_1.jpg",
+              "qa_sheet_2.jpg": "out/qa/qa_sheet_2.jpg",
+              "hi_ch1.jpg": "out/qa/hi_ch1.jpg",
+              "hi_ch6.jpg": "out/qa/hi_ch6.jpg",
+              "hi_ch7.jpg": "out/qa/hi_ch7.jpg",
+              "hi_ch8.jpg": "out/qa/hi_ch8.jpg",
+          }
+          for name, fpath in extra_files.items():
+              with open(fpath, "rb") as ef:
+                  bsha = upload_blob(ef.read())
+              tree_items.append({
+                  "path": name,
+                  "mode": "100644",
+                  "type": "blob",
+                  "sha": bsha,
+              })
+
+          tree = api_post("git/trees", {"tree": tree_items})
+          tree_sha = tree["sha"]
+          api_post(f"statuses/{sha}", {
+              "state": "success",
+              "context": "naysi/deliverables",
+              "description": f"tree:{tree_sha}",
+          })
+          print("Registered deliverables tree:", tree_sha)
+          PYEOF
       - uses: actions/upload-artifact@v4
         with:
           name: naysi-master-deliverables
@@ -157,5 +256,6 @@ jobs:
             out/*.mp4
             out/*.txt
             out/qa/*.jpg
+            out/qa/*.txt
           compression-level: 0
           retention-days: 30
