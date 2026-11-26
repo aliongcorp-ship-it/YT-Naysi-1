@@ -114,6 +114,7 @@ export const Scene05RatusanBulan: React.FC = () => {
           {/* ============================================================== */}
           {/* UPPER STAGE: 1 EARTH MOON VS HUNDREDS OF GOLDEN MOON MASSES    */}
           {/* ============================================================== */}
+          <g opacity={clamp01(1 - (humanPhase - 0.18) / 0.62)}>
           {nebulaUrl && (
             <image
               href={nebulaUrl}
@@ -186,6 +187,7 @@ export const Scene05RatusanBulan: React.FC = () => {
               </g>
             );
           })}
+          </g>
 
           {/* ============================================================== */}
           {/* LOWER STAGE: NOCTURNAL EARTH HILLTOP — 2-STORY HOUSE VS 21M Au */}
@@ -601,15 +603,25 @@ export const Scene06HujanMeteor: React.FC = () => {
           stroke="#FFF7D6"
           strokeWidth={3}
         />
+        <rect
+          x={cx - 104}
+          y={cy - 19}
+          width={208}
+          height={38}
+          rx={19}
+          fill="rgba(18, 12, 5, 0.82)"
+          stroke="rgba(255, 244, 198, 0.65)"
+          strokeWidth={1.5}
+        />
         <text
           x={cx}
-          y={cy + 7}
+          y={cy + 6}
           textAnchor="middle"
-          fill="#2B1602"
+          fill="#FFE89C"
           fontFamily={IDENTITY.fontMono}
-          fontSize={20}
-          fontWeight={800}
-          letterSpacing="0.16em"
+          fontSize={16}
+          fontWeight={700}
+          letterSpacing="0.14em"
         >
           INTI EMAS & BESI
         </text>

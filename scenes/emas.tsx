@@ -1445,7 +1445,7 @@ export const Scene02KurirMagma: React.FC = () => {
 
   const strataUrl = useMemo(() => getGeologicalStrataTexture(), []);
 
-  const mainPipe = 'M 712,1880 C 690,1590 748,1320 726,1040 C 712,860 722,680 720,515';
+  const mainPipe = 'M 714,1715 C 692,1490 746,1265 726,1015 C 712,845 722,675 720,515';
   const veinLeft = 'M 718,1315 C 610,1245 480,1175 305,1095';
   const veinRight = 'M 730,1115 C 858,1048 1005,980 1168,905';
   const veinLowRight = 'M 708,1545 C 835,1485 955,1440 1095,1395';
@@ -1558,13 +1558,13 @@ export const Scene02KurirMagma: React.FC = () => {
             ) : (
               <rect x={0} y={730} width={1440} height={1830} fill="#19161A" />
             )}
-            {/* Deep Mantle Reservoir Glow at Bottom */}
+            {/* Deep Mantle Reservoir Glow */}
             <ellipse
               cx={720}
-              cy={1940}
-              rx={680}
-              ry={250}
-              fill="rgba(255, 88, 24, 0.36)"
+              cy={1690}
+              rx={520}
+              ry={165}
+              fill="rgba(255, 88, 24, 0.22)"
             />
           </g>
 
@@ -2032,19 +2032,19 @@ export const Scene03MentokDiBesi: React.FC = () => {
             {/* Engraved Atomic Iron Stamp */}
             <text
               x={cx}
-              y={cy - 34}
+              y={cy - 36}
               textAnchor="middle"
-              fill="rgba(226, 236, 252, 0.8)"
+              fill="rgba(226, 236, 252, 0.85)"
               fontFamily={IDENTITY.fontMono}
-              fontSize={20}
+              fontSize={16}
               fontWeight={600}
-              letterSpacing="0.2em"
+              letterSpacing="0.14em"
             >
               NOMOR ATOM 26
             </text>
             <text
               x={cx}
-              y={cy + 22}
+              y={cy + 20}
               textAnchor="middle"
               fill="#FFFFFF"
               fontFamily={IDENTITY.fontDisplay}
@@ -2055,15 +2055,15 @@ export const Scene03MentokDiBesi: React.FC = () => {
             </text>
             <text
               x={cx}
-              y={cy + 56}
+              y={cy + 52}
               textAnchor="middle"
-              fill="#A8BAD4"
+              fill="#B6C8E4"
               fontFamily={IDENTITY.fontMono}
-              fontSize={19}
+              fontSize={16}
               fontWeight={600}
-              letterSpacing="0.22em"
+              letterSpacing="0.14em"
             >
-              INTI BESI PADAT
+              INTI BESI
             </text>
 
             {/* Radial Inward Gravity Collapse Force Arrows (GPS-style precision!) */}

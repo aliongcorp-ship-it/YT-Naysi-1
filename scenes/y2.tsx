@@ -426,12 +426,11 @@ export const Scene08FosilBintang: React.FC = () => {
             <stop offset="46%" stopColor="#AD7449" />
             <stop offset="100%" stopColor="#2E1A10" />
           </linearGradient>
-          <clipPath id="ch8-ring-annulus">
-            <path
-              d={`M ${cx},${cy - 225} A 225,225 0 1,1 ${cx - 0.01},${cy - 225} Z M ${cx},${cy - 168} A 168,168 0 1,0 ${cx - 0.01},${cy - 168} Z`}
-              fillRule="evenodd"
-            />
-          </clipPath>
+          <mask id="ch8-ring-mask">
+            <rect x={0} y={0} width={1440} height={2560} fill="black" />
+            <circle cx={cx} cy={cy} r={225} fill="white" />
+            <circle cx={cx} cy={cy} r={166} fill="black" />
+          </mask>
         </defs>
 
         {/* Distant Younger Sun Reference in Upper-Left */}
@@ -488,45 +487,41 @@ export const Scene08FosilBintang: React.FC = () => {
           </g>
 
           {/* Sculpted 24K Gold Ring Band with Procedural Brushed Gold Foil */}
-          <circle cx={cx} cy={cy} r={225} fill="none" />
-          <path
-            d={`M ${cx},${cy - 225} A 225,225 0 1,1 ${cx - 0.01},${cy - 225} Z M ${cx},${cy - 168} A 168,168 0 1,0 ${cx - 0.01},${cy - 168} Z`}
-            fill="url(#ch8-ring-gold)"
-            fillRule="evenodd"
-          />
-          {goldBrushedUrl && (
-            <g clipPath="url(#ch8-ring-annulus)" opacity={0.46}>
+          <g mask="url(#ch8-ring-mask)">
+            <circle cx={cx} cy={cy} r={228} fill="url(#ch8-ring-gold)" />
+            {goldBrushedUrl && (
               <image
                 href={goldBrushedUrl}
                 x={cx - 235}
                 y={cy - 235}
                 width={470}
                 height={470}
+                opacity={0.5}
               />
-            </g>
-          )}
+            )}
+          </g>
           <circle
             cx={cx}
             cy={cy}
             r={225}
             fill="none"
             stroke="#FFF7D6"
-            strokeWidth={2.5}
+            strokeWidth={2.8}
           />
           <circle
             cx={cx}
             cy={cy}
-            r={168}
+            r={166}
             fill="none"
             stroke="#FFF4C2"
-            strokeWidth={2.2}
+            strokeWidth={2.4}
           />
           <circle
             cx={cx}
             cy={cy}
             r={196}
             fill="none"
-            stroke="rgba(255, 253, 236, 0.55)"
+            stroke="rgba(255, 253, 236, 0.52)"
             strokeWidth={2}
           />
 
