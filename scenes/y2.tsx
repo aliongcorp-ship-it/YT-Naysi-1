@@ -288,9 +288,9 @@ export const Scene07Bukti2017: React.FC = () => {
         style={{
           position: 'absolute',
           left: 558,
-          top: 1038,
+          top: 1032,
           width: 776,
-          padding: '26px 32px 30px',
+          padding: '26px 32px 88px',
           backgroundColor: IDENTITY.paperCream,
           backgroundImage: paperUrl ? `url(${paperUrl})` : undefined,
           backgroundSize: 'cover',
@@ -401,21 +401,36 @@ export const Scene07Bukti2017: React.FC = () => {
           </div>
         ))}
 
+        <div
+          style={{
+            position: 'absolute',
+            left: 32,
+            bottom: 24,
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            color: IDENTITY.paperMuted,
+          }}
+        >
+          REF: ESO-VLT · LIGO-VIRGO
+        </div>
+
         {stampProg > 0.02 && (
           <div
             style={{
               position: 'absolute',
-              right: 24,
+              right: 28,
               bottom: 16,
               padding: '6px 16px',
               border: `3.5px solid ${IDENTITY.sagePatina}`,
               color: IDENTITY.sagePatina,
-              backgroundColor: 'rgba(239, 231, 214, 0.9)',
+              backgroundColor: 'rgba(239, 231, 214, 0.94)',
               fontFamily: IDENTITY.fontEditorial,
               fontSize: 25,
               fontWeight: 700,
               letterSpacing: '0.16em',
-              transform: `rotate(-7deg) scale(${interpolate(stampProg, [0, 1], [1.6, 1])})`,
+              transform: `rotate(-5.5deg) scale(${interpolate(stampProg, [0, 1], [1.6, 1])})`,
             }}
           >
             BUKTI LANGSUNG 2017
@@ -462,8 +477,8 @@ export const Scene08FosilBintang: React.FC = () => {
 
       <DocumentaryHeader
         eyebrow={ch.eyebrow}
-        figure="> 4,6 M"
-        unit="TAHUN"
+        figure="> 4,6"
+        unit="MILIAR THN"
         subtitle="FOSIL BINTANG MATI · LEBIH TUA DARI MATAHARI & BUMI"
         localSec={localSec}
         accentColor={IDENTITY.bullion24k}
@@ -588,10 +603,15 @@ export const Scene08FosilBintang: React.FC = () => {
             stroke="rgba(104, 58, 34, 0.35)"
             strokeWidth={1.4}
           />
+          {/* Subtle Warm Fingernail Highlights on Thumb & Fingertips */}
+          <ellipse cx={702} cy={1122} rx={13} ry={6} transform="rotate(-14, 702, 1122)" fill="rgba(248, 224, 204, 0.42)" />
+          <ellipse cx={1004} cy={1112} rx={14} ry={5.5} transform="rotate(-6, 1004, 1112)" fill="rgba(248, 224, 204, 0.38)" />
+          <ellipse cx={1102} cy={1136} rx={14} ry={5.5} transform="rotate(-5, 1102, 1136)" fill="rgba(248, 224, 204, 0.34)" />
+          <ellipse cx={1094} cy={1168} rx={13} ry={5} transform="rotate(-4, 1094, 1168)" fill="rgba(248, 224, 204, 0.28)" />
 
-          {/* Subtle Engraved Woodcut Palmar Crease Lines */}
+          {/* Subtle Engraved Woodcut Palmar & Knuckle Crease Lines */}
           <path
-            d="M 556,1236 Q 668,1212 778,1218 M 595,1268 Q 710,1252 835,1254"
+            d="M 556,1236 Q 668,1212 778,1218 M 595,1268 Q 710,1252 835,1254 M 886,1112 Q 892,1126 888,1138 M 916,1204 Q 922,1218 918,1232"
             fill="none"
             stroke="rgba(92, 48, 26, 0.36)"
             strokeWidth={1.8}

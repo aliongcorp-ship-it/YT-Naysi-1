@@ -384,7 +384,7 @@ export const Scene05RatusanBulan: React.FC = () => {
               <circle cx={173} cy={-25} r={2.2} fill={IDENTITY.bullionLight} />
 
               {/* Human Scale Silhouette (1,7 m) Standing Right Next to House */}
-              <g transform="translate(342, 0)">
+              <g transform="translate(362, 0)">
                 <circle cx={0} cy={-34} r={4.5} fill={IDENTITY.ivoryText} />
                 <path
                   d="M -5,-28 H 5 L 6,-13 H 3 L 3,0 H -3 L -3,-13 H -6 Z"
@@ -394,7 +394,7 @@ export const Scene05RatusanBulan: React.FC = () => {
 
               {/* House & Human Scale Labels */}
               <text
-                x={161}
+                x={148}
                 y={40}
                 textAnchor="middle"
                 fill={IDENTITY.ivoryText}
@@ -406,12 +406,13 @@ export const Scene05RatusanBulan: React.FC = () => {
                 RUMAH 2 LANTAI (± 8,5 M)
               </text>
               <text
-                x={342}
-                y={40}
+                x={362}
+                y={-48}
                 textAnchor="middle"
-                fill={IDENTITY.stoneText}
+                fill={IDENTITY.bullionLight}
                 fontFamily={IDENTITY.fontMono}
                 fontSize={15}
+                fontWeight={600}
                 letterSpacing="0.1em"
               >
                 1,7 M

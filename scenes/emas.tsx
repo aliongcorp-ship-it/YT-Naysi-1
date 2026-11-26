@@ -770,7 +770,7 @@ export const ArchivalPaperCard: React.FC<{
         left: x,
         top: y,
         width,
-        padding: '28px 34px 30px',
+        padding: stampText ? '28px 34px 92px' : '28px 34px 30px',
         backgroundColor: IDENTITY.paperCream,
         backgroundImage: paperUrl ? `url(${paperUrl})` : undefined,
         backgroundSize: 'cover',
@@ -861,25 +861,42 @@ export const ArchivalPaperCard: React.FC<{
         </div>
       ))}
 
+      {stampText && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 34,
+            bottom: 28,
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 15,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            color: IDENTITY.paperMuted,
+          }}
+        >
+          VERIFIKASI · ARSIP FISIKA NUKLIR
+        </div>
+      )}
+
       {stampText && sp > 0.02 && (
         <div
           style={{
             position: 'absolute',
             right: 34,
-            bottom: 22,
+            bottom: 18,
             padding: '8px 20px',
             border: `4px solid ${stampColor}`,
             outline: `1.5px solid ${stampColor}`,
             outlineOffset: -7,
             color: stampColor,
             fontFamily: IDENTITY.fontEditorial,
-            fontSize: 31,
+            fontSize: 30,
             fontWeight: 700,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
-            backgroundColor: 'rgba(239, 231, 214, 0.86)',
-            transform: `rotate(-8.5deg) scale(${stampScale})`,
-            opacity: clamp01(sp * 2.2) * 0.92,
+            backgroundColor: 'rgba(239, 231, 214, 0.94)',
+            transform: `rotate(-6.5deg) scale(${stampScale})`,
+            opacity: clamp01(sp * 2.2) * 0.94,
           }}
         >
           {stampText}
@@ -1461,11 +1478,12 @@ export const Scene01LogamAsing: React.FC = () => {
           />
           <text
             x={362}
-            y={788}
+            y={484}
             textAnchor="middle"
             fill={IDENTITY.stoneText}
             fontFamily={IDENTITY.fontMono}
             fontSize={16}
+            fontWeight={600}
             letterSpacing="0.18em"
           >
             LUP 10× · 79 PROTON
@@ -1579,7 +1597,7 @@ export const Scene02KurirMagma: React.FC = () => {
 
   const mainConduit = 'M 716,1725 C 696,1510 744,1295 724,1045 C 712,860 720,665 720,492';
   const sillLeft = 'M 726,1255 C 605,1195 470,1135 325,1075';
-  const sillRight = 'M 722,1065 C 855,1005 995,945 1135,895';
+  const sillRight = 'M 722,1065 C 832,1012 936,962 1032,918';
   const sillDeep = 'M 714,1465 C 835,1425 955,1395 1065,1372';
 
   return (
@@ -1717,8 +1735,8 @@ export const Scene02KurirMagma: React.FC = () => {
           {[
             { x: 355, y: 1086 },
             { x: 485, y: 1142 },
-            { x: 965, y: 960 },
-            { x: 1098, y: 908 },
+            { x: 938, y: 960 },
+            { x: 1022, y: 922 },
           ].map((pt, idx) => (
             <g key={idx} opacity={clamp01((pipeProgress - 0.55) * 2.4)}>
               <FacetedGoldNugget cx={pt.x} cy={pt.y} size={17} goldTexUrl={voronoiGoldUrl} rotation={idx * 52} />
@@ -1771,19 +1789,19 @@ export const Scene02KurirMagma: React.FC = () => {
 
         {/* Pinned Field-Survey Callout Plaque */}
         <g opacity={easeOutCubic(tagProgress)}>
-          <line x1={744} y1={1168} x2={845} y2={1168} stroke={IDENTITY.bullionLight} strokeWidth={2} />
+          <line x1={744} y1={1168} x2={794} y2={1168} stroke={IDENTITY.bullionLight} strokeWidth={2} />
           <circle cx={744} cy={1168} r={5} fill={IDENTITY.bullionLight} />
           <rect
-            x={845}
+            x={794}
             y={1114}
-            width={468}
+            width={524}
             height={112}
             fill={IDENTITY.paperCream}
             stroke="#2B231B"
             strokeWidth={1.8}
           />
           <text
-            x={868}
+            x={818}
             y={1150}
             fill={IDENTITY.terracottaStamp}
             fontFamily={IDENTITY.fontMono}
@@ -1794,18 +1812,18 @@ export const Scene02KurirMagma: React.FC = () => {
             KURIR ALAM · BUKAN PABRIK ATOM
           </text>
           <text
-            x={868}
+            x={818}
             y={1186}
             fill={IDENTITY.paperInk}
             fontFamily={IDENTITY.fontEditorial}
-            fontSize={29}
+            fontSize={27}
             fontWeight={700}
             letterSpacing="0.04em"
           >
             MENGANGKUT EMAS LAMA KE KERAK
           </text>
           <text
-            x={868}
+            x={818}
             y={1212}
             fill={IDENTITY.paperMuted}
             fontFamily={IDENTITY.fontMono}
@@ -2095,12 +2113,12 @@ export const Scene03BatasBesi: React.FC = () => {
         <g transform="translate(104, 1485)">
           <line x1={0} y1={92} x2={1232} y2={92} stroke="rgba(237,232,221,0.28)" strokeWidth={2} />
           {[
-            { x: 48, z: '1', sym: 'H', label: 'AKTIF', blocked: false },
-            { x: 225, z: '2', sym: 'He', label: 'AKTIF', blocked: false },
-            { x: 405, z: '6', sym: 'C', label: 'AKTIF', blocked: false },
-            { x: 585, z: '14', sym: 'Si', label: 'AKTIF', blocked: false },
-            { x: 790, z: '26', sym: 'Fe', label: 'BATAS MATI', blocked: false, wall: true },
-            { x: 1145, z: '79', sym: 'Au', label: 'MUSTAHIL DI SINI', blocked: true },
+            { x: 46, z: '1', sym: 'H', label: 'AKTIF', blocked: false },
+            { x: 196, z: '2', sym: 'He', label: 'AKTIF', blocked: false },
+            { x: 346, z: '6', sym: 'C', label: 'AKTIF', blocked: false },
+            { x: 496, z: '14', sym: 'Si', label: 'AKTIF', blocked: false },
+            { x: 666, z: '26', sym: 'Fe', label: 'BATAS MATI', blocked: false, wall: true },
+            { x: 1168, z: '79', sym: 'Au', label: 'MUSTAHIL DI SINI', blocked: true },
           ].map((el, idx) => (
             <g key={idx} transform={`translate(${el.x}, 0)`}>
               <rect
@@ -2170,28 +2188,30 @@ export const Scene03BatasBesi: React.FC = () => {
 
           {/* Heavy Iron Wall Barrier Bar Between 26 Fe and 79 Au */}
           <line
-            x1={925}
+            x1={776}
             y1={-6}
-            x2={925}
+            x2={776}
             y2={132}
             stroke={IDENTITY.terracottaStamp}
             strokeWidth={5}
           />
           <line
-            x1={938}
+            x1={789}
             y1={-6}
-            x2={938}
+            x2={789}
             y2={132}
             stroke={IDENTITY.terracottaStamp}
             strokeWidth={2}
             strokeDasharray="6 5"
           />
           <text
-            x={966}
-            y={56}
+            x={956}
+            y={58}
+            textAnchor="middle"
             fill={IDENTITY.stoneText}
             fontFamily={IDENTITY.fontMono}
             fontSize={16}
+            fontWeight={600}
             letterSpacing="0.1em"
           >
             KURANG 53 PROTON →
