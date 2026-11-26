@@ -37,17 +37,17 @@ jobs:
       matrix:
         include:
           - shard: 0
-            range: '0-1286'
+            range: '0-1769'
           - shard: 1
-            range: '1287-2573'
+            range: '1770-3539'
           - shard: 2
-            range: '2574-3860'
+            range: '3540-5309'
           - shard: 3
-            range: '3861-5147'
+            range: '5310-7079'
           - shard: 4
-            range: '5148-6434'
+            range: '7080-8849'
           - shard: 5
-            range: '6435-7719'
+            range: '8850-10618'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -100,7 +100,7 @@ jobs:
             echo "file '$f'" >> concat.txt
           done
 
-          VIDEO_OUT="out/Menambah Jalan Baru Justru Bikin Macet Makin Parah - Naysi - 1440x2560 90fps.mp4"
+          VIDEO_OUT="out/10 Hari di Oktober 1582 Hilang dari Kalender - Naysi - 1440x2560 90fps.mp4"
           ffmpeg -y -v error -f concat -safe 0 -i concat.txt -i public/audio/master.mp3 \
             -map 0:v:0 -map 1:a:0 \
             -c:v copy \
@@ -119,52 +119,56 @@ jobs:
               -of default=noprint_wrappers=1 "$VIDEO_OUT"
           } | tee out/qa/probe.txt
 
-          TIMES=(3.2 8.2 15.0 24.5 29.2 35.2 38.4 46.5 54.0 59.0 64.5 71.8 77.2 82.8 84.2 85.0)
+          TIMES=(4.15 11.0 14.18 25.2 31.0 35.8 43.0 51.8 59.5 64.0 75.5 83.2 91.5 100.5 110.8 115.8)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
             ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
           done
-          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_1.jpg"
-          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_2.jpg"
-          ffmpeg -y -v error -ss 8.2 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 59.0 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 64.5 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 84.2 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x0D0E12" "out/qa/qa_sheet_1.jpg"
+          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x0D0E12" "out/qa/qa_sheet_2.jpg"
+          ffmpeg -y -v error -ss 11.0 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
+          ffmpeg -y -v error -ss 35.8 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 64.0 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 83.2 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 100.5 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 115.8 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
           rm -f out/qa/f_*.jpg
 
-          cat << 'PAKET_EOF' > "out/Paket - Menambah Jalan Baru Justru Bikin Macet Makin Parah.txt"
+          cat << 'PAKET_EOF' > "out/Paket YouTube - 10 Hari di Oktober 1582 Hilang dari Kalender.txt"
           Judul:
-          Menambah Jalan Baru Justru Bikin Macet Makin Parah
+          10 Hari di Oktober 1582 Hilang dari Kalender
 
           Deskripsi:
-          Menambah jalan baru harusnya mengurai macet, tapi secara matematika justru bisa membuat semua orang pulang lebih lambat. Masalahnya bukan kurang aspal, tapi pilihan kita sendiri.
+          Pada Oktober 1582, sepuluh hari dihapus begitu saja dari kalender dunia. Orang tidur pada malam Kamis 4 Oktober 1582, lalu terbangun keesokan paginya langsung pada Jumat 15 Oktober 1582. Tanggal 5 sampai 14 Oktober 1582 tidak pernah ada dalam catatan sejarah.
 
-          Dalam model jaringan Dietrich Braess (1968), 4.000 mobil melintasi dua jalur kembar dari titik A ke titik B. Saat terbagi rata, tiap jalur memakan waktu 20 menit di jembatan sempit ditambah 45 menit di jalan lebar — total 65 menit untuk semua pengemudi.
+          0:00 Kamis 4 Oktober langsung lompat ke Jumat 15 Oktober 1582
+          0:14 Kalender Julian buatan Julius Caesar (365,25 hari)
+          0:28 Orbit asli Bumi lebih cepat 11 menit 14 detik per tahun
+          0:38 Meleset 1 hari tiap 128 tahun, menumpuk jadi 10 hari di 1582
+          0:54 Dekret Paus Gregorius XIII & astronom Aloysius Lilius
+          1:08 Rahasia tahun 1700, 1800, 1900 bukan kabisat vs tahun 2000
+          1:25 Inggris potong 11 hari (1752) & Rusia potong 13 hari (1918)
+          1:44 Cek Oktober 1582 di kalender ponselmu
 
-          0:00 Menambah jalan baru justru bikin makin lambat
-          0:11 Simulasi 4.000 mobil di dua jalur kembar
-          0:20 Jalan lebar 45 menit vs jembatan sempit 20 menit = 65 menit
-          0:31 Jalan pintas 0 menit dibuka, mobil pertama hemat 25 menit
-          0:40 Jebakan Keseimbangan Nash: semua berebut pindah
-          0:52 Beban jembatan bengkak 2x lipat, total molor jadi 80 menit
-          1:01 Bukti nyata Seoul 2003: tol 6 lajur (168.000 mobil/hari) dibongkar
-          1:15 Kadang obat macet justru menutup jalan pintas yang salah
+          Penyebabnya berawal dari kalender Julian yang ditetapkan Julius Caesar pada 45 SM. Kalender Julian mematok satu tahun rata-rata tepat 365,25 hari (365 hari 6 jam) dengan satu tahun kabisat setiap empat tahun tanpa pengecualian. Padahal, satu putaran tropik Bumi mengelilingi Matahari sebenarnya memakan waktu sekitar 365,2422 hari (365 hari 5 jam 48 menit 46 detik) — selisih sekitar 11 menit 14 detik lebih singkat setiap tahun.
 
-          Begitu jalan pintas 0 menit dibuka di tengah, setiap pengemudi mengambil keputusan paling rasional bagi dirinya sendiri untuk pindah. Akibatnya, kedua jembatan sempit diserbu 4.000 mobil sekaligus sehingga waktunya bengkak menjadi 40 menit per jembatan. Total perjalanan semua orang melonjak dari 65 menjadi 80 menit, dan tidak ada satu pun pengemudi yang untung jika balik sendirian (85 menit).
+          Selisih 11 menit per tahun itu menumpuk menjadi satu hari penuh setiap 128 tahun. Memasuki abad ke-16, posisi Matahari pada titik balik musim semi sudah bergeser sepuluh hari lebih awal dari tanggal 21 Maret di kalender. Melalui bulla kepausan Inter Gravissimas (24 Februari 1582), Paus Gregorius XIII bersama perhitungan astronom Aloysius Lilius dan matematikawan Christopher Clavius memotong 10 tanggal pada Oktober 1582 tanpa memutus siklus hari pekan Kamis ke Jumat.
 
-          Tahun 2003, kota Seoul membuktikan efek kebalikannya dengan membongkar Jalan Layang Cheonggyecheon enam lajur sepanjang 5,8 km yang dilewati 168.000 mobil per hari. Bukannya lumpuh total seperti prediksi, arus lalu lintas kota justru mengalir lebih lancar setelah jaringan mencapai keseimbangan baru — fenomena serupa yang tercatat saat penutupan 42nd Street di New York (1990) dan Stuttgart (1969).
+          Supaya pergeseran serupa tidak terulang, aturan tahun kabisat ikut diperbarui: tahun abad bulat (habis dibagi 100 seperti 1700, 1800, dan 1900) tidak lagi menjadi tahun kabisat, kecuali yang juga habis dibagi 400 seperti 1600 dan 2000. Hasilnya, rata-rata tahun Gregorian menjadi 365,2425 hari — baru meleset satu hari dalam sekitar 3.236 tahun.
 
-          Jalan mana di kotamu yang sudah dilebarkan tapi tetap macet? Tulis di komentar.
+          Negara yang menunda pergantian kalender terpaksa memotong lebih banyak hari karena melewati tahun-tahun abad tersebut: Inggris dan koloni Amerika memotong 11 hari pada September 1752 (2 September langsung ke 14 September), sementara Rusia baru beralih pada 1918 dan harus melompati 13 hari sekaligus (31 Januari langsung ke 14 Februari).
 
-          Sumber: Dietrich Braess, "Über ein Paradoxon aus der Verkehrsplanung", Unternehmensforschung 12 (1968), terjemahan Nagurney & Wakolbinger, Transportation Science 39 (2005); Seoul Development Institute, Cheonggyecheon Restoration Traffic Analysis (2003–2006); Gina Kolata, "What if They Closed 42d Street and Nobody Noticed?", The New York Times (25 Desember 1990).
+          Coba cek Oktober 1582 di kalender ponselmu — apakah tanggal 5 sampai 14 ikut hilang? Tulis di komentar.
 
-          Naysi — penjelasan singkat soal sains dan angka di baliknya.
+          Sumber: Paus Gregorius XIII, Bulla "Inter gravissimas" (24 Februari 1582); Christopher Clavius, "Romani calendarii a Gregorio XIII P.M. restituti explicatio" (Roma, 1603); U.S. Naval Observatory, "Introduction to Calendars" (Astronomical Applications Department); Apple Developer Documentation, "Historical Dates — NSCalendar Julian to Gregorian Transition (October 1582)".
+
+          Naysi — penjelasan singkat soal sains, sejarah, dan angka di baliknya.
 
           Hashtag:
-          #Shorts #Ekonomi #ParadoksBraess #Sains #FaktaUnik
+          #Shorts #Sejarah #Astronomi #FaktaUnik #Sains
 
           Tag:
-          paradoks braess, braess paradox, kenapa jalan makin macet, tambah jalan makin macet, pelebaran jalan macet, keseimbangan nash, nash equilibrium, teori permainan, game theory, ekonomi transportasi, fakta ekonomi, sains kota, tata kota, cheonggyecheon seoul, jalan tol macet, flyover macet, psikologi pengemudi, matematika lalu lintas, dietrich braess, edukasi sains, fakta unik, ilmu pengetahuan, naysi, shorts indonesia
+          oktober 1582, 10 hari hilang dari kalender, kenapa 5 sampai 14 oktober 1582 hilang, kalender oktober 1582, kalender gregorian, kalender julian, julius caesar, paus gregorius xiii, aloysius lilius, tahun kabisat, aturan tahun kabisat, tahun 1900 bukan kabisat, fakta sejarah, fakta astronomi, orbit bumi, sejarah dunia, kalender hp oktober 1582, sains populer, wawasan baru, ilmu pengetahuan, fakta menarik, edukasi, naysi, shorts indonesia
           PAKET_EOF
           ls -lh out/ out/qa/
       - name: Register Git object deliverables manifest
@@ -203,7 +207,7 @@ jobs:
               return res["sha"]
 
           tree_items = []
-          video_path = "out/Menambah Jalan Baru Justru Bikin Macet Makin Parah - Naysi - 1440x2560 90fps.mp4"
+          video_path = "out/10 Hari di Oktober 1582 Hilang dari Kalender - Naysi - 1440x2560 90fps.mp4"
           chunk_size = 18 * 1024 * 1024
           with open(video_path, "rb") as vf:
               idx = 0
@@ -221,11 +225,13 @@ jobs:
                   idx += 1
 
           extra_files = {
-              "paket.txt": "out/Paket - Menambah Jalan Baru Justru Bikin Macet Makin Parah.txt",
+              "paket.txt": "out/Paket YouTube - 10 Hari di Oktober 1582 Hilang dari Kalender.txt",
               "probe.txt": "out/qa/probe.txt",
               "qa_sheet_1.jpg": "out/qa/qa_sheet_1.jpg",
               "qa_sheet_2.jpg": "out/qa/qa_sheet_2.jpg",
               "hi_ch1.jpg": "out/qa/hi_ch1.jpg",
+              "hi_ch3.jpg": "out/qa/hi_ch3.jpg",
+              "hi_ch5.jpg": "out/qa/hi_ch5.jpg",
               "hi_ch6.jpg": "out/qa/hi_ch6.jpg",
               "hi_ch7.jpg": "out/qa/hi_ch7.jpg",
               "hi_ch8.jpg": "out/qa/hi_ch8.jpg",

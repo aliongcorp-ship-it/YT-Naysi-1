@@ -1,211 +1,242 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AbsoluteFill,
   Audio,
   Composition,
   continueRender,
   delayRender,
+  interpolate,
   registerRoot,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
 import {
-  Scene01JalanBaru,
-  Scene02DuaJalur,
-  Scene03EnamPuluhLima,
-  SceneRenderProps,
-} from './braess';
+  Lembar01Oktober1582,
+  Lembar02KalenderJulian,
+  Lembar03SelisihSebelasMenit,
+  Lembar04AkumulasiSepuluhHari,
+} from './kalender';
 import {
   CHAPTERS,
-  ChapterDef,
   IDENTITY,
-  SentenceCue,
   VIDEO_SPEC,
   clamp01,
-  easeInOutCubic,
-  getSentenceAt,
-  rangeProgress,
+  easeOutCubic,
+  getActiveCard,
+  getActiveChapterIndex,
 } from './script';
-import {
-  Scene04JalanPintas,
-  Scene05JebakanNash,
-  Scene06DelapanPuluh,
-} from './y1';
-import {Scene07Seoul2003, Scene08DitutupLancar} from './y2';
+import { Lembar05ReformasiGregorius, Lembar06RumusKabisat } from './y1';
+import { Lembar07EfekDomino, Lembar08CekPonselmu } from './y2';
 
-const SCENE_COMPONENTS: readonly React.FC<SceneRenderProps>[] = [
-  Scene01JalanBaru,
-  Scene02DuaJalur,
-  Scene03EnamPuluhLima,
-  Scene04JalanPintas,
-  Scene05JebakanNash,
-  Scene06DelapanPuluh,
-  Scene07Seoul2003,
-  Scene08DitutupLancar,
-];
+// ============================================================================
+// DETERMINISTIC LOCAL FONT LOADER (ZERO NETWORK CALLS DURING RENDER)
+// ============================================================================
 
-const GRAIN_SVG = encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">` +
-    Array.from({length: 85})
-      .map((_, i) => {
-        const x = (i * 53 + 17) % 160;
-        const y = (i * 97 + 29) % 160;
-        const r = i % 3 === 0 ? 1.1 : 0.75;
-        const fill = i % 2 === 0 ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.48)';
-        return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"/>`;
-      })
-      .join('') +
-    `</svg>`,
-);
+const FONT_ASSETS = [
+  { family: 'Fraunces', file: 'fonts/fraunces-black.ttf', weight: '900', style: 'normal' },
+  { family: 'Fraunces', file: 'fonts/fraunces-semibold.ttf', weight: '600', style: 'normal' },
+  { family: 'Fraunces', file: 'fonts/fraunces-italic.ttf', weight: '400', style: 'italic' },
+  {
+    family: 'Plus Jakarta Sans',
+    file: 'fonts/plus-jakarta-sans.woff2',
+    weight: '400 800',
+    style: 'normal',
+  },
+  {
+    family: 'Space Grotesk',
+    file: 'fonts/space-grotesk.woff2',
+    weight: '500 700',
+    style: 'normal',
+  },
+  {
+    family: 'JetBrains Mono',
+    file: 'fonts/jetbrains-mono.woff2',
+    weight: '400 800',
+    style: 'normal',
+  },
+] as const;
 
-const useStudioFonts = (): boolean => {
-  const [loaded, setLoaded] = useState(false);
-  const [handle] = useState(() => delayRender('Load Naysi WOFF2 studio fonts'));
+const useAlmanacFonts = (): boolean => {
+  const [handle] = useState(() => delayRender('Load Naysi Almanac Fonts'));
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    const specs: Array<{family: string; file: string; weight: string; style: string}> = [
-      {
-        family: 'Space Grotesk',
-        file: 'fonts/space-grotesk.woff2',
-        weight: '300 700',
-        style: 'normal',
-      },
-      {
-        family: 'Plus Jakarta Sans',
-        file: 'fonts/plus-jakarta-sans.woff2',
-        weight: '400 800',
-        style: 'normal',
-      },
-      {
-        family: 'JetBrains Mono',
-        file: 'fonts/jetbrains-mono.woff2',
-        weight: '400 800',
-        style: 'normal',
-      },
-      {
-        family: 'Instrument Serif',
-        file: 'fonts/instrument-serif-regular.woff2',
-        weight: '400',
-        style: 'normal',
-      },
-      {
-        family: 'Instrument Serif',
-        file: 'fonts/instrument-serif-italic.woff2',
-        weight: '400',
-        style: 'italic',
-      },
-    ];
-
+    let mounted = true;
     Promise.all(
-      specs.map(async (s) => {
-        const face = new FontFace(s.family, `url(${staticFile(s.file)})`, {
-          weight: s.weight,
-          style: s.style,
+      FONT_ASSETS.map(async (f) => {
+        const face = new FontFace(f.family, `url('${staticFile(f.file)}')`, {
+          weight: f.weight,
+          style: f.style,
         });
-        const loadedFace = await face.load();
-        document.fonts.add(loadedFace);
+        const loaded = await face.load();
+        document.fonts.add(loaded);
       }),
     )
       .then(() => {
-        if (active) {
-          setLoaded(true);
+        if (mounted) {
+          setReady(true);
           continueRender(handle);
         }
       })
       .catch((err) => {
-        console.error('Font load failed:', err);
-        if (active) {
-          setLoaded(true);
+        console.error('Font load error:', err);
+        if (mounted) {
+          setReady(true);
           continueRender(handle);
         }
       });
 
     return () => {
-      active = false;
+      mounted = false;
     };
   }, [handle]);
 
-  return loaded;
+  return ready;
 };
 
-const ProgressiveCaptionBar: React.FC<{
-  readonly sec: number;
-  readonly sentence: SentenceCue | null;
-}> = ({sec, sentence}) => {
-  if (!sentence) return null;
+// ============================================================================
+// CHAPTER COMPONENT REGISTRY (8 LEMBAR)
+// ============================================================================
 
-  const enterP = easeInOutCubic(
-    rangeProgress(sec, sentence.start - 0.05, sentence.start + 0.16),
-  );
-  const exitP = easeInOutCubic(
-    rangeProgress(sec, sentence.end - 0.08, sentence.end + 0.14),
-  );
-  const opacity = clamp01(enterP * (1 - exitP));
+const renderLembarByIndex = (idx: number): React.ReactNode => {
+  switch (idx) {
+    case 0:
+      return <Lembar01Oktober1582 />;
+    case 1:
+      return <Lembar02KalenderJulian />;
+    case 2:
+      return <Lembar03SelisihSebelasMenit />;
+    case 3:
+      return <Lembar04AkumulasiSepuluhHari />;
+    case 4:
+      return <Lembar05ReformasiGregorius />;
+    case 5:
+      return <Lembar06RumusKabisat />;
+    case 6:
+      return <Lembar07EfekDomino />;
+    case 7:
+    default:
+      return <Lembar08CekPonselmu />;
+  }
+};
 
-  let activeIdx = -1;
-  for (let i = 0; i < sentence.words.length; i++) {
-    const [, ws, we] = sentence.words[i];
-    if (sec >= ws - 0.02 && sec <= we + 0.06) {
-      activeIdx = i;
-    }
-  }
-  if (activeIdx === -1) {
-    for (let i = sentence.words.length - 1; i >= 0; i--) {
-      if (sec >= sentence.words[i][1]) {
-        activeIdx = i;
-        break;
-      }
-    }
-  }
+// ============================================================================
+// PHYSICAL FOLIO STACK STAGE (SLIDE & SETTLE PAGE TRANSITION)
+// ============================================================================
+
+const FolioStackStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
+  const activeIdx = getActiveChapterIndex(sec);
+  const currentChapter = CHAPTERS[activeIdx];
+  const localSec = sec - currentChapter.start;
+  const slideWindow = 0.44;
+  const isSlidingIn = activeIdx > 0 && localSec < slideWindow;
+  const slideP = isSlidingIn ? easeOutCubic(localSec / slideWindow) : 1;
+
+  // Opening gentle lift for Lembar 01
+  const firstSheetOpen =
+    activeIdx === 0 ? easeOutCubic(clamp01(sec / 0.36)) : 1;
+
+  return (
+    <AbsoluteFill style={{ overflow: 'hidden' }}>
+      {/* Keep Previous Lembar Resting Underneath While New Lembar Slides Over It */}
+      {isSlidingIn ? (
+        <AbsoluteFill
+          style={{
+            filter: `brightness(${1 - 0.24 * slideP})`,
+            transform: `scale(${1 - 0.012 * slideP})`,
+          }}
+        >
+          {renderLembarByIndex(activeIdx - 1)}
+        </AbsoluteFill>
+      ) : null}
+
+      {/* Active Lembar Sliding Onto the Physical Folio Stack */}
+      <AbsoluteFill
+        style={{
+          opacity: activeIdx === 0 ? firstSheetOpen : 1,
+          transform:
+            activeIdx === 0
+              ? `translateY(${(1 - firstSheetOpen) * 26}px)`
+              : `translateX(${(1 - slideP) * 1420}px) rotate(${(1 - slideP) * 2.1}deg)`,
+          transformOrigin: '50% 85%',
+          filter: isSlidingIn
+            ? 'drop-shadow(-34px 18px 46px rgba(0, 0, 0, 0.72))'
+            : undefined,
+        }}
+      >
+        {renderLembarByIndex(activeIdx)}
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+// ============================================================================
+// WHISPER-SYNCED PROGRESSIVE GOLD-HIGHLIGHT CAPTION STAGE
+// ============================================================================
+
+const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
+  const activeIdx = getActiveChapterIndex(sec);
+  const ch = CHAPTERS[activeIdx];
+  const activeCardObj = getActiveCard(ch, sec);
+
+  if (!activeCardObj) return null;
+  const { card } = activeCardObj;
+
+  // Smooth card enter & exit envelope
+  const enterP = clamp01((sec - card.start) / 0.11);
+  const exitP = clamp01((card.end - sec) / 0.11);
+  const cardAlpha = Math.min(enterP, exitP);
+  const liftY = (1 - easeOutCubic(enterP)) * 12;
 
   return (
     <div
       style={{
         position: 'absolute',
-        left: 96,
-        right: 96,
-        top: 1872,
-        minHeight: 380,
+        left: 72,
+        right: 72,
+        top: 1862,
+        height: 556,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         pointerEvents: 'none',
-        opacity,
-        transform: `translateY(${(1 - enterP) * 14 - exitP * 10}px)`,
+        opacity: cardAlpha,
+        transform: `translateY(${liftY}px)`,
+        zIndex: 40,
       }}
     >
       <div
         style={{
-          maxWidth: 1210,
+          maxWidth: 1216,
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'center',
           alignItems: 'baseline',
-          columnGap: 16,
+          columnGap: 17,
           rowGap: 10,
-          lineHeight: 1.26,
+          lineHeight: 1.25,
           fontFamily: IDENTITY.fontBody,
-          fontSize: 55,
+          fontSize: 58,
           fontWeight: 700,
-          letterSpacing: '-0.012em',
-          textShadow: '0 8px 28px rgba(0, 0, 0, 0.72)',
+          letterSpacing: '-0.014em',
         }}
       >
-        {sentence.words.map(([wordText, ws, we, emph], idx) => {
-          const isCurrent = idx === activeIdx && sec <= we + 0.22;
+        {card.words.map(([wordText, ws, we, emph], idx) => {
+          const nextWord = idx + 1 < card.words.length ? card.words[idx + 1] : null;
+          const handoffEnd = nextWord ? nextWord[1] - 0.01 : we + 0.18;
+          const isCurrent = sec >= ws - 0.015 && sec < handoffEnd;
           const isSpoken = sec >= ws - 0.015;
 
           const color = isCurrent
-            ? IDENTITY.citrine
+            ? IDENTITY.captionGold
             : isSpoken
-              ? IDENTITY.ivory
-              : 'rgba(244, 239, 230, 0.28)';
+              ? IDENTITY.captionWhite
+              : IDENTITY.captionDim;
 
-          const wordPop = isCurrent
+          const pop = isCurrent
             ? 1 +
-              0.045 *
+              0.042 *
                 Math.sin(
                   clamp01((sec - ws) / Math.max(0.08, we - ws)) * Math.PI,
                 )
@@ -213,15 +244,15 @@ const ProgressiveCaptionBar: React.FC<{
 
           return (
             <span
-              key={`${ws}-${idx}`}
+              key={`${card.start}-${idx}`}
               style={{
                 display: 'inline-block',
                 color,
                 fontWeight: isCurrent || emph === 1 ? 800 : 700,
-                transform: `scale(${wordPop})`,
+                transform: `scale(${pop})`,
                 textShadow: isCurrent
-                  ? '0 0 28px rgba(246, 200, 68, 0.42), 0 6px 20px rgba(0,0,0,0.85)'
-                  : '0 6px 22px rgba(0,0,0,0.78)',
+                  ? '0 0 30px rgba(244, 190, 68, 0.42), 0 6px 22px rgba(0, 0, 0, 0.88)'
+                  : '0 6px 22px rgba(0, 0, 0, 0.82)',
               }}
             >
               {wordText}
@@ -233,273 +264,197 @@ const ProgressiveCaptionBar: React.FC<{
   );
 };
 
-const StudioHudOverlay: React.FC<{
-  readonly chapter: ChapterDef;
-  readonly globalProgress: number;
-}> = ({chapter, globalProgress}) => {
+// ============================================================================
+// NAYSI STUDIO HUD CHROME (TOP BRANDING, CHAPTER FOOTER, PROGRESS BAR)
+// ============================================================================
+
+const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
+  const activeIdx = getActiveChapterIndex(sec);
+  const ch = CHAPTERS[activeIdx];
+  const progressPct = clamp01(sec / VIDEO_SPEC.durationSec) * 100;
+
   return (
-    <div style={{position: 'absolute', inset: 0, pointerEvents: 'none'}}>
+    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 50 }}>
       {/* Top-Left Brand Lockup: ▪ NAYSI */}
       <div
         style={{
           position: 'absolute',
-          left: 84,
-          top: 68,
+          left: 46,
+          top: 34,
           display: 'flex',
           alignItems: 'center',
           gap: 14,
         }}
       >
-        <span
+        <div
           style={{
-            width: 14,
-            height: 14,
-            borderRadius: 3.5,
-            background: IDENTITY.citrine,
-            boxShadow: '0 0 12px rgba(246, 200, 68, 0.5)',
-            display: 'inline-block',
+            width: 15,
+            height: 15,
+            borderRadius: 3,
+            background: IDENTITY.captionGold,
+            boxShadow: '0 0 14px rgba(244, 190, 68, 0.45)',
           }}
         />
         <span
           style={{
-            fontFamily: IDENTITY.fontDisplay,
-            fontSize: 27,
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 25,
             fontWeight: 700,
-            letterSpacing: '0.2em',
-            color: 'rgba(244, 239, 230, 0.78)',
+            letterSpacing: '0.20em',
+            color: 'rgba(245, 242, 235, 0.88)',
           }}
         >
-          {VIDEO_SPEC.brand}
+          {VIDEO_SPEC.seriesLeft}
         </span>
       </div>
 
-      {/* Top-Right Niche Watermark: NAYSI · EKONOMI */}
+      {/* Top-Right Series Category: NAYSI · SEJARAH */}
       <div
         style={{
           position: 'absolute',
-          right: 84,
-          top: 72,
-          fontFamily: IDENTITY.fontMono,
-          fontSize: 21,
-          fontWeight: 500,
-          letterSpacing: '0.2em',
-          color: 'rgba(244, 239, 230, 0.42)',
-        }}
-      >
-        {VIDEO_SPEC.nicheTag}
-      </div>
-
-      {/* Bottom-Left Chapter Ticker: 01 — JALAN BARU */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 84,
-          bottom: 78,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
+          right: 46,
+          top: 36,
           fontFamily: IDENTITY.fontMono,
           fontSize: 22,
           fontWeight: 600,
-          letterSpacing: '0.14em',
+          letterSpacing: '0.20em',
+          color: 'rgba(245, 242, 235, 0.48)',
         }}
       >
-        <span style={{color: IDENTITY.citrine}}>{chapter.num}</span>
-        <span style={{color: 'rgba(244, 239, 230, 0.34)'}}>—</span>
-        <span style={{color: 'rgba(244, 239, 230, 0.62)'}}>
-          {chapter.title}
-        </span>
+        {VIDEO_SPEC.seriesRight}
       </div>
 
-      {/* Bottom-Right 8-Chapter Segmented Dashes */}
+      {/* Bottom-Left Active Chapter Indicator */}
       <div
         style={{
           position: 'absolute',
-          right: 84,
-          bottom: 86,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          left: 46,
+          bottom: 48,
+          fontFamily: IDENTITY.fontMono,
+          fontSize: 22,
+          fontWeight: 600,
+          letterSpacing: '0.18em',
+          color: 'rgba(245, 242, 235, 0.62)',
         }}
       >
-        {CHAPTERS.map((ch) => {
-          const active = ch.index === chapter.index;
+        {ch.num} — {ch.hud}
+      </div>
+
+      {/* Bottom-Right 8 Chapter Dashes */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 46,
+          bottom: 56,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {CHAPTERS.map((item, idx) => {
+          const isCurrent = idx === activeIdx;
+          const isDone = idx < activeIdx;
           return (
             <div
-              key={ch.num}
+              key={item.num}
               style={{
-                width: active ? 28 : 18,
+                width: isCurrent ? 30 : 18,
                 height: 4,
-                borderRadius: 999,
-                background: active
-                  ? IDENTITY.citrine
-                  : 'rgba(244, 239, 230, 0.2)',
-                boxShadow: active
-                  ? '0 0 10px rgba(246, 200, 68, 0.55)'
-                  : undefined,
+                borderRadius: 2,
+                background: isCurrent
+                  ? IDENTITY.captionGold
+                  : isDone
+                    ? 'rgba(245, 242, 235, 0.46)'
+                    : 'rgba(245, 242, 235, 0.16)',
+                boxShadow: isCurrent
+                  ? '0 0 12px rgba(244, 190, 68, 0.6)'
+                  : 'none',
               }}
             />
           );
         })}
       </div>
 
-      {/* Bottom-Edge Continuous Glowing Progress Bar */}
+      {/* Bottom-Edge Continuous Progress Bar */}
       <div
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
-          height: 7,
+          height: 8,
           background: 'rgba(255, 255, 255, 0.06)',
         }}
       >
         <div
           style={{
-            width: `${clamp01(globalProgress) * 100}%`,
+            width: `${progressPct}%`,
             height: '100%',
-            background:
-              'linear-gradient(90deg, #F6C844 0%, #FF6B42 65%, #2CE59B 100%)',
-            boxShadow: '0 0 18px rgba(246, 200, 68, 0.65)',
+            background: `linear-gradient(90deg, #D95B38 0%, ${IDENTITY.captionGold} 100%)`,
+            boxShadow: '0 0 16px rgba(244, 190, 68, 0.5)',
           }}
         />
       </div>
-    </div>
+    </AbsoluteFill>
   );
 };
 
-export const NaysiMasterComposition: React.FC = () => {
-  const ready = useStudioFonts();
+// ============================================================================
+// MASTER COMPOSITION: NAYSI (1440×2560 @ 90 FPS)
+// ============================================================================
+
+export const NaysiEpisode: React.FC = () => {
+  useAlmanacFonts();
   const frame = useCurrentFrame();
-  const {fps, durationInFrames} = useVideoConfig();
-
+  const { fps, durationInFrames } = useVideoConfig();
   const sec = frame / fps;
-  const globalProgress = frame / Math.max(1, durationInFrames - 1);
-  const {chapter, sentence} = getSentenceAt(sec);
 
-  const XFADE = 0.22;
-  const activeScenes: Array<{
-    idx: number;
-    ch: ChapterDef;
-    opacity: number;
-    scale: number;
-  }> = [];
-
-  for (let i = 0; i < CHAPTERS.length; i++) {
-    const ch = CHAPTERS[i];
-    if (sec >= ch.start - XFADE && sec <= ch.end + XFADE) {
-      let opacity = 1;
-      if (i > 0 && sec < ch.start + XFADE) {
-        opacity = easeInOutCubic(
-          rangeProgress(sec, ch.start - XFADE, ch.start + XFADE),
-        );
-      } else if (i < CHAPTERS.length - 1 && sec > ch.end - XFADE) {
-        opacity =
-          1 -
-          easeInOutCubic(rangeProgress(sec, ch.end - XFADE, ch.end + XFADE));
-      }
-      const localP = rangeProgress(sec, ch.start, ch.end);
-      const scale = 1 + localP * 0.016;
-      activeScenes.push({idx: i, ch, opacity: clamp01(opacity), scale});
-    }
-  }
-
-  const grainStep = Math.floor(frame / 3);
-  const grainOffsetX = (grainStep * 37) % 160;
-  const grainOffsetY = (grainStep * 61) % 160;
-
-  if (!ready) {
-    return <AbsoluteFill style={{backgroundColor: IDENTITY.bgObsidian}} />;
-  }
+  // Clean fade-to-black in final 0.35s
+  const endFade = interpolate(
+    frame,
+    [durationInFrames - Math.round(0.35 * fps), durationInFrames - 1],
+    [1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+  );
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: IDENTITY.bgObsidian,
-        overflow: 'hidden',
+        backgroundColor: IDENTITY.bgStudio,
+        backgroundImage: `radial-gradient(90% 55% at 50% 35%, #171A21 0%, ${IDENTITY.bgStudio} 62%, ${IDENTITY.bgStudioDeep} 100%)`,
       }}
     >
-      <Audio src={staticFile('audio/master.mp3')} />
+      {/* Master Indonesian Male VO + Horological Underscore (MP3, Zero WAV) */}
+      <Audio src={staticFile('audio/master.mp3')} volume={1} />
 
-      {/* Active Chapter Visual Stage(s) with Smooth Cross-Dissolve */}
-      {activeScenes.map(({idx, ch, opacity, scale}) => {
-        const SceneComp = SCENE_COMPONENTS[idx];
-        return (
-          <AbsoluteFill
-            key={ch.slug}
-            style={{
-              opacity,
-              transform: `scale(${scale})`,
-              transformOrigin: '50% 42%',
-            }}
-          >
-            <SceneComp
-              sec={sec}
-              localSec={Math.max(0, sec - ch.start)}
-              durationSec={ch.end - ch.start}
-            />
-          </AbsoluteFill>
-        );
-      })}
+      <AbsoluteFill style={{ opacity: endFade }}>
+        {/* Physical Folio Stack Stage (Upper ~72% of 2K Vertical Frame) */}
+        <FolioStackStage sec={sec} />
 
-      {/* Bottom Caption Readability Gradient */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 820,
-          background:
-            'linear-gradient(180deg, rgba(8, 11, 10, 0) 0%, rgba(8, 11, 10, 0.76) 44%, rgba(6, 9, 8, 0.95) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
+        {/* Dedicated Dark Theater Caption Stage (Lower ~24% of Frame) */}
+        <CaptionStage sec={sec} />
 
-      {/* Cinematic Vignette */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          boxShadow: 'inset 0 0 210px rgba(0, 0, 0, 0.58)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Fast Tiled SVG Micro-Grain Overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url("data:image/svg+xml,${GRAIN_SVG}")`,
-          backgroundRepeat: 'repeat',
-          backgroundPosition: `${grainOffsetX}px ${grainOffsetY}px`,
-          opacity: 0.085,
-          mixBlendMode: 'overlay',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Synchronized Word-by-Word Progressive Caption */}
-      <ProgressiveCaptionBar sec={sec} sentence={sentence} />
-
-      {/* Studio Brand & Chapter HUD */}
-      <StudioHudOverlay chapter={chapter} globalProgress={globalProgress} />
+        {/* Precision Studio HUD */}
+        <StudioHud sec={sec} />
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
 
 export const RemotionRoot: React.FC = () => {
   return (
-    <Composition
-      id={VIDEO_SPEC.id}
-      component={NaysiMasterComposition}
-      durationInFrames={VIDEO_SPEC.durationInFrames}
-      fps={VIDEO_SPEC.fps}
-      width={VIDEO_SPEC.width}
-      height={VIDEO_SPEC.height}
-    />
+    <>
+      <Composition
+        id={VIDEO_SPEC.id}
+        component={NaysiEpisode}
+        durationInFrames={VIDEO_SPEC.durationInFrames}
+        fps={VIDEO_SPEC.fps}
+        width={VIDEO_SPEC.width}
+        height={VIDEO_SPEC.height}
+      />
+    </>
   );
 };
 
 registerRoot(RemotionRoot);
+export default RemotionRoot;

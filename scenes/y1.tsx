@@ -1,847 +1,928 @@
 import React from 'react';
-import {interpolate} from 'remotion';
-import {
-  AnodizedCard,
-  CartographicBackdrop,
-  DiamondNetworkStage,
-  SceneRenderProps,
-  SplitFlapDigits,
-  StageContainer,
-} from './braess';
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AlmanacFolioSheet, AlmanacPlaque } from './kalender';
 import {
   CHAPTERS,
   IDENTITY,
   clamp01,
   easeInOutCubic,
-  easeOutBack,
   easeOutCubic,
-  easeOutQuart,
-  formatIntID,
-  rangeProgress,
+  prog,
 } from './script';
 
-const PrecisionBridgeDial: React.FC<{
-  readonly title: string;
-  readonly subtitle: string;
-  readonly minutes: number;
-  readonly cars: number;
-}> = ({title, subtitle, minutes, cars}) => {
-  const norm = clamp01(minutes / 50);
-  const startDeg = -125;
-  const endDeg = 125;
-  const needleDeg = interpolate(norm, [0, 1], [startDeg, endDeg]);
-  const isDanger = minutes >= 32;
-  const ringColor = isDanger ? IDENTITY.vermilion : IDENTITY.emerald;
+// ============================================================================
+// LEMBAR 05 — PAUS GREGORIUS XIII & ALOYSIUS LILIUS: POTONG 10 TANGGAL
+// Cards:
+//  5A [53.90..56.19]: "Untuk meluruskannya kembali,"
+//  5B [56.19..62.28]: "Paus Gregorius ketiga belas dan astronom Aloysius Lilius merombak kalender."
+//  5C [62.28..65.45]: "Sepuluh tanggal di bulan Oktober langsung dipotong,"
+//  5D [65.45..68.30]: "tanpa mengubah urutan hari Kamis ke Jumat."
+// ============================================================================
 
-  const R = 132;
-  const cx = 185;
-  const cy = 182;
+export const Lembar05ReformasiGregorius: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
+  const ch = CHAPTERS[4];
 
-  const polar = (deg: number, r: number) => {
-    const rad = ((deg - 90) * Math.PI) / 180;
-    return {x: cx + Math.cos(rad) * r, y: cy + Math.sin(rad) * r};
-  };
+  const decreeP = easeOutCubic(prog(sec, ch.start + 0.1, 58.6));
+  const liliusP = easeOutCubic(prog(sec, 58.3, 60.8));
+  const cutRibbonP = easeInOutCubic(prog(sec, 62.28, 65.1));
+  const weekdayLockP = easeOutCubic(prog(sec, 65.45, 67.6));
 
-  const arcStart = polar(startDeg, R);
-  const arcCur = polar(needleDeg, R);
-  const largeArc = needleDeg - startDeg > 180 ? 1 : 0;
+  const remainingError = Math.abs(interpolate(cutRibbonP, [0, 1], [10.0, 0.0]))
+    .toFixed(1)
+    .replace('.', ',');
+
+  const weekdays = ['SEN', 'SEL', 'RAB', 'KAMIS', 'JUMAT', 'SAB', 'MIN'];
 
   return (
-    <AnodizedCard
-      accentColor={
-        isDanger ? 'rgba(255, 86, 52, 0.5)' : 'rgba(44, 229, 155, 0.4)'
-      }
-      headerLeft={title}
-      headerRight={subtitle}
-      statusDot={ringColor}
-    >
+    <AlmanacFolioSheet chapter={ch}>
+      {/* Upper Section: Papal Bull Inter Gravissimas & Two Reform Architects */}
       <div
         style={{
-          padding: '14px 20px 22px 20px',
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 34,
+          height: 392,
+          background: 'rgba(248, 244, 234, 0.93)',
+          border: `2px solid ${IDENTITY.ink}`,
+          padding: '26px 34px',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          justifyContent: 'space-between',
+          opacity: decreeP,
+          transform: `translateY(${(1 - decreeP) * 16}px)`,
         }}
       >
-        <svg width={370} height={265} viewBox="0 0 370 265">
-          {Array.from({length: 26}).map((_, i) => {
-            const frac = i / 25;
-            const deg = startDeg + frac * (endDeg - startDeg);
-            const major = i % 5 === 0;
-            const pOuter = polar(deg, R + 6);
-            const pInner = polar(deg, R - (major ? 14 : 6));
-            const tickHigh = frac >= 0.64;
-            return (
-              <line
-                key={`dt-${i}`}
-                x1={pInner.x}
-                y1={pInner.y}
-                x2={pOuter.x}
-                y2={pOuter.y}
-                stroke={
-                  tickHigh
-                    ? 'rgba(255, 86, 52, 0.72)'
-                    : 'rgba(244, 239, 230, 0.34)'
-                }
-                strokeWidth={major ? 3 : 1.5}
-                strokeLinecap="round"
-              />
-            );
-          })}
-
-          {norm > 0.02 && (
-            <path
-              d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 ${largeArc} 1 ${arcCur.x} ${arcCur.y}`}
-              fill="none"
-              stroke={ringColor}
-              strokeWidth={10}
-              strokeLinecap="round"
-            />
-          )}
-
-          <g transform={`translate(${cx}, ${cy}) rotate(${needleDeg})`}>
-            <polygon
-              points="-5,14 0,-114 5,14"
-              fill={ringColor}
-              stroke="#FFFFFF"
-              strokeWidth={1}
-            />
-            <circle
-              cx={0}
-              cy={0}
-              r={14}
-              fill="#192320"
-              stroke={ringColor}
-              strokeWidth={3}
-            />
-          </g>
-
-          <text
-            x={cx}
-            y={cy + 58}
-            textAnchor="middle"
-            fill={ringColor}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={44}
-            fontWeight={700}
-          >
-            {Math.round(minutes)} MNT
-          </text>
-        </svg>
-
         <div
           style={{
-            padding: '8px 22px',
-            borderRadius: 999,
-            background: isDanger ? IDENTITY.vermilionSoft : IDENTITY.emeraldSoft,
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 19,
-            fontWeight: 700,
-            color: ringColor,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          {formatIntID(cars)} MOBIL ÷ 100 = {Math.round(minutes)} MNT
+          <span
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              color: IDENTITY.crimson,
+            }}
+          >
+            KOMISI REFORMASI KALENDER · ROMA, 24 FEBRUARI 1582
+          </span>
+          <AlmanacPlaque tone="crimson" size="sm" label="INTER GRAVISSIMAS" />
+        </div>
+
+        {/* Two Architect Cards */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 22,
+            height: 256,
+          }}
+        >
+          {/* Left: Pope Gregory XIII */}
+          <div
+            style={{
+              background: '#EFE7D6',
+              border: `2px solid ${IDENTITY.ink}`,
+              padding: '22px 26px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span
+                style={{
+                  fontFamily: IDENTITY.fontMono,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: IDENTITY.crimson,
+                  letterSpacing: '0.10em',
+                }}
+              >
+                OTORITAS DEKRET RESMI
+              </span>
+              {/* Engraved Wax Seal */}
+              <svg width={44} height={44} viewBox="0 0 44 44">
+                <circle cx={22} cy={22} r={19} fill={IDENTITY.crimson} />
+                <circle
+                  cx={22}
+                  cy={22}
+                  r={14}
+                  fill="none"
+                  stroke="#FDE6DF"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 2"
+                />
+                <text
+                  x={22}
+                  y={27}
+                  textAnchor="middle"
+                  fontFamily={IDENTITY.fontSerif}
+                  fontWeight={900}
+                  fontSize={14}
+                  fill="#FFF8F2"
+                >
+                  XIII
+                </text>
+              </svg>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontFamily: IDENTITY.fontSerif,
+                  fontWeight: 900,
+                  fontSize: 38,
+                  color: IDENTITY.ink,
+                  lineHeight: 1.06,
+                }}
+              >
+                Paus Gregorius XIII
+              </div>
+              <div
+                style={{
+                  fontFamily: IDENTITY.fontBody,
+                  fontSize: 21,
+                  fontWeight: 600,
+                  color: IDENTITY.inkSoft,
+                  marginTop: 6,
+                }}
+              >
+                Menetapkan pemotongan 10 hari Oktober 1582
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Aloysius Lilius & Clavius */}
+          <div
+            style={{
+              background: '#EFE7D6',
+              border: `2px solid ${liliusP > 0.15 ? IDENTITY.lapis : IDENTITY.ink}`,
+              padding: '22px 26px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              opacity: 0.35 + 0.65 * liliusP,
+              transform: `translateY(${(1 - liliusP) * 12}px)`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span
+                style={{
+                  fontFamily: IDENTITY.fontMono,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: IDENTITY.lapis,
+                  letterSpacing: '0.10em',
+                }}
+              >
+                ARSITEK MATEMATIKA & ASTRONOMI
+              </span>
+              <svg width={44} height={44} viewBox="0 0 44 44">
+                <circle
+                  cx={22}
+                  cy={22}
+                  r={18}
+                  fill="none"
+                  stroke={IDENTITY.lapis}
+                  strokeWidth={2.5}
+                />
+                <line x1={22} y1={6} x2={22} y2={38} stroke={IDENTITY.lapis} strokeWidth={1.8} />
+                <line x1={6} y1={22} x2={38} y2={22} stroke={IDENTITY.lapis} strokeWidth={1.8} />
+                <circle cx={22} cy={22} r={5} fill={IDENTITY.brass} />
+              </svg>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontFamily: IDENTITY.fontSerif,
+                  fontWeight: 900,
+                  fontSize: 38,
+                  color: IDENTITY.ink,
+                  lineHeight: 1.06,
+                }}
+              >
+                Aloysius Lilius
+              </div>
+              <div
+                style={{
+                  fontFamily: IDENTITY.fontBody,
+                  fontSize: 21,
+                  fontWeight: 600,
+                  color: IDENTITY.inkSoft,
+                  marginTop: 6,
+                }}
+              >
+                Menyusun rumus siklus kabisat 400 tahun
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </AnodizedCard>
-  );
-};
 
-/* ==========================================================================
-   CHAPTER 04 — JALAN PINTAS (31.36s -> 40.12s)
-   ========================================================================== */
-export const Scene04JalanPintas: React.FC<SceneRenderProps> = ({
-  sec,
-  localSec,
-}) => {
-  const ch = CHAPTERS[3];
-  const sent2Start = ch.sentences[1].start;
-
-  const buildP = easeOutQuart(rangeProgress(localSec, 0.25, 2.05));
-  const pioneerRunP = easeInOutCubic(
-    rangeProgress(sec, sent2Start - 0.1, sent2Start + 3.15),
-  );
-  const timerDropP = easeOutCubic(
-    rangeProgress(sec, sent2Start + 0.55, sent2Start + 2.65),
-  );
-  const badgePop = easeOutBack(
-    rangeProgress(sec, sent2Start + 1.55, sent2Start + 2.25),
-  );
-
-  const displayedMinutes = Math.round(interpolate(timerDropP, [0, 1], [65, 40]));
-
-  return (
-    <div style={{position: 'absolute', inset: 0}}>
-      <CartographicBackdrop
-        sec={sec}
-        mood="citrine"
-        focusX={720}
-        focusY={780}
-      />
-
-      <StageContainer>
-        <div style={{textAlign: 'center', marginTop: 22}}>
-          <div
+      {/* Center Section: Dual-Track Mechanical Calendar Splicer */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 454,
+          height: 598,
+          background: '#F8F4EA',
+          border: `2px solid ${IDENTITY.ink}`,
+          padding: '28px 34px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span
             style={{
               fontFamily: IDENTITY.fontMono,
               fontSize: 21,
-              fontWeight: 600,
-              letterSpacing: '0.18em',
-              color: IDENTITY.citrine,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              color: IDENTITY.inkSoft,
             }}
           >
-            PROYEK BARU · VIADUK TENGAH
+            MEKANISME PEMOTONGAN PITA TANGGAL · OKTOBER 1582
+          </span>
+          <span
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 19,
+              fontWeight: 800,
+              color: weekdayLockP > 0.2 ? IDENTITY.verdigris : IDENTITY.crimson,
+            }}
+          >
+            {weekdayLockP > 0.2
+              ? 'URUTAN HARI TETAP UTUH ✓'
+              : 'MEMOTONG 5–14 OKTOBER'}
+          </span>
+        </div>
+
+        {/* Track 1: Unbroken 7-Day Weekday Rail */}
+        <div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 18,
+              fontWeight: 700,
+              color: IDENTITY.verdigris,
+              letterSpacing: '0.10em',
+              marginBottom: 8,
+            }}
+          >
+            1. PITA HARI PEKAN (TIDAK DIPOTONG SAMA SEKALI)
           </div>
           <div
             style={{
-              fontFamily: IDENTITY.fontDisplay,
-              fontSize: 50,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              height: 92,
+              border: `2.5px solid ${IDENTITY.ink}`,
+              background: IDENTITY.ink,
+            }}
+          >
+            {weekdays.map((wd, idx) => {
+              const highlightKJ = (idx === 3 || idx === 4) && weekdayLockP > 0.1;
+              return (
+                <div
+                  key={wd}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRight:
+                      idx < 6 ? '1px solid rgba(244,239,227,0.18)' : 'none',
+                    background: highlightKJ
+                      ? `rgba(31, 106, 84, ${0.85 * weekdayLockP})`
+                      : 'transparent',
+                    fontFamily: IDENTITY.fontMono,
+                    fontSize: idx === 3 || idx === 4 ? 25 : 22,
+                    fontWeight: 800,
+                    color: idx === 3 || idx === 4 ? '#F4BE44' : '#F4EFE3',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {wd}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Track 2: Sliding Date Ribbon where [5..14] drops out and [15,16,17] slides into Fri,Sat,Sun */}
+        <div style={{ position: 'relative', height: 266 }}>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 18,
               fontWeight: 700,
-              color: IDENTITY.ivory,
+              color: IDENTITY.crimson,
+              letterSpacing: '0.10em',
+              marginBottom: 8,
+            }}
+          >
+            2. PITA TANGGAL KALENDER (5–14 OKT DIKELUARKAN, 15 OKT GESER KE JUMAT)
+          </div>
+
+          <div
+            style={{
+              position: 'relative',
+              height: 118,
+              border: `2px dashed rgba(25, 23, 20, 0.28)`,
+              background: '#EAE1CE',
+            }}
+          >
+            {/* Fixed Left 4 Cells: 1, 2, 3, 4 OKT (Mon..Thu) */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: `${(4 / 7) * 100}%`,
+                height: '100%',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                background: '#F8F4EA',
+                borderRight: `3px solid ${IDENTITY.ink}`,
+                zIndex: 4,
+              }}
+            >
+              {[1, 2, 3, 4].map((d, idx) => (
+                <div
+                  key={d}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRight: idx < 3 ? '1px solid rgba(25,23,20,0.18)' : 'none',
+                    background:
+                      d === 4 && weekdayLockP > 0.1
+                        ? 'rgba(33, 78, 120, 0.14)'
+                        : 'transparent',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: IDENTITY.fontSerif,
+                      fontWeight: 900,
+                      fontSize: 48,
+                      color: IDENTITY.ink,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {d}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: IDENTITY.fontMono,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: IDENTITY.inkMuted,
+                      marginTop: 4,
+                    }}
+                  >
+                    OKT
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Dropping Cut Segment: [5 – 14 OKTOBER · 10 TANGGAL] */}
+            <div
+              style={{
+                position: 'absolute',
+                left: `${(4 / 7) * 100}%`,
+                top: `${cutRibbonP * 124}px`,
+                width: `${(3 / 7) * 100}%`,
+                height: '100%',
+                background: '#FDF3F1',
+                border: `3px solid ${IDENTITY.crimson}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: 1 - cutRibbonP * 0.25,
+                transform: `rotate(${cutRibbonP * 3.2}deg)`,
+                zIndex: 2,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: IDENTITY.fontSerif,
+                  fontWeight: 900,
+                  fontSize: 42,
+                  color: IDENTITY.crimson,
+                  textDecoration: cutRibbonP > 0.2 ? 'line-through' : 'none',
+                }}
+              >
+                5 – 14 Okt
+              </span>
+              <span
+                style={{
+                  fontFamily: IDENTITY.fontMono,
+                  fontSize: 17,
+                  fontWeight: 800,
+                  color: IDENTITY.crimson,
+                  letterSpacing: '0.08em',
+                  marginTop: 4,
+                }}
+              >
+                ✂ DIPOTONG (10 HARI)
+              </span>
+            </div>
+
+            {/* Sliding Right Segment: [15, 16, 17 OKT] sliding in from right onto Fri, Sat, Sun! */}
+            <div
+              style={{
+                position: 'absolute',
+                left: `${interpolate(cutRibbonP, [0, 1], [102, (4 / 7) * 100])}%`,
+                top: 0,
+                width: `${(3 / 7) * 100}%`,
+                height: '100%',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                background: '#EDF7F3',
+                borderLeft: `3px solid ${IDENTITY.verdigris}`,
+                zIndex: 5,
+                boxShadow:
+                  cutRibbonP > 0.1 ? '-10px 0 24px rgba(25,23,20,0.16)' : 'none',
+              }}
+            >
+              {[15, 16, 17].map((d, idx) => (
+                <div
+                  key={d}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRight: idx < 2 ? '1px solid rgba(31,106,84,0.25)' : 'none',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: IDENTITY.fontSerif,
+                      fontWeight: 900,
+                      fontSize: 48,
+                      color: d === 15 ? IDENTITY.verdigris : IDENTITY.ink,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {d}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: IDENTITY.fontMono,
+                      fontSize: 15,
+                      fontWeight: 800,
+                      color: IDENTITY.verdigris,
+                      marginTop: 4,
+                    }}
+                  >
+                    OKT
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Solar Alignment Readout Bar */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 1080,
+          height: 212,
+          background: IDENTITY.ink,
+          padding: '24px 38px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              color: '#F4BE44',
+            }}
+          >
+            STATUS KESELARASAN MATAHARI & KALENDER
+          </div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontBody,
+              fontSize: 25,
+              fontWeight: 600,
+              color: '#F4EFE3',
+              marginTop: 8,
+            }}
+          >
+            {cutRibbonP > 0.85
+              ? 'Kamis 4 Oktober langsung disambung ke Jumat 15 Oktober'
+              : 'Menggeser tanggal agar kembali tepat dengan orbit Bumi'}
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: '16px 28px',
+            background: cutRibbonP > 0.85 ? IDENTITY.verdigris : IDENTITY.crimson,
+            border: '2px solid rgba(255,255,255,0.22)',
+            textAlign: 'right',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 17,
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.84)',
+              letterSpacing: '0.10em',
+            }}
+          >
+            SELISIH MUSIM
+          </div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontSerif,
+              fontWeight: 900,
+              fontSize: 54,
+              lineHeight: 1.05,
+              color: '#FFFFFF',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {remainingError} Hari
+          </div>
+        </div>
+      </div>
+    </AlmanacFolioSheet>
+  );
+};
+
+// ============================================================================
+// LEMBAR 06 — RAHASIA RUMUS KABISAT: 1700, 1800, 1900 BUKAN KABISAT vs 2000
+// Cards:
+//  6A [68.38..72.86]: "Supaya tidak meleset lagi, aturan tahun kabisat ikut diubah."
+//  6B [72.86..76.48]: "Tahun abad bulat seperti seribu tujuh ratus,"
+//  6C [76.48..80.74]: "seribu delapan ratus, dan seribu sembilan ratus bukan kabisat,"
+//  6D [80.74..85.32]: "kecuali yang habis dibagi empat ratus seperti tahun dua ribu."
+// ============================================================================
+
+export const Lembar06RumusKabisat: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
+  const ch = CHAPTERS[5];
+
+  const ruleIntroP = easeOutCubic(prog(sec, ch.start + 0.1, 71.8));
+  const c1700P = easeOutCubic(prog(sec, 74.6, 76.2));
+  const c1800P = easeOutCubic(prog(sec, 76.5, 78.1));
+  const c1900P = easeOutCubic(prog(sec, 78.4, 80.4));
+  const c2000P = easeOutCubic(prog(sec, 81.2, 84.4));
+
+  const centuries = [
+    {
+      year: '1600',
+      div400: true,
+      note: '1600 ÷ 400 = 4',
+      feb: '29 HARI',
+      reveal: clamp01(c2000P * 1.15),
+    },
+    {
+      year: '1700',
+      div400: false,
+      note: 'TIDAK HABIS ÷ 400',
+      feb: '28 HARI',
+      reveal: c1700P,
+    },
+    {
+      year: '1800',
+      div400: false,
+      note: 'TIDAK HABIS ÷ 400',
+      feb: '28 HARI',
+      reveal: c1800P,
+    },
+    {
+      year: '1900',
+      div400: false,
+      note: 'TIDAK HABIS ÷ 400',
+      feb: '28 HARI',
+      reveal: c1900P,
+    },
+    {
+      year: '2000',
+      div400: true,
+      note: '2000 ÷ 400 = 5',
+      feb: '29 HARI',
+      reveal: c2000P,
+    },
+  ];
+
+  return (
+    <AlmanacFolioSheet chapter={ch}>
+      {/* Top Rule Summary Banner */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 34,
+          height: 172,
+          background: '#F8F4EA',
+          border: `2px solid ${IDENTITY.ink}`,
+          padding: '22px 34px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          opacity: ruleIntroP,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 19,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              color: IDENTITY.crimson,
+            }}
+          >
+            SARINGAN GANDA TAHUN KABISAT GREGORIAN
+          </div>
+          <div
+            style={{
+              fontFamily: IDENTITY.fontSerif,
+              fontWeight: 900,
+              fontSize: 38,
+              color: IDENTITY.ink,
               marginTop: 6,
             }}
           >
-            JALAN PINTAS SUPERCEPAT · 0 MENIT
+            Membuang 3 hari kabisat setiap 400 tahun
           </div>
         </div>
 
-        <div style={{marginTop: 28}}>
-          <DiamondNetworkStage
-            sec={sec}
-            height={850}
-            config={{
-              northBridgeCars: 2001,
-              southBridgeCars: 2001,
-              northWideCars: 2000,
-              southWideCars: 2000,
-              shortcutCars: pioneerRunP > 0.05 ? 350 : 0,
-              shortcutState: buildP < 0.98 ? 'building' : 'open',
-              shortcutBuildProgress: buildP,
-              highlightPioneer: pioneerRunP,
-              showLabels: true,
-            }}
-          />
+        <div
+          style={{
+            padding: '14px 24px',
+            background: IDENTITY.ink,
+            color: '#F4BE44',
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 24,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+          }}
+        >
+          97 KABISAT / 400 THN
         </div>
+      </div>
 
-        <div style={{width: 1272, margin: '34px auto 0 auto'}}>
-          <AnodizedCard
-            accentColor="rgba(246, 200, 68, 0.55)"
-            headerLeft="SIMULASI PENGEMUDI PERTAMA (A → U → S → B)"
-            headerRight="20 + 0 + 20 = 40 MNT"
-            statusDot={IDENTITY.citrine}
-          >
+      {/* Center 5-Century Sieve Matrix (1600 .. 2000) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 232,
+          height: 734,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        {centuries.map((item) => {
+          const r = item.reveal;
+          const active = r > 0.05;
+          const bg = !active
+            ? 'rgba(248, 244, 234, 0.88)'
+            : item.div400
+              ? '#EDF7F3'
+              : '#FDF3F1';
+          const borderCol = !active
+            ? 'rgba(25, 23, 20, 0.32)'
+            : item.div400
+              ? IDENTITY.verdigris
+              : IDENTITY.crimson;
+
+          return (
             <div
+              key={item.year}
               style={{
-                padding: '28px 36px 32px 36px',
-                display: 'flex',
+                flex: 1,
+                background: bg,
+                border: `2.5px solid ${borderCol}`,
+                padding: '0 32px',
+                display: 'grid',
+                gridTemplateColumns: '230px 1fr 290px',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                boxShadow: active
+                  ? '0 10px 24px rgba(25, 23, 20, 0.11)'
+                  : 'none',
+                transform: `scale(${0.985 + 0.015 * r})`,
               }}
             >
+              {/* Century Year */}
+              <div
+                style={{
+                  fontFamily: IDENTITY.fontSerif,
+                  fontWeight: 900,
+                  fontSize: 66,
+                  lineHeight: 1,
+                  color: !active
+                    ? IDENTITY.ink
+                    : item.div400
+                      ? IDENTITY.verdigris
+                      : IDENTITY.crimson,
+                }}
+              >
+                {item.year}
+              </div>
+
+              {/* Mathematical Division Proof */}
               <div>
                 <div
                   style={{
                     fontFamily: IDENTITY.fontMono,
-                    fontSize: 19,
-                    letterSpacing: '0.14em',
-                    color: IDENTITY.slateMuted,
-                  }}
-                >
-                  RUTE LAMA: <s style={{color: IDENTITY.ivorySoft}}>65 MENIT</s>
-                </div>
-                <div style={{marginTop: 12}}>
-                  <SplitFlapDigits
-                    value={String(displayedMinutes)}
-                    unit="MENIT"
-                    color={
-                      timerDropP > 0.5 ? IDENTITY.citrine : IDENTITY.ivory
-                    }
-                    digitWidth={78}
-                    digitHeight={106}
-                    fontSize={66}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  opacity: Math.max(0.15, badgePop),
-                  transform: `scale(${0.85 + badgePop * 0.15})`,
-                  padding: '22px 34px',
-                  borderRadius: 24,
-                  background:
-                    'linear-gradient(135deg, rgba(246,200,68,0.22) 0%, rgba(44,229,155,0.18) 100%)',
-                  border: `2px solid ${IDENTITY.citrine}`,
-                  textAlign: 'right',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: IDENTITY.fontMono,
-                    fontSize: 44,
-                    fontWeight: 700,
-                    color: IDENTITY.citrine,
-                  }}
-                >
-                  −25 MENIT ⚡
-                </div>
-                <div
-                  style={{
-                    fontFamily: IDENTITY.fontBody,
                     fontSize: 21,
-                    fontWeight: 600,
-                    color: IDENTITY.ivory,
-                    marginTop: 4,
-                  }}
-                >
-                  Hemat hampir 40% waktu!
-                </div>
-              </div>
-            </div>
-          </AnodizedCard>
-        </div>
-      </StageContainer>
-    </div>
-  );
-};
-
-/* ==========================================================================
-   CHAPTER 05 — JEBAKAN NASH (40.12s -> 52.09s)
-   ========================================================================== */
-export const Scene05JebakanNash: React.FC<SceneRenderProps> = ({
-  sec,
-  localSec,
-}) => {
-  const ch = CHAPTERS[4];
-  const sent2Start = ch.sentences[1].start;
-
-  const migrateP = easeInOutCubic(rangeProgress(localSec, 0.6, 7.8));
-  const payoffAppear = easeOutQuart(
-    rangeProgress(sec, sent2Start - 0.3, sent2Start + 0.8),
-  );
-
-  const migratedCars = Math.round(interpolate(migrateP, [0, 1], [1, 4000]));
-  const bridgeLoad = Math.round(interpolate(migrateP, [0, 1], [2000, 4000]));
-  const wideLoad = Math.round(interpolate(migrateP, [0, 1], [2000, 0]));
-  const migratePct = Math.round((migratedCars / 4000) * 100);
-
-  return (
-    <div style={{position: 'absolute', inset: 0}}>
-      <CartographicBackdrop
-        sec={sec}
-        mood={migrateP > 0.55 ? 'vermilion' : 'citrine'}
-        focusX={720}
-        focusY={760}
-      />
-
-      <StageContainer>
-        <div style={{textAlign: 'center', marginTop: 18}}>
-          <div
-            style={{
-              fontFamily: IDENTITY.fontMono,
-              fontSize: 21,
-              fontWeight: 600,
-              letterSpacing: '0.18em',
-              color: IDENTITY.vermilion,
-            }}
-          >
-            KESEIMBANGAN NASH · EFEK DOMINO
-          </div>
-          <div
-            style={{
-              fontFamily: IDENTITY.fontDisplay,
-              fontSize: 48,
-              fontWeight: 700,
-              color: IDENTITY.ivory,
-              marginTop: 4,
-            }}
-          >
-            SEMUA BEREBUT JALAN PINTAS
-          </div>
-        </div>
-
-        <div style={{marginTop: 22}}>
-          <DiamondNetworkStage
-            sec={sec}
-            height={780}
-            config={{
-              northBridgeCars: bridgeLoad,
-              southBridgeCars: bridgeLoad,
-              northWideCars: wideLoad,
-              southWideCars: wideLoad,
-              shortcutCars: migratedCars,
-              shortcutState: 'open',
-              showLabels: true,
-            }}
-          />
-        </div>
-
-        {/* Migration Bar + Dual Payoff Comparison */}
-        <div
-          style={{
-            width: 1272,
-            margin: '28px auto 0 auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 20,
-          }}
-        >
-          <AnodizedCard
-            accentColor="rgba(255, 86, 52, 0.52)"
-            headerLeft="GELOMBANG MIGRASI PENGEMUDI KE JALAN PINTAS"
-            headerRight={`${migratePct}% PINDAH`}
-            statusDot={IDENTITY.vermilion}
-          >
-            <div style={{padding: '22px 30px 26px 30px'}}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: IDENTITY.fontMono,
-                    fontSize: 48,
                     fontWeight: 700,
-                    color:
-                      migrateP > 0.6 ? IDENTITY.vermilion : IDENTITY.citrine,
-                    fontVariantNumeric: 'tabular-nums',
+                    color: IDENTITY.ink,
+                    letterSpacing: '0.06em',
                   }}
                 >
-                  {formatIntID(migratedCars)} / 4.000 MOBIL
-                </span>
-                <span
-                  style={{
-                    fontFamily: IDENTITY.fontMono,
-                    fontSize: 22,
-                    color: IDENTITY.ivorySoft,
-                  }}
-                >
-                  BEBAN JEMBATAN: {Math.round(bridgeLoad / 100)} MNT
-                </span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  height: 18,
-                  borderRadius: 999,
-                  background: 'rgba(255,255,255,0.08)',
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    width: `${Math.max(2, migratePct)}%`,
-                    height: '100%',
-                    borderRadius: 999,
-                    background:
-                      'linear-gradient(90deg, #F6C844 0%, #FF5634 100%)',
-                  }}
-                />
-              </div>
-            </div>
-          </AnodizedCard>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 22,
-              opacity: Math.max(0.3, payoffAppear),
-              transform: `translateY(${(1 - payoffAppear) * 18}px)`,
-            }}
-          >
-            <div
-              style={{
-                padding: '20px 26px',
-                borderRadius: 24,
-                background: 'rgba(28, 19, 17, 0.94)',
-                border: `1.5px solid ${IDENTITY.vermilion}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontFamily: IDENTITY.fontMono,
-                    fontSize: 17,
-                    color: IDENTITY.vermilion,
-                  }}
-                >
-                  LEWAT PINTAS (SEMUA IKUT)
+                  {active ? item.note : 'TAHUN ABAD BULAT (÷ 100)'}
                 </div>
                 <div
                   style={{
                     fontFamily: IDENTITY.fontBody,
                     fontSize: 20,
-                    color: IDENTITY.ivorySoft,
+                    fontWeight: 600,
+                    color: IDENTITY.inkSoft,
                     marginTop: 4,
                   }}
                 >
-                  40 + 0 + 40 menit
+                  {active
+                    ? `Bulan Februari: ${item.feb}`
+                    : 'Menunggu uji pembagian 400'}
                 </div>
               </div>
-              <div
-                style={{
-                  fontFamily: IDENTITY.fontMono,
-                  fontSize: 42,
-                  fontWeight: 700,
-                  color: IDENTITY.vermilion,
-                }}
-              >
-                80 MNT
-              </div>
-            </div>
 
-            <div
-              style={{
-                padding: '20px 26px',
-                borderRadius: 24,
-                background: 'rgba(16, 22, 20, 0.94)',
-                border: '1.5px solid rgba(244,239,230,0.15)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div>
+              {/* Verdict Stamp */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div
                   style={{
+                    padding: '12px 22px',
+                    background: !active
+                      ? 'rgba(25, 23, 20, 0.08)'
+                      : item.div400
+                        ? IDENTITY.verdigris
+                        : IDENTITY.crimson,
+                    color: !active ? IDENTITY.inkMuted : '#FFFFFF',
                     fontFamily: IDENTITY.fontMono,
-                    fontSize: 17,
-                    color: IDENTITY.slateMuted,
+                    fontSize: 21,
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    opacity: active ? 0.3 + 0.7 * r : 0.65,
                   }}
                 >
-                  BALIK SENDIRIAN KE JALUR LAMA
+                  {!active
+                    ? 'UJI ABAD'
+                    : item.div400
+                      ? '✓ TAHUN KABISAT'
+                      : '✕ BUKAN KABISAT'}
                 </div>
-                <div
-                  style={{
-                    fontFamily: IDENTITY.fontBody,
-                    fontSize: 20,
-                    color: IDENTITY.slateMuted,
-                    marginTop: 4,
-                  }}
-                >
-                  40 + 45 menit (makin rugi!)
-                </div>
-              </div>
-              <div
-                style={{
-                  fontFamily: IDENTITY.fontMono,
-                  fontSize: 42,
-                  fontWeight: 700,
-                  color: IDENTITY.slateMuted,
-                }}
-              >
-                85 MNT
               </div>
             </div>
-          </div>
-        </div>
-      </StageContainer>
-    </div>
-  );
-};
+          );
+        })}
+      </div>
 
-/* ==========================================================================
-   CHAPTER 06 — 80 MENIT (52.09s -> 61.07s)
-   ========================================================================== */
-export const Scene06DelapanPuluh: React.FC<SceneRenderProps> = ({
-  sec,
-  localSec,
-}) => {
-  const ch = CHAPTERS[5];
-  const sent2Start = ch.sentences[1].start;
-
-  const dialSweep = easeOutCubic(rangeProgress(localSec, 0.15, 2.35));
-  const chartReveal = easeOutQuart(
-    rangeProgress(sec, sent2Start - 0.15, sent2Start + 1.25),
-  );
-  const rightBarGrow = easeOutBack(
-    rangeProgress(sec, sent2Start + 0.45, sent2Start + 2.0),
-    1.15,
-  );
-  const deltaBadge = easeOutBack(
-    rangeProgress(sec, sent2Start + 1.65, sent2Start + 2.35),
-  );
-
-  const bridgeMin = interpolate(dialSweep, [0, 1], [20, 40]);
-  const bridgeCars = Math.round(interpolate(dialSweep, [0, 1], [2000, 4000]));
-  const totalAfter = Math.round(interpolate(rightBarGrow, [0, 1], [65, 80]));
-
-  return (
-    <div style={{position: 'absolute', inset: 0}}>
-      <CartographicBackdrop
-        sec={sec}
-        mood="vermilion"
-        focusX={720}
-        focusY={880}
-      />
-
-      <StageContainer>
+      {/* Bottom Head-to-Head Accuracy Plaque: 128 Tahun vs 3.236 Tahun */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 44,
+          right: 44,
+          top: 994,
+          height: 298,
+          background: IDENTITY.ink,
+          padding: '26px 36px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
         <div
           style={{
-            width: 1272,
-            margin: '16px auto 0 auto',
             display: 'flex',
-            flexDirection: 'column',
-            gap: 26,
+            justifyContent: 'space-between',
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 20,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            color: '#F4BE44',
           }}
         >
-          {/* Twin Precision Bridge Load Dials */}
+          <span>LONJAKAN AKURASI KALENDER KITA HARI INI</span>
+          <span>RATA-RATA: 365,2425 HARI</span>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 24,
+          }}
+        >
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 26,
-              transform: `scale(${1 - chartReveal * 0.03})`,
+              padding: '18px 24px',
+              background: 'rgba(255, 255, 255, 0.06)',
+              borderLeft: `5px solid ${IDENTITY.crimson}`,
             }}
           >
-            <PrecisionBridgeDial
-              title="JEMBATAN UTARA · A→U"
-              subtitle="2× LIPAT"
-              minutes={bridgeMin}
-              cars={bridgeCars}
-            />
-            <PrecisionBridgeDial
-              title="JEMBATAN SELATAN · S→B"
-              subtitle="2× LIPAT"
-              minutes={bridgeMin}
-              cars={bridgeCars}
-            />
+            <div
+              style={{
+                fontFamily: IDENTITY.fontMono,
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#FF8B7B',
+              }}
+            >
+              JULIAN LAMA (365,2500)
+            </div>
+            <div
+              style={{
+                fontFamily: IDENTITY.fontSerif,
+                fontWeight: 900,
+                fontSize: 42,
+                color: '#F4EFE3',
+                marginTop: 6,
+              }}
+            >
+              Meleset 1 hari / 128 thn
+            </div>
           </div>
 
-          {/* Monumental Comparative Column Chart (65 MNT vs 80 MNT) */}
-          <AnodizedCard
-            accentColor="rgba(255, 86, 52, 0.56)"
-            headerLeft="PERBANDINGAN WAKTU TEMPUH SEMUA PENGEMUDI"
-            headerRight="DIETRICH BRAESS · 1968"
-            statusDot={IDENTITY.vermilion}
+          <div
+            style={{
+              padding: '18px 24px',
+              background: 'rgba(31, 106, 84, 0.28)',
+              borderLeft: '5px solid #4AD2A5',
+            }}
           >
-            <div style={{padding: '30px 44px 36px 44px'}}>
-              <div
-                style={{
-                  position: 'relative',
-                  height: 620,
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-around',
-                  paddingBottom: 68,
-                  borderBottom: '2px solid rgba(244,239,230,0.18)',
-                }}
-              >
-                {/* Horizontal Reference Lines */}
-                {[20, 40, 65, 80].map((val) => {
-                  const bottomPx = 68 + (val / 92) * 490;
-                  const isBase65 = val === 65;
-                  return (
-                    <div
-                      key={`grid-${val}`}
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: bottomPx,
-                        borderTop: isBase65
-                          ? `2px dashed ${IDENTITY.emerald}`
-                          : '1px solid rgba(244,239,230,0.08)',
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          top: -26,
-                          fontFamily: IDENTITY.fontMono,
-                          fontSize: 18,
-                          fontWeight: 600,
-                          color: isBase65
-                            ? IDENTITY.emerald
-                            : IDENTITY.slateMuted,
-                        }}
-                      >
-                        {val} mnt
-                      </span>
-                    </div>
-                  );
-                })}
-
-                {/* Column 1: Tanpa Jalan Pintas = 65 MNT */}
-                <div
-                  style={{
-                    width: 310,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    zIndex: 2,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 52,
-                      fontWeight: 700,
-                      color: IDENTITY.emerald,
-                      marginBottom: 14,
-                    }}
-                  >
-                    65 MNT
-                  </div>
-                  <div
-                    style={{
-                      width: 220,
-                      height: (65 / 92) * 490,
-                      borderRadius: '22px 22px 6px 6px',
-                      background:
-                        'linear-gradient(180deg, #35F0A4 0%, #157D53 100%)',
-                      border: '2px solid #78F9C4',
-                      boxShadow: '0 0 36px rgba(44, 229, 155, 0.25)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      color: '#061A11',
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 22,
-                      fontWeight: 700,
-                    }}
-                  >
-                    <span>20 + 45</span>
-                  </div>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: 14,
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 21,
-                      fontWeight: 700,
-                      color: IDENTITY.ivorySoft,
-                    }}
-                  >
-                    SEBELUM (2 JALUR)
-                  </div>
-                </div>
-
-                {/* Column 2: Dengan Jalan Pintas = 80 MNT */}
-                <div
-                  style={{
-                    width: 340,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    zIndex: 2,
-                    opacity: Math.max(0.25, chartReveal),
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 58,
-                      fontWeight: 700,
-                      color: IDENTITY.vermilion,
-                      marginBottom: 14,
-                    }}
-                  >
-                    {totalAfter} MNT
-                  </div>
-                  <div
-                    style={{
-                      width: 230,
-                      height: (totalAfter / 92) * 490,
-                      borderRadius: '22px 22px 6px 6px',
-                      background:
-                        'linear-gradient(180deg, #FF6E4E 0%, #B0240C 100%)',
-                      border: '2px solid #FFA38F',
-                      boxShadow: '0 0 50px rgba(255, 86, 52, 0.42)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-evenly',
-                      alignItems: 'center',
-                      color: '#FFFFFF',
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 22,
-                      fontWeight: 700,
-                    }}
-                  >
-                    <span>UTARA: 40</span>
-                    <span
-                      style={{
-                        width: '78%',
-                        height: 2,
-                        background: 'rgba(255,255,255,0.38)',
-                      }}
-                    />
-                    <span>SELATAN: 40</span>
-                  </div>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: 14,
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 21,
-                      fontWeight: 700,
-                      color: IDENTITY.vermilion,
-                    }}
-                  >
-                    + JALAN PINTAS BARU
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Delta Callout */}
-              <div
-                style={{
-                  marginTop: 28,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  opacity: deltaBadge,
-                  transform: `scale(${0.88 + deltaBadge * 0.12})`,
-                }}
-              >
-                <div
-                  style={{
-                    padding: '16px 40px',
-                    borderRadius: 999,
-                    background:
-                      'linear-gradient(90deg, rgba(255,86,52,0.24) 0%, rgba(246,200,68,0.2) 100%)',
-                    border: `2px solid ${IDENTITY.vermilion}`,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 18,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 40,
-                      fontWeight: 700,
-                      color: IDENTITY.vermilion,
-                    }}
-                  >
-                    +15 MENIT
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: IDENTITY.fontMono,
-                      fontSize: 22,
-                      fontWeight: 700,
-                      letterSpacing: '0.1em',
-                      color: IDENTITY.ivory,
-                    }}
-                  >
-                    SEMUA ORANG PULANG LEBIH LAMA
-                  </span>
-                </div>
-              </div>
+            <div
+              style={{
+                fontFamily: IDENTITY.fontMono,
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#6EF0C4',
+              }}
+            >
+              GREGORIAN BARU (365,2425)
             </div>
-          </AnodizedCard>
+            <div
+              style={{
+                fontFamily: IDENTITY.fontSerif,
+                fontWeight: 900,
+                fontSize: 42,
+                color: '#FFFFFF',
+                marginTop: 6,
+              }}
+            >
+              1 hari / 3.236 thn
+            </div>
+          </div>
         </div>
-      </StageContainer>
-    </div>
+      </div>
+    </AlmanacFolioSheet>
   );
 };
