@@ -1,0 +1,161 @@
+name: Render 2K 90FPS Master
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck
+
+  render-shard:
+    needs: typecheck
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - shard: 0
+            range: '0-1286'
+          - shard: 1
+            range: '1287-2573'
+          - shard: 2
+            range: '2574-3860'
+          - shard: 3
+            range: '3861-5147'
+          - shard: 4
+            range: '5148-6434'
+          - shard: 5
+            range: '6435-7719'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx remotion browser ensure
+      - name: Render shard ${{ matrix.shard }} (${{ matrix.range }})
+        run: |
+          mkdir -p out
+          npx remotion render scenes/y3.tsx Naysi "out/shard_${{ matrix.shard }}.mp4" \
+            --frames="${{ matrix.range }}" \
+            --muted \
+            --codec=h264 \
+            --crf=18 \
+            --pixel-format=yuv420p \
+            --jpeg-quality=94 \
+            --concurrency=4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.shard }}
+          path: out/shard_${{ matrix.shard }}.mp4
+          compression-level: 0
+          retention-days: 5
+
+  assemble:
+    needs: render-shard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          path: shards
+      - name: Concatenate 2K 90fps shards and mux 320kbps audio
+        run: |
+          set -euo pipefail
+          mkdir -p out/qa
+          rm -f concat.txt
+          for i in 0 1 2 3 4 5; do
+            f=$(find "shards/shard-${i}" -name "shard_${i}.mp4" | head -n 1)
+            test -n "$f" && test -s "$f"
+            echo "file '$f'" >> concat.txt
+          done
+
+          VIDEO_OUT="out/Menambah Jalan Baru Justru Bikin Macet Makin Parah - Naysi - 1440x2560 90fps.mp4"
+          ffmpeg -y -v error -f concat -safe 0 -i concat.txt -i public/audio/master.mp3 \
+            -map 0:v:0 -map 1:a:0 \
+            -c:v copy \
+            -c:a aac -b:a 320k -ar 48000 \
+            -movflags +faststart \
+            "$VIDEO_OUT"
+
+          ffprobe -v error -select_streams v:0 \
+            -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames,duration \
+            -of default=noprint_wrappers=1 "$VIDEO_OUT"
+
+          ffprobe -v error -select_streams a:0 \
+            -show_entries stream=codec_name,sample_rate,channels,bit_rate \
+            -of default=noprint_wrappers=1 "$VIDEO_OUT"
+
+          # Generate 2 QA 4x2 contact sheets across all 8 chapters
+          TIMES=(3.2 8.2 15.0 24.5 29.2 35.2 38.4 46.5 54.0 59.0 64.5 71.8 77.2 82.8 84.2 85.0)
+          for idx in "${!TIMES[@]}"; do
+            num=$(printf "%02d" $((idx + 1)))
+            ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
+          done
+          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_1.jpg"
+          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x101413" "out/qa/qa_sheet_2.jpg"
+          cp "out/qa/f_01.jpg" "out/qa/sample_ch1.jpg"
+          cp "out/qa/f_11.jpg" "out/qa/sample_ch7.jpg"
+          rm -f out/qa/f_*.jpg
+
+          cat << 'PAKET_EOF' > "out/Paket - Menambah Jalan Baru Justru Bikin Macet Makin Parah.txt"
+          Judul:
+          Menambah Jalan Baru Justru Bikin Macet Makin Parah
+
+          Deskripsi:
+          Menambah jalan baru harusnya mengurai macet, tapi secara matematika justru bisa membuat semua orang pulang lebih lambat. Masalahnya bukan kurang aspal, tapi pilihan kita sendiri.
+
+          Dalam model jaringan Dietrich Braess (1968), 4.000 mobil melintasi dua jalur kembar dari titik A ke titik B. Saat terbagi rata, tiap jalur memakan waktu 20 menit di jembatan sempit ditambah 45 menit di jalan lebar — total 65 menit untuk semua pengemudi.
+
+          0:00 Menambah jalan baru justru bikin makin lambat
+          0:11 Simulasi 4.000 mobil di dua jalur kembar
+          0:20 Jalan lebar 45 menit vs jembatan sempit 20 menit = 65 menit
+          0:31 Jalan pintas 0 menit dibuka, mobil pertama hemat 25 menit
+          0:40 Jebakan Keseimbangan Nash: semua berebut pindah
+          0:52 Beban jembatan bengkak 2x lipat, total molor jadi 80 menit
+          1:01 Bukti nyata Seoul 2003: tol 6 lajur (168.000 mobil/hari) dibongkar
+          1:15 Kadang obat macet justru menutup jalan pintas yang salah
+
+          Begitu jalan pintas 0 menit dibuka di tengah, setiap pengemudi mengambil keputusan paling rasional bagi dirinya sendiri untuk pindah. Akibatnya, kedua jembatan sempit diserbu 4.000 mobil sekaligus sehingga waktunya bengkak menjadi 40 menit per jembatan. Total perjalanan semua orang melonjak dari 65 menjadi 80 menit, dan tidak ada satu pun pengemudi yang untung jika balik sendirian (85 menit).
+
+          Tahun 2003, kota Seoul membuktikan efek kebalikannya dengan membongkar Jalan Layang Cheonggyecheon enam lajur sepanjang 5,8 km yang dilewati 168.000 mobil per hari. Bukannya lumpuh total seperti prediksi, arus lalu lintas kota justru mengalir lebih lancar setelah jaringan mencapai keseimbangan baru — fenomena serupa yang tercatat saat penutupan 42nd Street di New York (1990) dan Stuttgart (1969).
+
+          Jalan mana di kotamu yang sudah dilebarkan tapi tetap macet? Tulis di komentar.
+
+          Sumber: Dietrich Braess, "Über ein Paradoxon aus der Verkehrsplanung", Unternehmensforschung 12 (1968), terjemahan Nagurney & Wakolbinger, Transportation Science 39 (2005); Seoul Development Institute, Cheonggyecheon Restoration Traffic Analysis (2003–2006); Gina Kolata, "What if They Closed 42d Street and Nobody Noticed?", The New York Times (25 Desember 1990).
+
+          Naysi — penjelasan singkat soal sains dan angka di baliknya.
+
+          Hashtag:
+          #Shorts #Ekonomi #ParadoksBraess #Sains #FaktaUnik
+
+          Tag:
+          paradoks braess, braess paradox, kenapa jalan makin macet, tambah jalan makin macet, pelebaran jalan macet, keseimbangan nash, nash equilibrium, teori permainan, game theory, ekonomi transportasi, fakta ekonomi, sains kota, tata kota, cheonggyecheon seoul, jalan tol macet, flyover macet, psikologi pengemudi, matematika lalu lintas, dietrich braess, edukasi sains, fakta unik, ilmu pengetahuan, naysi, shorts indonesia
+          PAKET_EOF
+          ls -lh out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: naysi-master-deliverables
+          path: |
+            out/*.mp4
+            out/*.txt
+            out/qa/*.jpg
+          compression-level: 0
+          retention-days: 30

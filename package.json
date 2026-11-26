@@ -1,0 +1,27 @@
+{
+  "name": "yt-naysi-braess",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "render": "remotion render scenes/y3.tsx Naysi out/master.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --jpeg-quality=94 --overwrite"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource-variable/space-grotesk": "^5.2.8",
+    "@fontsource/instrument-serif": "^5.2.8",
+    "@remotion/cli": "4.0.547",
+    "@remotion/media-utils": "4.0.547",
+    "@remotion/paths": "4.0.547",
+    "@remotion/renderer": "4.0.547",
+    "@remotion/shapes": "4.0.547",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.547"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "typescript": "5.9.3"
+  }
+}
