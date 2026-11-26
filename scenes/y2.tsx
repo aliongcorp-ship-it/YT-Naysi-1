@@ -26,9 +26,9 @@ export const Lembar07EfekDomino: React.FC = () => {
   const sec = frame / fps;
   const ch = CHAPTERS[6];
 
-  const row1P = easeOutCubic(prog(sec, ch.start + 0.15, 88.2));
-  const row2P = easeInOutCubic(prog(sec, 88.9, 94.6));
-  const row3P = easeInOutCubic(prog(sec, 95.3, 102.6));
+  const row1P = easeOutCubic(prog(sec, ch.start + 0.15, 88.0));
+  const row2P = easeOutCubic(prog(sec, 88.9, 92.4));
+  const row3P = easeOutCubic(prog(sec, 95.3, 98.9));
 
   const nations = [
     {

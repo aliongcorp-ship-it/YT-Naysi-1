@@ -682,9 +682,10 @@ export const Lembar06RumusKabisat: React.FC = () => {
             style={{
               fontFamily: IDENTITY.fontSerif,
               fontWeight: 900,
-              fontSize: 38,
+              fontSize: 31,
               color: IDENTITY.ink,
               marginTop: 6,
+              whiteSpace: 'nowrap',
             }}
           >
             Membuang 3 hari kabisat setiap 400 tahun
@@ -693,13 +694,14 @@ export const Lembar06RumusKabisat: React.FC = () => {
 
         <div
           style={{
-            padding: '14px 24px',
+            padding: '14px 22px',
             background: IDENTITY.ink,
             color: '#F4BE44',
             fontFamily: IDENTITY.fontMono,
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: 800,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.06em',
+            whiteSpace: 'nowrap',
           }}
         >
           97 KABISAT / 400 THN

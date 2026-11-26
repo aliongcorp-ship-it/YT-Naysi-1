@@ -956,7 +956,7 @@ export const Lembar01Oktober1582: React.FC = () => {
               </marker>
             </defs>
             <path
-              d="M 573 68 C 720 140, 390 250, 112 305"
+              d="M 642 62 C 742 135, 390 250, 112 305"
               fill="none"
               stroke={IDENTITY.crimson}
               strokeWidth={5.5}
@@ -1706,7 +1706,7 @@ export const Lembar03SelisihSebelasMenit: React.FC = () => {
 
   const orbitP = easeInOutCubic(prog(sec, ch.start + 0.15, 32.35));
   const diffReveal = easeOutCubic(prog(sec, 32.4, 34.4));
-  const exactNumP = easeOutCubic(prog(sec, 34.55, 36.8));
+  const exactNumP = easeOutCubic(prog(sec, 34.45, 35.65));
 
   const minsCount = Math.round(interpolate(exactNumP, [0, 1], [0, 11]));
   const secsCount = Math.round(interpolate(exactNumP, [0, 1], [0, 14]));
@@ -2164,9 +2164,10 @@ export const Lembar04AkumulasiSepuluhHari: React.FC = () => {
             style={{
               fontFamily: IDENTITY.fontSerif,
               fontWeight: 900,
-              fontSize: 40,
+              fontSize: 32,
               color: IDENTITY.ink,
               marginTop: 4,
+              whiteSpace: 'nowrap',
             }}
           >
             11m 14d ×{' '}
@@ -2217,20 +2218,22 @@ export const Lembar04AkumulasiSepuluhHari: React.FC = () => {
           <span
             style={{
               fontFamily: IDENTITY.fontMono,
-              fontSize: 21,
+              fontSize: 18,
               fontWeight: 700,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.10em',
               color: IDENTITY.inkSoft,
+              whiteSpace: 'nowrap',
             }}
           >
-            GRAFIK PERGESERAN TANGGAL DARI KONSILI NICEA (325 M – 1582 M)
+            PERGESERAN TANGGAL DARI KONSILI NICEA (325–1582 M)
           </span>
           <span
             style={{
               fontFamily: IDENTITY.fontSerif,
               fontWeight: 900,
-              fontSize: 44,
+              fontSize: 40,
               color: IDENTITY.crimson,
+              whiteSpace: 'nowrap',
             }}
           >
             +{Math.max(0, Math.round(activeSteps))} Hari
