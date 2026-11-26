@@ -4,6 +4,7 @@ import {
   Audio,
   Composition,
   Sequence,
+  cancelRender,
   continueRender,
   delayRender,
   interpolate,
@@ -14,425 +15,344 @@ import {
 } from 'remotion';
 import {
   CHAPTERS,
+  CaptionCard,
+  FPS,
+  HEIGHT,
   IDENTITY,
+  TOTAL_FRAMES,
   VIDEO_SPEC,
+  WIDTH,
   clamp01,
   easeInOutCubic,
   easeOutCubic,
-  getActiveCard,
-  getActiveChapterIndex,
 } from './script';
 import {
-  Scene01LogamAsing,
-  Scene02KurirMagma,
-  Scene03BatasBesi,
-  Scene04TabrakanNeutron,
-} from './emas';
-import { Scene05RatusanBulan, Scene06HujanMeteor } from './y1';
-import { Scene07Bukti2017, Scene08FosilBintang } from './y2';
+  Scene01JebakanAroma,
+  Scene02PelontarAerosol,
+  Scene03PabrikStreptomyces,
+  Scene04EmpatRatusKolam,
+} from './hujan';
+import { Scene05UmpanKutuPegas, Scene06KurirSpora } from './y1';
+import { Scene07KompasGurun, Scene08ParadoksGeosmin } from './y2';
 
 // ============================================================================
-// 1. DETERMINISTIC LOCAL FONT LOADER (ALL 6 FAMILIES FROM public/fonts/)
+// 1. DETERMINISTIC LOCAL FONT LOADER (ZERO NETWORK CALLS)
 // ============================================================================
 
-let fontsLoadedMemory = false;
+interface LocalFontDef {
+  readonly family: string;
+  readonly file: string;
+  readonly weight: string;
+  readonly style?: string;
+}
 
-const useLocalFonts = (): boolean => {
-  const [ready, setReady] = useState<boolean>(fontsLoadedMemory);
+const LOCAL_FONT_DEFS: readonly LocalFontDef[] = [
+  { family: 'Bebas Neue', file: 'fonts/bebas-neue.woff2', weight: '400' },
+  { family: 'Oswald', file: 'fonts/oswald-variable.woff2', weight: '400 700' },
+  { family: 'Cormorant Garamond', file: 'fonts/cormorant-garamond.woff2', weight: '400 700' },
+  {
+    family: 'Cormorant Garamond',
+    file: 'fonts/cormorant-garamond-italic.woff2',
+    weight: '400 700',
+    style: 'italic',
+  },
+  { family: 'Plus Jakarta Sans', file: 'fonts/plus-jakarta-sans.woff2', weight: '400 800' },
+  { family: 'IBM Plex Mono', file: 'fonts/ibm-plex-mono-400.woff2', weight: '400' },
+  { family: 'IBM Plex Mono', file: 'fonts/ibm-plex-mono-600.woff2', weight: '600' },
+];
+
+let fontsLoadedOnce = false;
+
+function useLocalFonts(): boolean {
+  const [ready, setReady] = useState<boolean>(fontsLoadedOnce);
+  const [handle] = useState(() => (fontsLoadedOnce ? null : delayRender('load-local-fonts')));
 
   useEffect(() => {
-    if (fontsLoadedMemory || typeof FontFace === 'undefined') {
-      setReady(true);
-      return;
-    }
-
-    const handle = delayRender('load-naysi-atelier-fonts');
-    const specs: readonly {
-      family: string;
-      file: string;
-      weight: string;
-      style: string;
-    }[] = [
-      { family: 'Bebas Neue', file: 'fonts/bebas-neue.woff2', weight: '400', style: 'normal' },
-      { family: 'Oswald', file: 'fonts/oswald-variable.woff2', weight: '300 700', style: 'normal' },
-      { family: 'Cormorant Garamond', file: 'fonts/cormorant-garamond.woff2', weight: '400 700', style: 'normal' },
-      { family: 'Cormorant Garamond', file: 'fonts/cormorant-garamond-italic.woff2', weight: '400 700', style: 'italic' },
-      { family: 'IBM Plex Mono', file: 'fonts/ibm-plex-mono-400.woff2', weight: '400', style: 'normal' },
-      { family: 'IBM Plex Mono', file: 'fonts/ibm-plex-mono-600.woff2', weight: '600', style: 'normal' },
-      { family: 'Plus Jakarta Sans', file: 'fonts/plus-jakarta-sans.woff2', weight: '400 800', style: 'normal' },
-      { family: 'Space Grotesk', file: 'fonts/space-grotesk.woff2', weight: '400 700', style: 'normal' },
-      { family: 'JetBrains Mono', file: 'fonts/jetbrains-mono.woff2', weight: '400 700', style: 'normal' },
-    ];
+    if (handle === null) return;
+    let cancelled = false;
 
     Promise.all(
-      specs.map(async (s) => {
-        const ff = new FontFace(s.family, `url(${staticFile(s.file)})`, {
-          weight: s.weight,
-          style: s.style,
+      LOCAL_FONT_DEFS.map(async (f) => {
+        const face = new FontFace(f.family, `url(${staticFile(f.file)})`, {
+          weight: f.weight,
+          style: f.style ?? 'normal',
         });
-        const loaded = await ff.load();
+        const loaded = await face.load();
         document.fonts.add(loaded);
       }),
     )
       .then(() => {
-        fontsLoadedMemory = true;
+        if (cancelled) return;
+        fontsLoadedOnce = true;
         setReady(true);
         continueRender(handle);
       })
       .catch((err) => {
-        console.error('Font load warning:', err);
-        fontsLoadedMemory = true;
-        setReady(true);
-        continueRender(handle);
+        if (!cancelled) cancelRender(err);
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [handle]);
 
   return ready;
-};
-
-// ============================================================================
-// 2. CHAPTER SCENE DISPATCHER & CINEMATIC LENS STAGE (30-FRAME DISSOLVE)
-// ============================================================================
-
-const SCENE_COMPONENTS: readonly React.FC[] = [
-  Scene01LogamAsing,
-  Scene02KurirMagma,
-  Scene03BatasBintangBridge,
-  Scene04TabrakanNeutron,
-  Scene05RatusanBulan,
-  Scene06HujanMeteor,
-  Scene07Bukti2017,
-  Scene08FosilBintang,
-];
-
-function Scene03BatasBintangBridge() {
-  return <Scene03BatasBesi />;
 }
+
+// ============================================================================
+// 2. CHAPTER CROSS-DISSOLVE & SUBTLE DOCUMENTARY CAMERA PUSH
+// ============================================================================
 
 const TRANSITION_FRAMES = 28;
 
-const FullBleedChapterStage: React.FC = () => {
+const SCENE_COMPONENTS: readonly React.FC[] = [
+  Scene01JebakanAroma,
+  Scene02PelontarAerosol,
+  Scene03PabrikStreptomyces,
+  Scene04EmpatRatusKolam,
+  Scene05UmpanKutuPegas,
+  Scene06KurirSpora,
+  Scene07KompasGurun,
+  Scene08ParadoksGeosmin,
+];
+
+const FullBleedChapterStage: React.FC<{
+  index: number;
+  durationFrames: number;
+  Component: React.FC;
+}> = ({ index, durationFrames, Component }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+
+  const fadeIn =
+    index === 0 ? 1 : easeInOutCubic(clamp01(frame / TRANSITION_FRAMES));
+  const fadeOut =
+    index === CHAPTERS.length - 1
+      ? 1
+      : 1 -
+        easeInOutCubic(
+          clamp01((frame - (durationFrames - TRANSITION_FRAMES)) / TRANSITION_FRAMES),
+        );
+  const opacity = clamp01(fadeIn * fadeOut);
+
+  const camScale = interpolate(frame, [0, durationFrames], [1.0, 1.022], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#0E0F0C', overflow: 'hidden' }}>
-      {CHAPTERS.map((ch, idx) => {
-        const startFrame = Math.round(ch.start * fps);
-        const endFrame = Math.round(ch.end * fps);
-        const seqFrom = idx === 0 ? 0 : Math.max(0, startFrame - TRANSITION_FRAMES);
-        const seqEnd = idx === CHAPTERS.length - 1 ? VIDEO_SPEC.durationInFrames : endFrame;
-        const seqDur = Math.max(1, seqEnd - seqFrom);
-
-        if (frame < seqFrom - 2 || frame > seqEnd + 2) {
-          return null;
-        }
-
-        const localInSeq = frame - seqFrom;
-        let opacity = 1;
-        let scale = 1;
-
-        if (idx > 0 && localInSeq < TRANSITION_FRAMES) {
-          const u = easeInOutCubic(clamp01(localInSeq / TRANSITION_FRAMES));
-          opacity = u;
-          scale = interpolate(u, [0, 1], [1.024, 1.0]);
-        }
-
-        // Subtle documentary lens push over the chapter's duration
-        const chapterProgress = clamp01(localInSeq / seqDur);
-        const slowPush = interpolate(chapterProgress, [0, 1], [1.0, 1.022]);
-        const SceneComp = SCENE_COMPONENTS[idx];
-
-        return (
-          <Sequence key={ch.slug} from={seqFrom} durationInFrames={seqDur} layout="none">
-            <AbsoluteFill
-              style={{
-                opacity,
-                transform: `scale(${(scale * slowPush).toFixed(4)})`,
-                transformOrigin: '50% 44%',
-              }}
-            >
-              <SceneComp />
-            </AbsoluteFill>
-          </Sequence>
-        );
-      })}
+    <AbsoluteFill
+      style={{
+        opacity,
+        transform: `scale(${camScale})`,
+        transformOrigin: '50% 48%',
+      }}
+    >
+      <Component />
     </AbsoluteFill>
   );
 };
 
 // ============================================================================
-// 3. LOWER VIGNETTE & PROGRESSIVE WORD-HIGHLIGHT CAPTION STAGE (ZERO NEON)
+// 3. PROGRESSIVE NON-NEON EDITORIAL CAPTIONS
 // ============================================================================
 
-const CaptionStage: React.FC<{ sec: number; chapterIdx: number }> = ({ sec, chapterIdx }) => {
-  const ch = CHAPTERS[chapterIdx];
-  const active = getActiveCard(ch, sec);
+const ALL_CARDS: readonly CaptionCard[] = CHAPTERS.flatMap((c) => c.cards);
+
+const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
+  let activeCard: CaptionCard | null = null;
+  for (let i = 0; i < ALL_CARDS.length; i++) {
+    const c = ALL_CARDS[i];
+    const nextStart = i < ALL_CARDS.length - 1 ? ALL_CARDS[i + 1].start : c.end + 0.32;
+    const holdEnd = Math.min(nextStart - 0.02, c.end + 0.26);
+    if (currentSec >= c.start - 0.05 && currentSec <= holdEnd) {
+      activeCard = c;
+      break;
+    }
+  }
+
+  if (!activeCard) return null;
+
+  const enterP = easeOutCubic(clamp01((currentSec - (activeCard.start - 0.05)) / 0.14));
+  const exitP = clamp01((activeCard.end + 0.26 - currentSec) / 0.12);
+  const cardAlpha = enterP * exitP;
 
   return (
-    <>
+    <div
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 245,
+        minHeight: 340,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 92px',
+        pointerEvents: 'none',
+        background:
+          'linear-gradient(180deg, rgba(8,11,10,0) 0%, rgba(8,11,10,0.76) 36%, rgba(8,11,10,0.90) 100%)',
+      }}
+    >
       <div
         style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 820,
-          pointerEvents: 'none',
-          background:
-            'linear-gradient(180deg, rgba(10, 11, 10, 0) 0%, rgba(10, 11, 10, 0.72) 38%, rgba(8, 9, 8, 0.96) 100%)',
+          maxWidth: 1248,
+          textAlign: 'center',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          columnGap: 17,
+          rowGap: 8,
+          opacity: cardAlpha,
+          transform: `translateY(${(1 - enterP) * 14}px)`,
         }}
-      />
+      >
+        {activeCard.words.map(([word, wStart, wEnd, emph], idx) => {
+          const started = currentSec >= wStart - 0.02;
+          const speaking = currentSec >= wStart - 0.02 && currentSec <= wEnd + 0.08;
+          const wordPop = speaking
+            ? 1 +
+              0.045 *
+                Math.sin(
+                  clamp01((currentSec - wStart) / Math.max(0.09, wEnd - wStart)) * Math.PI,
+                )
+            : 1;
 
-      {active && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 108,
-            right: 108,
-            top: 1845,
-            height: 440,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignItems: 'baseline',
-              columnGap: 18,
-              rowGap: 12,
-              maxWidth: 1180,
-              textAlign: 'center',
-              opacity: easeOutCubic(clamp01((sec - active.card.start) / 0.14)),
-              transform: `translateY(${interpolate(
-                easeOutCubic(clamp01((sec - active.card.start) / 0.16)),
-                [0, 1],
-                [14, 0],
-              )}px)`,
-            }}
-          >
-            {active.card.words.map(([word, wStart, wEnd], wIdx) => {
-              const nextWordStart =
-                wIdx + 1 < active.card.words.length
-                  ? active.card.words[wIdx + 1][1]
-                  : wEnd + 0.18;
-              const isCurrent = sec >= wStart - 0.02 && sec < Math.max(wEnd, nextWordStart);
-              const isSpoken = sec >= wStart - 0.02;
+          const color = !started
+            ? 'rgba(242, 239, 232, 0.34)'
+            : emph === 1
+              ? IDENTITY.amberLight
+              : IDENTITY.ivoryText;
 
-              const color = isCurrent
-                ? IDENTITY.captionGold
-                : isSpoken
-                  ? IDENTITY.captionWhite
-                  : IDENTITY.captionDim;
-
-              return (
-                <span
-                  key={`${active.cardIndex}-${wIdx}`}
-                  style={{
-                    fontFamily: IDENTITY.fontBody,
-                    fontSize: 66,
-                    fontWeight: 800,
-                    lineHeight: 1.24,
-                    letterSpacing: '-0.02em',
-                    color,
-                    textShadow: '0 4px 16px rgba(0, 0, 0, 0.85)',
-                    transform: isCurrent ? 'translateY(-2px)' : 'translateY(0px)',
-                    display: 'inline-block',
-                  }}
-                >
-                  {word}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </>
+          return (
+            <span
+              key={idx}
+              style={{
+                display: 'inline-block',
+                fontFamily: IDENTITY.fontBody,
+                fontSize: 58,
+                fontWeight: emph === 1 ? 800 : 700,
+                lineHeight: 1.24,
+                letterSpacing: '-0.015em',
+                color,
+                transform: `scale(${wordPop})`,
+                textShadow: '0 4px 18px rgba(0, 0, 0, 0.88), 0 1px 3px rgba(0, 0, 0, 0.94)',
+              }}
+            >
+              {word}
+            </span>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
 // ============================================================================
-// 4. NAYSI DOCUMENTARY SERIES HUD (MATCHING SUARA TERKERAS & GPS BENCHMARKS)
+// 4. MINIMAL WATERMARK: YOUTUBE CHANNEL NAME & TOPIC ONLY (ZERO PAGE CLUTTER)
 // ============================================================================
 
-const formatTimecode = (sec: number): string => {
-  const mins = Math.floor(sec / 60);
-  const secs = Math.floor(sec % 60);
-  const cs = Math.floor((sec % 1) * 100);
-  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-  return `T+${pad(mins)}:${pad(secs)}:${pad(cs)}`;
-};
-
-const StudioHud: React.FC<{ sec: number; chapterIdx: number }> = ({ sec, chapterIdx }) => {
-  const ch = CHAPTERS[chapterIdx];
-  const progressPct = clamp01(sec / VIDEO_SPEC.durationSec) * 100;
-
+const TopWatermark: React.FC = () => {
   return (
-    <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      {/* Top-Left Brand Mark */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 82,
-          left: 104,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 15,
-        }}
-      >
-        <div
+    <div
+      style={{
+        position: 'absolute',
+        left: 88,
+        right: 88,
+        top: 84,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        pointerEvents: 'none',
+      }}
+    >
+      {/* YouTube Channel Watermark */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <span
           style={{
-            width: 18,
-            height: 18,
+            width: 16,
+            height: 16,
             borderRadius: 3,
-            backgroundColor: IDENTITY.bullion24k,
+            backgroundColor: IDENTITY.amberSpore,
+            display: 'inline-block',
           }}
         />
         <span
           style={{
             fontFamily: IDENTITY.fontBody,
-            fontSize: 25,
+            fontSize: 27,
             fontWeight: 800,
-            letterSpacing: '0.24em',
-            color: '#EAE5DA',
+            letterSpacing: '0.18em',
+            color: IDENTITY.ivoryText,
           }}
         >
-          {VIDEO_SPEC.seriesLeft}
+          NAYSI
         </span>
       </div>
 
-      {/* Top-Right Series Category & Live Documentary Timecode */}
-      <div
+      {/* Topic Watermark Only */}
+      <span
         style={{
-          position: 'absolute',
-          top: 82,
-          right: 104,
-          textAlign: 'right',
-        }}
-      >
-        <div
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 21,
-            fontWeight: 600,
-            letterSpacing: '0.2em',
-            color: IDENTITY.hudMuted,
-          }}
-        >
-          {VIDEO_SPEC.seriesRight}
-        </div>
-        <div
-          style={{
-            marginTop: 6,
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 16,
-            fontWeight: 400,
-            letterSpacing: '0.16em',
-            color: 'rgba(183, 178, 166, 0.34)',
-          }}
-        >
-          {formatTimecode(sec)} · {ch.code}
-        </div>
-      </div>
-
-      {/* Bottom-Left Active Chapter Slug */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 72,
-          left: 104,
           fontFamily: IDENTITY.fontMono,
           fontSize: 22,
           fontWeight: 600,
-          letterSpacing: '0.16em',
-          color: IDENTITY.hudMuted,
+          letterSpacing: '0.2em',
+          color: IDENTITY.stoneText,
+          textTransform: 'uppercase',
         }}
       >
-        {ch.num} — {ch.hud}
-      </div>
-
-      {/* Bottom-Right 8 Chapter Dashes */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 82,
-          right: 104,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 11,
-        }}
-      >
-        {CHAPTERS.map((item, idx) => {
-          const isActive = idx === chapterIdx;
-          const isPast = idx < chapterIdx;
-          return (
-            <div
-              key={item.num}
-              style={{
-                width: isActive ? 28 : 17,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: isActive
-                  ? IDENTITY.bullion24k
-                  : isPast
-                    ? 'rgba(234, 229, 218, 0.44)'
-                    : 'rgba(234, 229, 218, 0.16)',
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Bottom 6px Bullion Progress Strip */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 6,
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-        }}
-      >
-        <div
-          style={{
-            width: `${progressPct.toFixed(3)}%`,
-            height: '100%',
-            backgroundColor: IDENTITY.bullion24k,
-          }}
-        />
-      </div>
-    </AbsoluteFill>
+        {VIDEO_SPEC.topicWatermark}
+      </span>
+    </div>
   );
 };
 
 // ============================================================================
-// 5. ROOT NAYSI COMPOSITION (1440x2560 @ 90 FPS)
+// 5. MASTER 1440x2560 @ 90FPS COMPOSITION ROOT
 // ============================================================================
 
-export const NaysiGoldShort: React.FC = () => {
+export const NaysiPetrichorShort: React.FC = () => {
   const fontsReady = useLocalFonts();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const sec = frame / fps;
-  const chapterIdx = getActiveChapterIndex(sec);
+  const currentSec = frame / fps;
 
   if (!fontsReady) {
-    return <AbsoluteFill style={{ backgroundColor: '#0E0F0C' }} />;
+    return <AbsoluteFill style={{ backgroundColor: '#090D0C' }} />;
   }
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#0E0F0C', overflow: 'hidden' }}>
+    <AbsoluteFill style={{ backgroundColor: '#090D0C', overflow: 'hidden' }}>
       <Audio src={staticFile('audio/master.mp3')} />
-      <FullBleedChapterStage />
-      <CaptionStage sec={sec} chapterIdx={chapterIdx} />
-      <StudioHud sec={sec} chapterIdx={chapterIdx} />
+
+      {CHAPTERS.map((ch, idx) => {
+        const rawStart = Math.round(ch.start * fps);
+        const rawEnd = Math.round(ch.end * fps);
+        const fromFrame = idx === 0 ? 0 : Math.max(0, rawStart - TRANSITION_FRAMES);
+        const endFrame =
+          idx === CHAPTERS.length - 1
+            ? TOTAL_FRAMES
+            : Math.min(TOTAL_FRAMES, rawEnd + TRANSITION_FRAMES);
+        const durFrames = Math.max(1, endFrame - fromFrame);
+        const SceneComp = SCENE_COMPONENTS[idx];
+
+        return (
+          <Sequence
+            key={ch.slug}
+            from={fromFrame}
+            durationInFrames={durFrames}
+            name={ch.slug}
+          >
+            <FullBleedChapterStage
+              index={idx}
+              durationFrames={durFrames}
+              Component={SceneComp}
+            />
+          </Sequence>
+        );
+      })}
+
+      <CaptionStage currentSec={currentSec} />
+      <TopWatermark />
     </AbsoluteFill>
   );
 };
@@ -441,7 +361,7 @@ export const RemotionRoot: React.FC = () => {
   return (
     <Composition
       id={VIDEO_SPEC.id}
-      component={NaysiGoldShort}
+      component={NaysiPetrichorShort}
       durationInFrames={VIDEO_SPEC.durationInFrames}
       fps={VIDEO_SPEC.fps}
       width={VIDEO_SPEC.width}
@@ -451,4 +371,3 @@ export const RemotionRoot: React.FC = () => {
 };
 
 registerRoot(RemotionRoot);
-export default RemotionRoot;

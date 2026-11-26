@@ -7,17 +7,10 @@ export interface CaptionCard {
   readonly words: readonly WordCue[];
 }
 
-export type HeadlineSegment = readonly [prefix: string, highlight: string, suffix: string];
-
 export interface ChapterSpec {
   readonly index: number;
-  readonly num: string;
   readonly slug: string;
-  readonly hud: string;
-  readonly code: string;
   readonly eyebrow: string;
-  readonly headLines: readonly [HeadlineSegment, HeadlineSegment];
-  readonly latin: string;
   readonly groundTop: string;
   readonly groundBottom: string;
   readonly start: number;
@@ -27,274 +20,243 @@ export interface ChapterSpec {
   readonly cards: readonly CaptionCard[];
 }
 
+export const WIDTH = 1440;
+export const HEIGHT = 2560;
+export const FPS = 90;
+export const TOTAL_FRAMES = 10490;
+export const TOTAL_DURATION_SEC = 116.5556;
+
 export const VIDEO_SPEC = {
   id: 'Naysi',
-  width: 1440,
-  height: 2560,
-  fps: 90,
-  durationInFrames: 10104,
-  durationSec: 112.2667,
-  seriesLeft: 'NAYSI',
-  seriesRight: 'NAYSI · MATERI',
-  title: 'Emas di Jarimu Bukan Buatan Bumi',
+  title: 'Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri',
+  topicWatermark: 'BIOLOGI · ALAM',
+  width: WIDTH,
+  height: HEIGHT,
+  fps: FPS,
+  durationInFrames: TOTAL_FRAMES,
+  durationSec: TOTAL_DURATION_SEC,
 } as const;
 
+// Bespoke Non-Neon Botanical Herbarium & Tropical Monsoon Palette
 export const IDENTITY = {
-  suedeCharcoal: '#131411',
-  basaltGround: '#181411',
-  furnaceSoot: '#161311',
-  celestialSlate: '#111519',
-  nocturnalSlate: '#141513',
-  archeanEarth: '#121619',
-  observatorySlate: '#11161C',
-  walnutDesk: '#1A140F',
-  obsidianVignette: '#0A0B0A',
-
-  bullionSpecular: '#F7E9B8',
-  bullionLight: '#E8C777',
-  bullion24k: '#D4A03E',
-  bullionMid: '#AE7B24',
-  bullionDeep: '#785012',
-  bullionUmber: '#3E2707',
-
-  terracottaStamp: '#B53D2A',
-  terracottaWarm: '#CC5A38',
-  ochreMineral: '#D4833B',
-  siennaCrust: '#6E4730',
-  basaltRock: '#2B2622',
-  graniteGrey: '#4A4640',
-  sandstoneBuff: '#8C7558',
-
-  castIronLight: '#BAC1C7',
-  castIronMid: '#7A828A',
-  castIronDark: '#30363C',
-  platinumIvory: '#EDE6D6',
-  platinumWarm: '#CFC6B4',
-  oceanAbyss: '#172936',
-  oceanShelf: '#264254',
-  landOlive: '#4A543E',
-  landOchre: '#6B6247',
-  sagePatina: '#4E7A63',
-
-  paperCream: '#EFE7D6',
-  paperWarm: '#E3D7C0',
-  paperRule: 'rgba(54, 44, 32, 0.16)',
-  paperInk: '#1F1B16',
-  paperMuted: '#5C5245',
-
-  ivoryText: '#EDE8DD',
-  stoneText: '#A8A296',
-  hairlineBrass: 'rgba(212, 160, 62, 0.34)',
-  hairlineIvory: 'rgba(237, 232, 221, 0.18)',
-
-  hudText: '#B7B2A6',
-  hudMuted: 'rgba(183, 178, 166, 0.48)',
-  captionWhite: '#F2EFE9',
-  captionGold: '#E2AC42',
-  captionDim: 'rgba(222, 216, 204, 0.34)',
-
-  fontCondensed: "'Bebas Neue', 'Oswald', sans-serif",
-  fontEditorial: "'Oswald', 'Space Grotesk', sans-serif",
-  fontSerif: "'Cormorant Garamond', 'Fraunces', Georgia, serif",
+  canvasRainTop: '#101715',
+  canvasRainBot: '#090D0C',
+  amberSpore: '#D8A148',
+  amberLight: '#ECC77E',
+  amberDeep: '#8C5F1E',
+  mossSage: '#7A9E73',
+  mossLight: '#A8C4A0',
+  mossDeep: '#3E5939',
+  lateriteClay: '#B66343',
+  lateriteDeep: '#7A3B24',
+  stampRust: '#9E3324',
+  rainMist: '#CFDCD9',
+  rainSlate: '#5A767D',
+  poolTile: '#3B6978',
+  poolWater: '#4F818E',
+  ivoryText: '#F2EFE8',
+  stoneText: '#A7A398',
+  mutedText: '#6F6C63',
+  paperHerbarium: '#EFE7D6',
+  paperInk: '#221E18',
+  paperMuted: '#655C4F',
+  paperRule: 'rgba(42, 35, 26, 0.18)',
+  fontDisplay: "'Bebas Neue', 'Oswald', sans-serif",
+  fontEditorial: "'Oswald', 'Plus Jakarta Sans', sans-serif",
+  fontSerif: "'Cormorant Garamond', 'Instrument Serif', Georgia, serif",
   fontBody: "'Plus Jakarta Sans', -apple-system, sans-serif",
   fontMono: "'IBM Plex Mono', 'JetBrains Mono', monospace",
 } as const;
 
+export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+export const prog = (t: number, t0: number, t1: number): number =>
+  t1 <= t0 ? 1 : clamp01((t - t0) / (t1 - t0));
+
+export const smoothstep = (x: number): number => {
+  const c = clamp01(x);
+  return c * c * (3 - 2 * c);
+};
+
+export const easeOutCubic = (x: number): number => 1 - Math.pow(1 - clamp01(x), 3);
+
+export const easeOutQuart = (x: number): number => 1 - Math.pow(1 - clamp01(x), 4);
+
+export const easeOutExpo = (x: number): number => {
+  const c = clamp01(x);
+  return c === 1 ? 1 : 1 - Math.pow(2, -10 * c);
+};
+
+export const easeInOutCubic = (x: number): number => {
+  const c = clamp01(x);
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+};
+
 export const CHAPTERS: readonly ChapterSpec[] = [
   {
-    index: 1, num: '01', slug: 'bukan-dari-bumi', hud: 'BUKAN DARI BUMI', code: 'AU-79 · UJI LOGAM',
-    eyebrow: 'ARSIP 01 · BALAI UJI LOGAM MULIA',
-    headLines: [['Emas di jarimu ', 'bukan', ''], ['buatan planet Bumi', '', '']],
-    latin: 'Aurum Nativa · Nomor Atom 79',
-    groundTop: '#1A1915', groundBottom: '#0E0F0C',
-    start: 0.0, end: 10.764, voStart: 0.34, voEnd: 10.554,
+    index: 0,
+    slug: "bukan-air",
+    eyebrow: "FENOMENA PETRIKOR \u00b7 TETES HUJAN PERTAMA",
+    groundTop: "#101715",
+    groundBottom: "#090D0C",
+    start: 0.0,
+    end: 11.22,
+    voStart: 0.18,
+    voEnd: 11.08,
     cards: [
-      { text: 'Emas yang melingkar di jarimu', start: 0.03, end: 2.29,
-        words: [['Emas', 0.34, 0.54, 1], ['yang', 0.54, 0.86, 0], ['melingkar', 0.86, 1.53, 0], ['di', 1.53, 1.693, 0], ['jarimu', 1.693, 2.28, 0]] },
-      { text: 'sebenarnya bukan buatan Bumi.', start: 2.28, end: 4.25,
-        words: [['sebenarnya', 2.32, 2.94, 0], ['bukan', 2.94, 3.34, 1], ['buatan', 3.34, 3.82, 0], ['Bumi.', 3.82, 4.24, 1]] },
-      { text: 'Sejak terbentuk empat setengah miliar tahun lalu,', start: 4.24, end: 6.815,
-        words: [['Sejak', 4.28, 4.704, 0], ['terbentuk', 4.7, 5.137, 0], ['empat', 5.137, 5.38, 1], ['setengah', 5.38, 5.769, 1], ['miliar', 5.769, 6.06, 1], ['tahun', 6.059, 6.543, 0], ['lalu,', 6.543, 6.805, 0]] },
-      { text: 'Bumi tak sanggup membuat satu gram emas pun.', start: 6.805, end: 10.734,
-        words: [['Bumi', 6.845, 7.414, 1], ['tak', 7.414, 7.704, 0], ['sanggup', 7.704, 8.381, 0], ['membuat', 8.381, 9.059, 0], ['satu', 9.059, 9.155, 1], ['gram', 9.155, 9.543, 1], ['emas', 9.543, 9.833, 1], ['pun.', 9.833, 10.554, 0]] },
+      { text: "Aroma wangi yang langsung tercium saat", start: 0.2, end: 2.351, words: [["Aroma", 0.2, 0.741, 0], ["wangi", 0.741, 1.121, 0], ["yang", 1.121, 1.328, 0], ["langsung", 1.328, 1.741, 0], ["tercium", 1.741, 2.144, 0], ["saat", 2.144, 2.351, 0]] },
+      { text: "hujan turun sebenarnya bukan bau air.", start: 2.351, end: 4.64, words: [["hujan", 2.351, 2.73, 0], ["turun", 2.73, 3.11, 0], ["sebenarnya", 3.11, 3.869, 0], ["bukan", 3.869, 4.249, 1], ["bau", 4.249, 4.444, 1], ["air.", 4.444, 4.64, 0]] },
+      { text: "Air hujan murni sama sekali tidak punya", start: 4.83, end: 6.705, words: [["Air", 4.83, 4.969, 1], ["hujan", 4.969, 5.239, 0], ["murni", 5.239, 5.509, 0], ["sama", 5.509, 5.771, 0], ["sekali", 5.771, 6.165, 0], ["tidak", 6.165, 6.435, 0], ["punya", 6.435, 6.705, 0]] },
+      { text: "aroma, wangi khas itu justru jebakan kimia", start: 6.705, end: 9.415, words: [["aroma,", 6.705, 7.09, 0], ["wangi", 7.27, 7.628, 0], ["khas", 7.628, 7.822, 0], ["itu", 7.822, 8.158, 0], ["justru", 8.158, 8.527, 0], ["jebakan", 8.527, 9.058, 1], ["kimia", 9.058, 9.415, 0]] },
+      { text: "yang dipasang bakteri tanah.", start: 9.415, end: 11.04, words: [["yang", 9.415, 9.61, 0], ["dipasang", 9.61, 10.152, 0], ["bakteri", 10.152, 10.682, 1], ["tanah.", 10.682, 11.04, 0]] },
     ],
   },
   {
-    index: 2, num: '02', slug: 'perut-bumi', hud: 'PERUT BUMI', code: 'KERAK · 0–40 KM',
-    eyebrow: 'ARSIP 02 · SURVEI STRATIGRAFI VULKANIK',
-    headLines: [['Gunung api cuma ', 'kurir', ''], ['pengantar dari mantel', '', '']],
-    latin: 'Venae Hydrothermales · Kerak & Mantel',
-    groundTop: '#211915', groundBottom: '#0F0C0A',
-    start: 10.764, end: 22.089, voStart: 11.014, voEnd: 21.879,
+    index: 1,
+    slug: "aerosol-mit",
+    eyebrow: "KAMERA KECEPATAN TINGGI \u00b7 MIT 2015",
+    groundTop: "#11181A",
+    groundBottom: "#090E10",
+    start: 11.22,
+    end: 26.05,
+    voStart: 11.36,
+    voEnd: 25.91,
     cards: [
-      { text: 'Gunung berapi dan magma panas di bawah tanah', start: 10.794, end: 13.799,
-        words: [['Gunung', 11.014, 11.345, 0], ['berapi', 11.345, 11.795, 0], ['dan', 11.795, 12.021, 0], ['magma', 12.021, 12.397, 1], ['panas', 12.397, 12.772, 0], ['di', 12.772, 12.922, 0], ['bawah', 12.922, 13.284, 0], ['tanah', 13.284, 13.789, 0]] },
-      { text: 'ternyata cuma bertugas mengangkut emas ke permukaan.', start: 13.789, end: 16.679,
-        words: [['ternyata', 13.829, 14.222, 0], ['cuma', 14.222, 14.511, 0], ['bertugas', 14.511, 15.089, 0], ['mengangkut', 15.089, 15.763, 1], ['emas', 15.763, 15.965, 1], ['ke', 15.965, 16.1, 0], ['permukaan.', 16.1, 16.669, 0]] },
-      { text: 'Panas perut Bumi jauh terlalu lemah', start: 16.669, end: 19.849,
-        words: [['Panas', 16.709, 17.39, 0], ['perut', 17.39, 18.006, 0], ['Bumi', 18.006, 18.384, 1], ['jauh', 18.384, 18.686, 0], ['terlalu', 18.686, 19.216, 0], ['lemah', 19.216, 19.839, 1]] },
-      { text: 'untuk merakit inti atom seberat emas.', start: 19.839, end: 22.059,
-        words: [['untuk', 19.879, 20.048, 0], ['merakit', 20.048, 20.577, 0], ['inti', 20.577, 20.879, 1], ['atom', 20.879, 21.182, 0], ['seberat', 21.182, 21.711, 1], ['emas.', 21.711, 21.879, 1]] },
+      { text: "Rekaman kamera super cepat di MIT mengungkap", start: 11.39, end: 13.998, words: [["Rekaman", 11.39, 11.853, 0], ["kamera", 11.853, 12.307, 0], ["super", 12.307, 12.619, 0], ["cepat", 12.619, 12.931, 0], ["di", 12.931, 13.082, 0], ["MIT", 13.082, 13.507, 1], ["mengungkap", 13.507, 13.998, 0]] },
+      { text: "caranya melompat ke udara.", start: 13.998, end: 15.53, words: [["caranya", 13.998, 14.461, 0], ["melompat", 14.461, 14.934, 0], ["ke", 14.934, 15.085, 0], ["udara.", 15.085, 15.53, 0]] },
+      { text: "Saat gerimis pelan menimpa tanah berpori,", start: 15.72, end: 17.93, words: [["Saat", 15.72, 15.892, 0], ["gerimis", 15.892, 16.361, 1], ["pelan", 16.361, 16.677, 0], ["menimpa", 16.677, 17.145, 0], ["tanah", 17.145, 17.461, 1], ["berpori,", 17.461, 17.93, 0]] },
+      { text: "tetesannya mengurung gelembung udara kecil", start: 18.13, end: 20.557, words: [["tetesannya", 18.13, 18.776, 0], ["mengurung", 18.776, 19.275, 0], ["gelembung", 19.275, 19.773, 1], ["udara", 19.773, 20.234, 0], ["kecil", 20.234, 20.557, 0]] },
+      { text: "yang meletup seperti soda dan melontarkan", start: 20.557, end: 22.827, words: [["yang", 20.557, 20.733, 0], ["meletup", 20.733, 21.212, 0], ["seperti", 21.212, 21.692, 0], ["soda", 21.692, 22.005, 1], ["dan", 22.005, 22.171, 0], ["melontarkan", 22.171, 22.827, 0]] },
+      { text: "ratusan kabut halus pembawa bau mendahului", start: 22.827, end: 25.244, words: [["ratusan", 22.827, 23.306, 0], ["kabut", 23.306, 23.629, 1], ["halus", 23.629, 23.952, 0], ["pembawa", 23.952, 24.432, 0], ["bau", 24.432, 24.598, 1], ["mendahului", 24.598, 25.244, 1]] },
+      { text: "awan hujan.", start: 25.244, end: 25.88, words: [["awan", 25.244, 25.557, 0], ["hujan.", 25.557, 25.88, 0]] },
     ],
   },
   {
-    index: 3, num: '03', slug: 'mentok-di-besi', hud: 'MENTOK DI BESI', code: 'INTI FE-56 · Z=26',
-    eyebrow: 'ARSIP 03 · BATAS TERMODINAMIKA FUSI',
-    headLines: [['Bintang raksasa ', 'padam', ''], ['saat menyentuh besi', '', '']],
-    latin: 'Nucleosynthesis · Tembok Besi-56',
-    groundTop: '#1C1613', groundBottom: '#0D0B0A',
-    start: 22.089, end: 35.546, voStart: 22.339, voEnd: 35.336,
+    index: 2,
+    slug: "streptomyces",
+    eyebrow: "MIKROBIOLOGI TANAH \u00b7 KOLONI STREPTOMYCES",
+    groundTop: "#161410",
+    groundBottom: "#0C0A08",
+    start: 26.05,
+    end: 42.78,
+    voStart: 26.19,
+    voEnd: 42.64,
     cards: [
-      { text: 'Bahkan bintang raksasa yang jutaan derajat panasnya', start: 22.119, end: 26.099,
-        words: [['Bahkan', 22.339, 22.726, 0], ['bintang', 22.726, 23.317, 1], ['raksasa', 23.317, 23.883, 0], ['yang', 23.883, 24.207, 0], ['jutaan', 24.207, 24.693, 1], ['derajat', 24.693, 25.259, 0], ['panasnya', 25.259, 26.089, 0]] },
-      { text: 'ikut menyerah saat intinya berubah menjadi besi.', start: 26.089, end: 29.324,
-        words: [['ikut', 26.129, 26.324, 0], ['menyerah', 26.324, 26.933, 0], ['saat', 26.933, 27.238, 0], ['intinya', 27.238, 27.771, 0], ['berubah', 27.771, 28.305, 0], ['menjadi', 28.305, 28.838, 0], ['besi.', 28.838, 29.314, 1]] },
-      { text: 'Begitu menyentuh besi, tungku bintang langsung padam', start: 29.314, end: 32.639,
-        words: [['Begitu', 29.354, 30.304, 0], ['menyentuh', 29.653, 30.304, 0], ['besi,', 30.304, 30.692, 1], ['tungku', 30.692, 31.157, 0], ['bintang', 31.157, 31.699, 1], ['langsung', 31.699, 32.319, 0], ['padam', 32.319, 32.629, 1]] },
-      { text: 'dan runtuh oleh gravitasinya sendiri.', start: 32.629, end: 35.516,
-        words: [['dan', 32.669, 33.094, 0], ['runtuh', 33.094, 33.559, 1], ['oleh', 33.559, 33.869, 0], ['gravitasinya', 33.869, 34.799, 0], ['sendiri.', 34.799, 35.336, 0]] },
+      { text: "Peracik utamanya adalah bakteri tanah", start: 26.21, end: 29.097, words: [["Peracik", 26.21, 26.792, 0], ["utamanya", 26.792, 27.553, 0], ["adalah", 27.553, 28.123, 0], ["bakteri", 28.123, 28.705, 1], ["tanah", 28.705, 29.097, 1]] },
+      { text: "bernama Streptomyces, keluarga mikroba", start: 29.097, end: 31.459, words: [["bernama", 29.097, 29.679, 0], ["Streptomyces,", 29.679, 30.32, 1], ["keluarga", 30.52, 30.994, 0], ["mikroba", 30.994, 31.459, 0]] },
+      { text: "penghasil dua pertiga antibiotik medis", start: 31.459, end: 33.507, words: [["penghasil", 31.459, 31.942, 0], ["dua", 31.942, 32.103, 1], ["pertiga", 32.103, 32.568, 1], ["antibiotik", 32.568, 33.194, 1], ["medis", 33.194, 33.507, 0]] },
+      { text: "dunia.", start: 33.507, end: 33.82, words: [["dunia.", 33.507, 33.82, 0]] },
+      { text: "Ketika tanah mengering saat kemarau,", start: 34.03, end: 36.13, words: [["Ketika", 34.03, 34.537, 0], ["tanah", 34.537, 34.885, 1], ["mengering", 34.885, 35.423, 0], ["saat", 35.423, 35.613, 0], ["kemarau,", 35.613, 36.13, 0]] },
+      { text: "koloni bakteri ini terancam mati lalu", start: 36.37, end: 38.926, words: [["koloni", 36.37, 36.877, 0], ["bakteri", 36.877, 37.394, 1], ["ini", 37.394, 37.722, 0], ["terancam", 37.722, 38.25, 0], ["mati", 38.25, 38.588, 0], ["lalu", 38.588, 38.926, 0]] },
+      { text: "memproduksi spora bersama molekul parfum", start: 38.926, end: 41.375, words: [["memproduksi", 38.926, 39.633, 0], ["spora", 39.633, 39.982, 0], ["bersama", 39.982, 40.499, 0], ["molekul", 40.499, 41.017, 0], ["parfum", 41.017, 41.375, 0]] },
+      { text: "bumi bernama geosmin.", start: 41.375, end: 42.6, words: [["bumi", 41.375, 41.713, 0], ["bernama", 41.713, 42.231, 0], ["geosmin.", 42.231, 42.6, 1]] },
     ],
   },
   {
-    index: 4, num: '04', slug: 'tabrakan-bintang', hud: 'TABRAKAN BINTANG', code: 'R-PROCESS · KILONOVA',
-    eyebrow: 'ARSIP 04 · TUMBUKAN BINTANG NEUTRON',
-    headLines: [['Lahir dari ', 'tabrakan', ''], ['dua bintang neutron', '', '']],
-    latin: 'Kilonova · Tangkapan Neutron Cepat',
-    groundTop: '#161A1E', groundBottom: '#0B0D10',
-    start: 35.546, end: 51.827, voStart: 35.796, voEnd: 51.617,
+    index: 3,
+    slug: "empat-ratus-kolam",
+    eyebrow: "AMBANG PENCIUMAN MANUSIA \u00b7 GEOSMIN",
+    groundTop: "#0E1618",
+    groundBottom: "#080D0F",
+    start: 42.78,
+    end: 59.49,
+    voStart: 42.92,
+    voEnd: 59.35,
     cards: [
-      { text: 'Emas baru bisa lahir dari bencana paling ekstrem,', start: 35.576, end: 39.266,
-        words: [['Emas', 35.796, 36.01, 1], ['baru', 36.01, 36.343, 0], ['bisa', 36.343, 36.676, 0], ['lahir', 36.676, 37.093, 0], ['dari', 37.093, 37.426, 0], ['bencana', 37.426, 38.01, 0], ['paling', 38.01, 38.51, 0], ['ekstrem,', 38.51, 39.256, 1]] },
-      { text: 'ketika dua bintang neutron yang padat saling menghantam.', start: 39.256, end: 43.406,
-        words: [['ketika', 39.296, 39.676, 0], ["dua", 39.676, 39.926, 0], ['bintang', 39.926, 40.51, 1], ['neutron', 40.51, 41.093, 1], ['yang', 41.093, 41.426, 0], ['padat', 41.426, 41.76, 0], ['saling', 41.76, 42.26, 0], ['menghantam.', 42.26, 43.396, 1]] },
-      { text: 'Ledakan dahsyat bernama kilonova itu memaksa atom', start: 43.396, end: 47.871,
-        words: [['Ledakan', 43.436, 43.944, 0], ['dahsyat', 43.944, 44.712, 0], ['bernama', 44.712, 45.48, 0], ['kilonova', 45.48, 46.358, 1], ['itu', 46.358, 46.687, 0], ['memaksa', 46.687, 47.289, 0], ['atom', 47.289, 47.861, 0]] },
-      { text: 'menelan ribuan neutron dan berubah menjadi emas murni.', start: 47.861, end: 51.797,
-        words: [['menelan', 47.901, 48.236, 0], ['ribuan', 48.236, 48.752, 1], ['neutron', 48.752, 49.354, 1], ['dan', 49.354, 49.612, 0], ['berubah', 49.612, 50.214, 0], ['menjadi', 50.214, 50.816, 0], ['emas', 50.816, 51.16, 1], ['murni.', 51.16, 51.617, 1]] },
+      { text: "Anehnya, hidung manusia sanggup mengendus", start: 42.94, end: 45.918, words: [["Anehnya,", 42.94, 43.61, 0], ["hidung", 43.81, 44.234, 0], ["manusia", 44.234, 44.846, 0], ["sanggup", 44.846, 45.282, 0], ["mengendus", 45.282, 45.918, 0]] },
+      { text: "geosmin hanya pada kadar lima bagian per", start: 45.918, end: 48.614, words: [["geosmin", 45.918, 46.355, 1], ["hanya", 46.355, 46.766, 0], ["pada", 46.766, 47.166, 0], ["kadar", 47.166, 47.578, 0], ["lima", 47.578, 47.977, 1], ["bagian", 47.977, 48.402, 0], ["per", 48.402, 48.614, 0]] },
+      { text: "triliun, setara satu sendok teh di dalam", start: 48.614, end: 51.209, words: [["triliun,", 48.614, 49.05, 1], ["setara", 49.18, 49.721, 0], ["satu", 49.721, 50.082, 0], ["sendok", 50.082, 50.465, 0], ["teh", 50.465, 50.656, 0], ["di", 50.656, 50.837, 0], ["dalam", 50.837, 51.209, 0]] },
+      { text: "empat ratus kolam renang Olimpiade.", start: 51.209, end: 53.44, words: [["empat", 51.209, 51.581, 1], ["ratus", 51.581, 51.952, 1], ["kolam", 51.952, 52.324, 0], ["renang", 52.324, 52.707, 0], ["Olimpiade.", 52.707, 53.44, 0]] },
+      { text: "Kepekaan kita terhadap bau hujan dua ratus", start: 53.62, end: 56.12, words: [["Kepekaan", 53.62, 54.159, 0], ["kita", 54.159, 54.504, 0], ["terhadap", 54.504, 55.042, 0], ["bau", 55.042, 55.225, 1], ["hujan", 55.225, 55.581, 0], ["dua", 55.581, 55.764, 1], ["ratus", 55.764, 56.12, 1]] },
+      { text: "ribu kali lebih tajam daripada hiu saat", start: 56.12, end: 58.588, words: [["ribu", 56.12, 56.465, 1], ["kali", 56.465, 56.81, 0], ["lebih", 56.81, 57.165, 0], ["tajam", 57.165, 57.521, 0], ["daripada", 57.521, 58.211, 0], ["hiu", 58.211, 58.394, 1], ["saat", 58.394, 58.588, 0]] },
+      { text: "mencium darah.", start: 58.588, end: 59.32, words: [["mencium", 58.588, 58.964, 0], ["darah.", 58.964, 59.32, 0]] },
     ],
   },
   {
-    index: 5, num: '05', slug: 'ratusan-bulan', hud: 'RATUSAN BULAN', code: '213.000 TON · 21 M',
-    eyebrow: 'ARSIP 05 · PERBANDINGAN VOLUME EMAS',
-    headLines: [['Sekali meledak, ', 'emas', ''], ['seberat ratusan Bulan', '', '']],
-    latin: 'Ejecta Aurea · Kubus 21 Meter',
-    groundTop: '#1A1B17', groundBottom: '#0D0E0C',
-    start: 51.827, end: 66.33, voStart: 52.077, voEnd: 66.12,
+    index: 4,
+    slug: "kutu-pegas",
+    eyebrow: "EVOLUSI 450 JUTA TAHUN \u00b7 COLLEMBOLA",
+    groundTop: "#131712",
+    groundBottom: "#0A0D09",
+    start: 59.49,
+    end: 74.01,
+    voStart: 59.63,
+    voEnd: 73.87,
     cards: [
-      { text: 'Hanya dalam hitungan detik, satu ledakan kilonova', start: 51.857, end: 55.677,
-        words: [['Hanya', 52.077, 52.386, 0], ['dalam', 52.386, 52.815, 0], ['hitungan', 52.815, 53.501, 0], ['detik,', 53.501, 54.101, 1], ['satu', 54.101, 54.444, 1], ['ledakan', 54.444, 55.045, 0], ['kilonova', 55.045, 55.667, 1]] },
-      { text: 'sanggup menyemburkan awan emas seberat ratusan Bulan.', start: 55.667, end: 59.547,
-        words: [['sanggup', 55.707, 56.332, 0], ['menyemburkan', 56.332, 57.361, 0], ['awan', 57.361, 57.704, 0], ['emas', 57.704, 58.016, 1], ['seberat', 58.016, 58.562, 1], ['ratusan', 58.562, 59.162, 1], ['Bulan.', 59.162, 59.537, 1]] },
-      { text: 'Padahal seluruh emas yang pernah ditambang manusia', start: 59.537, end: 63.377,
-        words: [['Padahal', 59.577, 60.305, 0], ['seluruh', 60.305, 60.855, 0], ['emas', 60.855, 61.091, 1], ['yang', 61.091, 61.405, 0], ['pernah', 61.405, 61.877, 0], ['ditambang', 61.877, 62.584, 0], ['manusia', 62.584, 63.367, 0]] },
-      { text: 'hanya muat di dalam satu kubus seukuran rumah.', start: 63.367, end: 66.3,
-        words: [['hanya', 63.407, 63.605, 0], ['muat', 63.605, 63.92, 0], ['di', 63.92, 64.077, 0], ['dalam', 64.077, 64.47, 0], ['satu', 64.47, 64.784, 1], ['kubus', 64.784, 65.177, 1], ['seukuran', 65.177, 65.805, 0], ['rumah.', 65.805, 66.12, 1]] },
+      { text: "Namun parfum itu bukan dibuat untuk manusia.", start: 59.66, end: 62.3, words: [["Namun", 59.66, 60.013, 0], ["parfum", 60.013, 60.376, 0], ["itu", 60.376, 60.708, 0], ["bukan", 60.708, 61.06, 1], ["dibuat", 61.06, 61.424, 0], ["untuk", 61.424, 61.776, 0], ["manusia.", 61.776, 62.3, 0]] },
+      { text: "Riset tahun dua ribu dua puluh membuktikan", start: 62.49, end: 64.968, words: [["Riset", 62.49, 62.842, 0], ["tahun", 62.842, 63.195, 0], ["dua", 63.195, 63.376, 1], ["ribu", 63.376, 63.718, 1], ["dua", 63.718, 63.9, 1], ["puluh", 63.9, 64.252, 0], ["membuktikan", 64.252, 64.968, 0]] },
+      { text: "geosmin adalah umpan berusia ratusan juta", start: 64.968, end: 67.596, words: [["geosmin", 64.968, 65.342, 1], ["adalah", 65.342, 65.854, 0], ["umpan", 65.854, 66.207, 1], ["berusia", 66.207, 66.73, 0], ["ratusan", 66.73, 67.254, 0], ["juta", 67.254, 67.596, 0]] },
+      { text: "tahun untuk memancing kutu pegas,", start: 67.596, end: 69.54, words: [["tahun", 67.596, 67.948, 0], ["untuk", 67.948, 68.301, 0], ["memancing", 68.301, 68.846, 0], ["kutu", 68.846, 69.188, 1], ["pegas,", 69.188, 69.54, 1]] },
+      { text: "hewan tanah seukuran ujung jarum yang", start: 69.75, end: 71.8, words: [["hewan", 69.75, 70.088, 0], ["tanah", 70.088, 70.427, 1], ["seukuran", 70.427, 70.939, 0], ["ujung", 70.939, 71.278, 0], ["jarum", 71.278, 71.616, 0], ["yang", 71.616, 71.8, 0]] },
+      { text: "memiliki antena pelacak geosmin.", start: 71.8, end: 73.81, words: [["memiliki", 71.8, 72.457, 0], ["antena", 72.457, 72.949, 1], ["pelacak", 72.949, 73.452, 0], ["geosmin.", 73.452, 73.81, 1]] },
     ],
   },
   {
-    index: 6, num: '06', slug: 'hujan-meteor', hud: 'HUJAN METEOR', code: '3,9 MILIAR THN',
-    eyebrow: 'ARSIP 06 · PEMBOMAN BERAT AKHIR',
-    headLines: [['Terkubur di ', 'inti,', ''], ['ditabur ulang meteor', '', '']],
-    latin: 'Imber Meteoriticus · 20 Miliar Miliar Ton',
-    groundTop: '#161B1F', groundBottom: '#0B0D10',
-    start: 66.33, end: 82.456, voStart: 66.58, voEnd: 82.246,
+    index: 5,
+    slug: "kurir-spora",
+    eyebrow: "SIMBIOSIS PENYEBARAN \u00b7 LONTARAN EKOR PEGAS",
+    groundTop: "#15130F",
+    groundBottom: "#0B0A08",
+    start: 74.01,
+    end: 89.12,
+    voStart: 74.15,
+    voEnd: 88.98,
     cards: [
-      { text: 'Saat Bumi muda masih berupa lautan magma cair,', start: 66.36, end: 69.795,
-        words: [['Saat', 66.58, 66.802, 0], ['Bumi', 66.802, 67.143, 1], ['muda', 67.143, 67.485, 0], ['masih', 67.485, 67.911, 0], ['berupa', 67.911, 68.509, 0], ['lautan', 68.509, 69.021, 0], ['magma', 69.021, 69.439, 1], ['cair,', 69.439, 69.785, 0]] },
-      { text: 'hampir semua emas awalnya tenggelam ke inti terdalam.', start: 69.785, end: 74.155,
-        words: [['hampir', 69.825, 70.493, 0], ['semua', 70.493, 70.938, 0], ['emas', 70.938, 71.205, 1], ['awalnya', 71.205, 71.827, 0], ['tenggelam', 71.827, 72.627, 1], ['ke', 72.627, 72.816, 0], ['inti', 72.816, 73.16, 1], ['terdalam.', 73.16, 74.145, 0]] },
-      { text: 'Emas yang kita tambang hari ini datang belakangan,', start: 74.145, end: 77.585,
-        words: [['Emas', 74.185, 74.69, 1], ['yang', 74.69, 74.997, 0], ['kita', 74.997, 75.304, 0], ['tambang', 75.304, 75.842, 0], ['hari', 75.842, 76.148, 0], ['ini', 76.148, 76.455, 0], ['datang', 76.455, 76.916, 0], ['belakangan,', 76.916, 77.575, 0]] },
-      { text: 'dibawa hujan meteor raksasa hampir empat miliar tahun lalu.', start: 77.575, end: 82.426,
-        words: [['dibawa', 77.615, 78.626, 0], ['hujan', 78.626, 79.244, 1], ['meteor', 79.244, 79.667, 1], ['raksasa', 79.667, 80.16, 0], ['hampir', 80.16, 80.583, 0], ['empat', 80.583, 80.936, 1], ['miliar', 80.936, 81.358, 1], ['tahun', 81.358, 81.711, 0], ['lalu.', 81.711, 82.246, 0]] },
+      { text: "Terpikat baunya, kutu pegas datang melahap", start: 74.17, end: 76.701, words: [["Terpikat", 74.17, 74.753, 0], ["baunya,", 74.753, 75.15, 0], ["kutu", 75.33, 75.627, 1], ["pegas", 75.627, 75.932, 1], ["datang", 75.932, 76.247, 0], ["melahap", 76.247, 76.701, 1]] },
+      { text: "bakteri tersebut bulat-bulat.", start: 76.701, end: 78.23, words: [["bakteri", 76.701, 77.155, 1], ["tersebut", 77.155, 77.619, 0], ["bulat-bulat.", 77.619, 78.23, 0]] },
+      { text: "Padahal cangkang spora bakteri tahan dicerna", start: 78.47, end: 80.869, words: [["Padahal", 78.47, 78.942, 0], ["cangkang", 78.942, 79.289, 0], ["spora", 79.289, 79.606, 0], ["bakteri", 79.606, 80.079, 1], ["tahan", 80.079, 80.397, 1], ["dicerna", 80.397, 80.869, 1]] },
+      { text: "di dalam perut dan menempel di tubuhnya,", start: 80.869, end: 82.94, words: [["di", 80.869, 81.023, 0], ["dalam", 81.023, 81.341, 0], ["perut", 81.341, 81.659, 0], ["dan", 81.659, 81.822, 0], ["menempel", 81.822, 82.304, 0], ["di", 82.304, 82.458, 0], ["tubuhnya,", 82.458, 82.94, 0]] },
+      { text: "sehingga saat kutu pegas melenting jauh", start: 83.14, end: 85.325, words: [["sehingga", 83.14, 83.681, 0], ["saat", 83.681, 83.876, 0], ["kutu", 83.876, 84.222, 1], ["pegas", 84.222, 84.579, 1], ["melenting", 84.579, 85.131, 1], ["jauh", 85.131, 85.325, 0]] },
+      { text: "ke tanah lembap baru,", start: 85.325, end: 86.57, words: [["ke", 85.325, 85.499, 0], ["tanah", 85.499, 85.856, 1], ["lembap", 85.856, 86.224, 0], ["baru,", 86.224, 86.57, 0]] },
+      { text: "ia menjadi kurir penyebar koloni baru.", start: 86.75, end: 88.92, words: [["ia", 86.75, 86.902, 0], ["menjadi", 86.902, 87.369, 0], ["kurir", 87.369, 87.683, 1], ["penyebar", 87.683, 88.158, 0], ["koloni", 88.158, 88.615, 0], ["baru.", 88.615, 88.92, 0]] },
     ],
   },
   {
-    index: 7, num: '07', slug: 'bukti-2017', hud: 'BUKTI 2017', code: 'GW170817 · NGC 4993',
-    eyebrow: 'ARSIP 07 · OBSERVASI LIGO-VIRGO 2017',
-    headLines: [['Tujuh puluh ', 'teleskop', ''], ['memergoki pabrik emas', '', '']],
-    latin: 'GW170817 · 130 Juta Tahun Cahaya',
-    groundTop: '#151B22', groundBottom: '#0B0E12',
-    start: 82.456, end: 99.502, voStart: 82.706, voEnd: 99.292,
+    index: 6,
+    slug: "kompas-gurun",
+    eyebrow: "NALURI EVOLUSI \u00b7 PELACAK SUMBER AIR",
+    groundTop: "#17140F",
+    groundBottom: "#0C0A07",
+    start: 89.12,
+    end: 102.27,
+    voStart: 89.26,
+    voEnd: 102.13,
     cards: [
-      { text: 'Asal usul ini terbukti langsung pada Agustus dua ribu tujuh belas,', start: 82.486, end: 86.676,
-        words: [['Asal', 82.706, 82.964, 0], ['usul', 82.964, 83.343, 0], ['ini', 83.343, 83.626, 0], ['terbukti', 83.626, 84.383, 0], ['langsung', 84.383, 85.24, 0], ['pada', 85.24, 85.437, 0], ['Agustus', 85.437, 85.782, 1], ['dua', 85.782, 85.93, 0], ['ribu', 85.93, 86.128, 0], ['tujuh', 86.128, 86.374, 1], ['belas,', 86.374, 86.67, 0]] },
-      { text: 'saat tujuh puluh teleskop dunia mengarah ke satu titik langit.', start: 86.666, end: 90.881,
-        words: [['saat', 86.706, 87.085, 0], ['tujuh', 87.085, 87.424, 1], ['puluh', 87.424, 87.847, 1], ['teleskop', 87.847, 88.525, 1], ['dunia', 88.525, 88.949, 0], ['mengarah', 88.949, 89.626, 0], ['ke', 89.626, 89.779, 0], ['satu', 89.779, 90.055, 1], ['titik', 90.055, 90.402, 0], ['langit.', 90.402, 90.871, 0]] },
-      { text: 'Para astronom memergoki kilatan emas dan platina baru', start: 90.871, end: 95.176,
-        words: [['Para', 90.911, 91.401, 0], ['astronom', 91.401, 92.071, 0], ['memergoki', 92.071, 92.993, 0], ['kilatan', 92.993, 93.579, 0], ['emas', 93.579, 93.83, 1], ['dan', 93.83, 94.081, 0], ['platina', 94.081, 94.667, 1], ['baru', 94.667, 95.166, 0]] },
-      { text: 'dari tabrakan bintang berjarak seratus tiga puluh juta tahun cahaya.', start: 95.166, end: 99.472,
-        words: [['dari', 95.206, 95.383, 0], ['tabrakan', 95.383, 95.977, 0], ['bintang', 95.977, 96.497, 1], ['berjarak', 96.497, 97.091, 0], ['seratus', 97.091, 97.61, 1], ['tiga', 97.61, 97.907, 0], ['puluh', 97.907, 98.278, 1], ['juta', 98.278, 98.575, 0], ['tahun', 98.575, 98.947, 0], ['cahaya.', 98.947, 99.292, 1]] },
+      { text: "Manusia ikut menyukai bau jebakan ini", start: 89.28, end: 91.375, words: [["Manusia", 89.28, 89.73, 0], ["ikut", 89.73, 90.024, 0], ["menyukai", 90.024, 90.484, 0], ["bau", 90.484, 90.64, 1], ["jebakan", 90.64, 91.09, 1], ["ini", 91.09, 91.375, 0]] },
+      { text: "karena alasan bertahan hidup.", start: 91.375, end: 93.02, words: [["karena", 91.375, 91.816, 0], ["alasan", 91.816, 92.258, 0], ["bertahan", 92.258, 92.717, 1], ["hidup.", 92.717, 93.02, 1]] },
+      { text: "Bagi nenek moyang kita hingga kawanan", start: 93.51, end: 95.481, words: [["Bagi", 93.51, 93.805, 0], ["nenek", 93.805, 94.109, 0], ["moyang", 94.109, 94.422, 0], ["kita", 94.422, 94.717, 0], ["hingga", 94.717, 95.03, 0], ["kawanan", 95.03, 95.481, 0]] },
+      { text: "unta di gurun kering,", start: 95.481, end: 96.54, words: [["unta", 95.481, 95.776, 1], ["di", 95.776, 95.923, 0], ["gurun", 95.923, 96.227, 0], ["kering,", 96.227, 96.54, 0]] },
+      { text: "hembusan geosmin dari kejauhan adalah", start: 96.85, end: 99.188, words: [["hembusan", 96.85, 97.394, 0], ["geosmin", 97.394, 97.774, 1], ["dari", 97.774, 98.122, 0], ["kejauhan", 98.122, 98.666, 0], ["adalah", 98.666, 99.188, 0]] },
+      { text: "kompas alami penunjuk sumber air dan tanah", start: 99.188, end: 101.711, words: [["kompas", 99.188, 99.558, 1], ["alami", 99.558, 100.069, 0], ["penunjuk", 100.069, 100.613, 0], ["sumber", 100.613, 100.983, 0], ["air", 100.983, 101.167, 1], ["dan", 101.167, 101.352, 0], ["tanah", 101.352, 101.711, 1]] },
+      { text: "subur.", start: 101.711, end: 102.07, words: [["subur.", 101.711, 102.07, 0]] },
     ],
   },
   {
-    index: 8, num: '08', slug: 'fosil-bintang', hud: 'FOSIL BINTANG', code: '> 4,6 MILIAR THN',
-    eyebrow: 'ARSIP 08 · RELIQUIA STELLARUM',
-    headLines: [['Sepotong ', 'bintang mati', ''], ['melingkar di jarimu', '', '']],
-    latin: 'Reliquia Stellarum · Lebih Tua dari Matahari',
-    groundTop: '#1D1812', groundBottom: '#0D0B09',
-    start: 99.502, end: 112.267, voStart: 99.752, voEnd: 111.114,
+    index: 7,
+    slug: "paradoks-ikan",
+    eyebrow: "SATU MOLEKUL DUA WAJAH \u00b7 C12H22O",
+    groundTop: "#141210",
+    groundBottom: "#0A0908",
+    start: 102.27,
+    end: 116.5556,
+    voStart: 102.41,
+    voEnd: 116.13,
     cards: [
-      { text: 'Jadi setiap perhiasan emas yang berkilau di dekatmu', start: 99.532, end: 103.607,
-        words: [['Jadi', 99.752, 100.045, 0], ['setiap', 100.045, 100.54, 0], ['perhiasan', 100.54, 101.282, 0], ['emas', 101.282, 101.529, 1], ['yang', 101.529, 101.859, 0], ['berkilau', 101.859, 102.601, 0], ['di', 102.601, 102.766, 0], ['dekatmu', 102.766, 103.597, 0]] },
-      { text: 'adalah kepingan bintang mati yang lebih tua dari Matahari.', start: 103.597, end: 107.597,
-        words: [['adalah', 103.637, 103.921, 0], ['kepingan', 103.921, 104.581, 1], ['bintang', 104.581, 105.241, 1], ['mati', 105.241, 105.571, 1], ['yang', 105.571, 105.9, 0], ['lebih', 105.9, 106.313, 0], ['tua', 106.313, 106.56, 0], ['dari', 106.56, 106.89, 0], ['Matahari.', 106.89, 107.587, 1]] },
-      { text: 'Ada benda emas yang sedang kamu pakai sekarang? Tulis di komentar.', start: 107.587, end: 111.65,
-        words: [['Ada', 107.627, 107.855, 0], ['benda', 107.855, 108.225, 0], ['emas', 108.225, 108.447, 1], ['yang', 108.447, 108.743, 0], ['sedang', 108.743, 109.188, 0], ['kamu', 109.188, 109.484, 0], ['pakai', 109.484, 109.781, 0], ['sekarang?', 109.78, 110.32, 0], ['Tulis', 110.34, 110.68, 1], ['di', 110.68, 110.84, 0], ['komentar.', 110.84, 111.38, 1]] },
+      { text: "Uniknya, molekul geosmin yang persis sama", start: 102.43, end: 104.954, words: [["Uniknya,", 102.43, 103.06, 0], ["molekul", 103.24, 103.74, 0], ["geosmin", 103.74, 104.097, 1], ["yang", 104.097, 104.281, 0], ["persis", 104.281, 104.627, 0], ["sama", 104.627, 104.954, 0]] },
+      { text: "juga menjadi penyebab rasa bau tanah pada", start: 104.954, end: 107.455, words: [["juga", 104.954, 105.281, 0], ["menjadi", 105.281, 105.781, 0], ["penyebab", 105.781, 106.292, 0], ["rasa", 106.292, 106.618, 0], ["bau", 106.618, 106.792, 1], ["tanah", 106.792, 107.129, 1], ["pada", 107.129, 107.455, 0]] },
+      { text: "ikan lele dan gurame yang dibenci lidah", start: 107.455, end: 109.793, words: [["ikan", 107.455, 107.782, 0], ["lele", 107.782, 108.109, 1], ["dan", 108.109, 108.282, 0], ["gurame", 108.282, 108.773, 1], ["yang", 108.773, 108.956, 0], ["dibenci", 108.956, 109.456, 0], ["lidah", 109.456, 109.793, 0]] },
+      { text: "kita.", start: 109.793, end: 110.12, words: [["kita.", 109.793, 110.12, 0]] },
+      { text: "Saat gerimis pertama turun,", start: 110.34, end: 111.75, words: [["Saat", 110.34, 110.51, 0], ["gerimis", 110.51, 110.974, 1], ["pertama", 110.974, 111.438, 0], ["turun,", 111.438, 111.75, 0]] },
+      { text: "kamu tim langsung keluar menghirup udaranya", start: 111.93, end: 113.95, words: [["kamu", 111.93, 112.206, 0], ["tim", 112.206, 112.353, 0], ["langsung", 112.353, 112.664, 0], ["keluar", 112.664, 112.957, 1], ["menghirup", 112.957, 113.397, 0], ["udaranya", 113.397, 113.95, 0]] },
+      { text: "atau tetap di dalam rumah?", start: 113.95, end: 115.22, words: [["atau", 113.95, 114.227, 0], ["tetap", 114.227, 114.512, 0], ["di", 114.512, 114.65, 0], ["dalam", 114.65, 114.935, 0], ["rumah?", 114.935, 115.22, 0]] },
+      { text: "Tulis di komentar.", start: 115.41, end: 116.08, words: [["Tulis", 115.41, 115.633, 0], ["di", 115.633, 115.742, 0], ["komentar.", 115.742, 116.08, 1]] },
     ],
   },
 ];
 
-export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
-
-export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - clamp01(t), 3);
-
-export const easeOutQuint = (t: number): number => 1 - Math.pow(1 - clamp01(t), 5);
-
-export const easeOutExpo = (t: number): number => {
-  const x = clamp01(t);
-  return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
-};
-
-export const easeInOutCubic = (t: number): number => {
-  const x = clamp01(t);
-  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-};
-
-export const easeInOutQuart = (t: number): number => {
-  const x = clamp01(t);
-  return x < 0.5 ? 8 * x * x * x * x : 1 - Math.pow(-2 * x + 2, 4) / 2;
-};
-
-export const smoothstep = (t: number): number => {
-  const x = clamp01(t);
-  return x * x * (3 - 2 * x);
-};
-
-export const prog = (sec: number, s: number, e: number): number =>
-  clamp01((sec - s) / Math.max(0.001, e - s));
-
-export const getActiveChapterIndex = (sec: number): number => {
+export function getActiveChapterIndex(sec: number): number {
   for (let i = CHAPTERS.length - 1; i >= 0; i--) {
     if (sec >= CHAPTERS[i].start) return i;
   }
   return 0;
-};
-
-export const getActiveCard = (
-  ch: ChapterSpec,
-  sec: number,
-): { card: CaptionCard; cardIndex: number } | null => {
-  for (let i = 0; i < ch.cards.length; i++) {
-    const c = ch.cards[i];
-    const nextStart = i + 1 < ch.cards.length ? ch.cards[i + 1].start : c.end;
-    if (sec >= c.start && sec < nextStart) {
-      return { card: c, cardIndex: i };
-    }
-  }
-  const last = ch.cards[ch.cards.length - 1];
-  if (sec >= last.start && sec <= last.end) {
-    return { card: last, cardIndex: ch.cards.length - 1 };
-  }
-  return null;
-};
+}

@@ -37,17 +37,17 @@ jobs:
       matrix:
         include:
           - shard: 0
-            range: '0-1683'
+            range: '0-1747'
           - shard: 1
-            range: '1684-3367'
+            range: '1748-3495'
           - shard: 2
-            range: '3368-5051'
+            range: '3496-5243'
           - shard: 3
-            range: '5052-6735'
+            range: '5244-6991'
           - shard: 4
-            range: '6736-8419'
+            range: '6992-8739'
           - shard: 5
-            range: '8420-10103'
+            range: '8740-10489'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -100,7 +100,7 @@ jobs:
             echo "file '$f'" >> concat.txt
           done
 
-          VIDEO_OUT="out/Emas di Jarimu Bukan Buatan Bumi - Naysi - 1440x2560 90fps.mp4"
+          VIDEO_OUT="out/Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri - Naysi - 1440x2560 90fps.mp4"
           ffmpeg -y -v error -f concat -safe 0 -i concat.txt -i public/audio/master.mp3 \
             -map 0:v:0 -map 1:a:0 \
             -c:v copy \
@@ -119,62 +119,63 @@ jobs:
               -of default=noprint_wrappers=1 "$VIDEO_OUT"
           } | tee out/qa/probe.txt
 
-          TIMES=(2.10 7.90 10.90 15.60 25.50 32.10 39.80 48.90 55.80 63.80 71.80 79.60 84.80 94.60 104.20 110.20)
+          TIMES=(2.20 6.80 14.20 21.50 29.80 39.20 48.50 56.50 64.20 70.80 79.80 86.20 93.20 99.50 107.20 114.20)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
             ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
           done
-          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x05070B" "out/qa/qa_sheet_1.jpg"
-          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x05070B" "out/qa/qa_sheet_2.jpg"
-          ffmpeg -y -v error -ss 7.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 15.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
-          ffmpeg -y -v error -ss 32.10 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
-          ffmpeg -y -v error -ss 39.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4a.jpg"
-          ffmpeg -y -v error -ss 48.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
-          ffmpeg -y -v error -ss 55.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5a.jpg"
-          ffmpeg -y -v error -ss 63.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
-          ffmpeg -y -v error -ss 71.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6a.jpg"
-          ffmpeg -y -v error -ss 79.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 94.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 110.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_1.jpg"
+          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_2.jpg"
+
+          ffmpeg -y -v error -ss 6.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
+          ffmpeg -y -v error -ss 14.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2a.jpg"
+          ffmpeg -y -v error -ss 21.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
+          ffmpeg -y -v error -ss 39.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 48.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4a.jpg"
+          ffmpeg -y -v error -ss 56.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
+          ffmpeg -y -v error -ss 70.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 79.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6a.jpg"
+          ffmpeg -y -v error -ss 86.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 98.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 113.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
           rm -f out/qa/f_*.jpg
 
-          cat << 'PAKET_EOF' > "out/Paket YouTube - Emas di Jarimu Bukan Buatan Bumi.txt"
+          cat << 'PAKET_EOF' > "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt"
           Judul:
-          Emas di Jarimu Bukan Buatan Bumi
+          Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri
 
           Deskripsi:
-          Emas yang melingkar di jarimu sebenarnya bukan buatan Bumi. Sejak terbentuk 4,5 miliar tahun lalu, planet kita tidak pernah sanggup menciptakan satu gram emas pun. Setiap perhiasan emas yang kita sentuh hari ini lahir dari salah satu tabrakan paling ekstrem di alam semesta.
+          Aroma khas yang langsung tercium saat gerimis pertama turun sebenarnya sama sekali bukan bau air hujan. Air hujan murni tidak memiliki bau sedikit pun — wangi hangat yang kita kenal sebagai petrikor itu ternyata jebakan kimia berusia ratusan juta tahun yang dipasang bakteri tanah.
 
-          0:00 Emas di jarimu bukan buatan planet Bumi
-          0:11 Gunung berapi & magma cuma kurir pengangkut emas
-          0:22 Tungku bintang raksasa padam saat intinya jadi besi
-          0:36 Tabrakan dua bintang neutron & ledakan kilonova
-          0:52 Awan emas ratusan Bulan vs 1 kubus emas manusia
-          1:06 Emas awal tenggelam ke inti, ditabur ulang hujan meteor
-          1:22 Bukti 17 Agustus 2017 dari 70 teleskop dunia (GW170817)
-          1:40 Fosil bintang mati yang lebih tua dari Matahari
+          0:00 Bau hujan ternyata bukan aroma air langit
+          0:11 Kamera MIT: gerimis pelan meletupkan kabut pembawa bau
+          0:26 Bakteri Streptomyces peracik antibiotik & geosmin
+          0:43 1 sendok teh di 400 kolam Olimpiade (200.000x hiu)
+          0:59 Riset 2020: umpan pemancing kutu pegas tanah
+          1:14 Spora tahan dicerna & lontaran kurir ekor pegas
+          1:29 Kompas alami manusia purba & unta melacak mata air
+          1:42 Paradoks geosmin pada bau lumpur ikan lele & gurame
 
-          Gunung berapi dan aliran magma panas di bawah tanah ternyata hanya mengangkut emas yang sudah lebih dulu ada di mantel Bumi menuju celah batuan kuarsa di dekat permukaan. Panas perut Bumi — bahkan suhu jutaan derajat di pusat bintang raksasa sekalipun — belum mampu merakit inti atom seberat emas (nomor atom 79). Reaksi fusi di dalam bintang berhenti pada unsur besi (nomor atom 26) karena penggabungan inti besi justru menyerap energi, membuat bintang padam dan runtuh oleh gravitasinya sendiri.
+          Rekaman kamera kecepatan tinggi di Massachusetts Institute of Technology (MIT) membuktikan bagaimana aroma dari dalam tanah sanggup melompat ke hidung kita. Ketika tetes gerimis pelan menimpa tanah kering berpori, air mengurung gelembung udara mikroskopis yang kemudian meletup ke atas seperti buih soda, melontarkan ratusan butir aerosol halus pembawa molekul wangi yang diterbangkan angin mendahului awan hujan.
 
-          Unsur berat seperti emas baru tercipta lewat proses tangkapan neutron cepat (r-process) ketika dua bintang neutron — sisa inti bintang mati yang memadatkan massa lebih berat dari Matahari ke dalam bola seukuran kota — saling berpilin dan menghantam dalam ledakan kilonova. Dalam hitungan detik, satu ledakan kilonova sanggup menyemburkan awan emas murni seberat puluhan hingga ratusan kali massa Bulan. Sebagai perbandingan, seluruh emas yang pernah ditambang manusia sepanjang sejarah hanya akan membentuk satu kubus padat bersisi sekitar 21 meter.
+          Peracik utama aroma tersebut adalah bakteri benang tanah bernama Streptomyces — keluarga mikroba yang juga berjasa menghasilkan sekitar dua pertiga antibiotik medis dunia. Saat musim kemarau mengeringkan tanah, koloni Streptomyces yang terancam mati membentuk spora keras sambil melepaskan molekul alkohol bisiklik bernama geosmin (C12H22O). Hidung manusia luar biasa peka terhadap geosmin hingga sanggup menciumnya pada kadar 5 bagian per triliun — setara satu sendok teh di dalam 400 kolam renang Olimpiade, atau sekitar 200.000 kali lebih tajam daripada penciuman hiu terhadap darah di laut.
 
-          Saat Bumi muda masih berupa lautan magma cair 4,5 miliar tahun lalu, hampir semua emas awalnya tertarik bersama besi cair tenggelam ke inti terdalam Bumi. Emas yang bisa ditambang manusia di kerak Bumi hari ini datang belakangan, ditaburkan oleh hujan meteor raksasa sekitar 3,9 miliar tahun lalu. Asal-usul kosmik ini terbukti langsung pada 17 Agustus 2017 (peristiwa GW170817 di galaksi NGC 4993, berjarak 130 juta tahun cahaya), ketika detektor gelombang gravitasi LIGO-Virgo dan sekitar 70 observatorium dunia menangkap kilatan pembentukan emas dan platina baru dari tabrakan dua bintang neutron.
+          Pada tahun 2020, riset di Nature Microbiology akhirnya terpecahkan: geosmin sesungguhnya adalah umpan evolusi berusia ratusan juta tahun untuk memancing kutu pegas (Collembola), arthropoda tanah seukuran ujung jarum yang memiliki reseptor khusus geosmin di ujung antenanya. Saat kutu pegas melahap koloni bakteri itu, cangkang spora Streptomyces bertahan utuh di saluran pencernaannya dan menempel di bulu tubuhnya, lalu ikut terlontar jauh bersama pegas ekornya ke tanah lembap baru. Uniknya, molekul geosmin yang persis sama juga menjadi penyebab sensasi "bau tanah" pada ikan air tawar seperti lele dan gurame yang dibenci lidah manusia, sementara hidung kita memujanya sebagai tanda datangnya air dan kehidupan.
 
-          Ada benda emas yang sedang kamu pakai sekarang? Tulis di komentar.
+          Saat gerimis pertama turun, kamu tim langsung keluar menghirup udaranya atau tetap di dalam rumah? Tulis di komentar.
 
-          Sumber: LIGO Scientific Collaboration & Virgo Collaboration, "GW170817: Observation of Gravitational Waves from a Binary Neutron Star Inspiral", Physical Review Letters 119, 161101 (2017); D. Kasen et al., "Origin of the heavy elements in binary neutron-star mergers from a gravitational-wave event", Nature 551, 80–84 (2017); M. Willbold, T. Elliott & S. Moorbath, "The tungsten isotopic composition of the Earth's mantle before the terminal bombardment", Nature 477, 195–198 (2011).
+          Sumber: P. G. Becher et al., "Developmentally regulated volatiles geosmin and 2-methylisoborneol attract a soil arthropod to Streptomyces bacteria promoting spore dispersal", Nature Microbiology 5, 821–829 (2020); Y. S. Joung & C. R. Buie, "Aerosol generation by raindrop impact on soil", Nature Communications 6, 6083 (2015); I. J. Bear & R. G. Thomas, "Nature of argillaceous odour", Nature 201, 993–995 (1964).
 
           Naysi — penjelasan singkat soal sains, sejarah, dan angka di baliknya.
           Kerja sama: elths.i09@gmail.com
 
           Hashtag:
-          #Shorts #Astronomi #Sains #FaktaUnik #Emas
+          #Shorts #Sains #Biologi #FaktaUnik #Hujan
 
           Tag:
-          asal usul emas, emas bukan dari bumi, emas dari tabrakan bintang, bintang neutron, ledakan kilonova, gw170817, kenapa bumi tidak bisa membuat emas, inti besi bintang, hujan meteor emas, fakta emas, fakta astronomi, fisika bintang, kosmos, alam semesta, sains populer, ilmu pengetahuan, wawasan baru, fakta menarik, edukasi, naysi, shorts indonesia
+          bau hujan, kenapa hujan berbau wangi, petrikor, petrichor adalah, geosmin, bakteri tanah, streptomyces, kutu pegas, fakta hujan, kenapa suka bau hujan, bau tanah saat hujan, bau tanah ikan lele, fakta biologi, fakta unik dunia, penciuman manusia vs hiu, sains populer, edukasi, ilmu pengetahuan, wawasan baru, naysi, shorts indonesia
           PAKET_EOF
-          sed -i 's/^          //' "out/Paket YouTube - Emas di Jarimu Bukan Buatan Bumi.txt"
+          sed -i 's/^          //' "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt"
           ls -lh out/ out/qa/
       - name: Register Git object deliverables manifest
         env:
@@ -212,7 +213,7 @@ jobs:
               return res["sha"]
 
           tree_items = []
-          video_path = "out/Emas di Jarimu Bukan Buatan Bumi - Naysi - 1440x2560 90fps.mp4"
+          video_path = "out/Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri - Naysi - 1440x2560 90fps.mp4"
           chunk_size = 18 * 1024 * 1024
           with open(video_path, "rb") as vf:
               idx = 0
@@ -230,16 +231,16 @@ jobs:
                   idx += 1
 
           extra_files = {
-              "paket.txt": "out/Paket YouTube - Emas di Jarimu Bukan Buatan Bumi.txt",
+              "paket.txt": "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt",
               "probe.txt": "out/qa/probe.txt",
               "qa_sheet_1.jpg": "out/qa/qa_sheet_1.jpg",
               "qa_sheet_2.jpg": "out/qa/qa_sheet_2.jpg",
               "hi_ch1.jpg": "out/qa/hi_ch1.jpg",
+              "hi_ch2a.jpg": "out/qa/hi_ch2a.jpg",
               "hi_ch2.jpg": "out/qa/hi_ch2.jpg",
               "hi_ch3.jpg": "out/qa/hi_ch3.jpg",
               "hi_ch4a.jpg": "out/qa/hi_ch4a.jpg",
               "hi_ch4.jpg": "out/qa/hi_ch4.jpg",
-              "hi_ch5a.jpg": "out/qa/hi_ch5a.jpg",
               "hi_ch5.jpg": "out/qa/hi_ch5.jpg",
               "hi_ch6a.jpg": "out/qa/hi_ch6a.jpg",
               "hi_ch6.jpg": "out/qa/hi_ch6.jpg",

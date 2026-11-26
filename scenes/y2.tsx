@@ -1,475 +1,384 @@
 import React, { useMemo } from 'react';
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import {
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from 'remotion';
+import { contours } from 'd3-contour';
+import { geoPath } from 'd3-geo';
 import {
   CHAPTERS,
   IDENTITY,
   clamp01,
+  easeInOutCubic,
   easeOutCubic,
   easeOutExpo,
   prog,
+  smoothstep,
 } from './script';
 import {
   DocumentaryHeader,
-  FacetedGoldNugget,
-  GuillocheRosette,
-  Illustrated24KGoldRing,
+  GeosminBrassMedallion,
   MatteCanvasGround,
   TrimPath,
-  buildNaturalEarthMap,
+  buildOrthographicGlobe,
+  fbm2D,
   useProceduralSurface,
-} from './emas';
+} from './hujan';
 
 // ============================================================================
-// SCENE 07 — 17 AGUSTUS 2017: 70 OBSERVATORIUM & GW170817 (82.456s – 99.502s)
+// SCENE 07 — KOMPAS EVOLUSI GURUN: UNTA & MANUSIA PURBA (89.120s – 102.270s)
 // ============================================================================
 
-interface ObservatoryHub {
-  readonly name: string;
-  readonly lon: number;
-  readonly lat: number;
-  readonly delay: number;
-}
+const DromedaryCamelSilhouette: React.FC<{
+  x: number;
+  y: number;
+  scale?: number;
+  stridePhase?: number;
+}> = ({ x, y, scale = 1, stridePhase = 0 }) => {
+  const s1 = Math.sin(stridePhase) * 8;
+  const s2 = Math.sin(stridePhase + Math.PI) * 8;
 
-const GLOBAL_OBSERVATORIES: readonly ObservatoryHub[] = [
-  { name: 'LIGO HANFORD', lon: -119.4, lat: 46.45, delay: 0.0 },
-  { name: 'LIGO LIVINGSTON', lon: -90.77, lat: 30.56, delay: 0.12 },
-  { name: 'VIRGO ITALIA', lon: 10.5, lat: 43.63, delay: 0.24 },
-  { name: 'PARANAL CHILI', lon: -70.4, lat: -24.63, delay: 0.38 },
-  { name: 'MAUNA KEA', lon: -155.47, lat: 19.82, delay: 0.52 },
-  { name: 'SAAO AFRIKA', lon: 20.81, lat: -32.38, delay: 0.66 },
-  { name: 'SIDING SPRING', lon: 149.06, lat: -31.27, delay: 0.8 },
-];
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {/* Four Long Striding Desert Legs */}
+      <line x1={-34} y1={-46} x2={-42 + s1} y2={0} stroke="#1B150E" strokeWidth={7} strokeLinecap="round" />
+      <line x1={-22} y1={-46} x2={-16 + s2} y2={0} stroke="#2A2117" strokeWidth={6} strokeLinecap="round" />
+      <line x1={26} y1={-48} x2={20 + s2} y2={0} stroke="#1B150E" strokeWidth={7} strokeLinecap="round" />
+      <line x1={38} y1={-48} x2={44 + s1} y2={0} stroke="#2A2117" strokeWidth={6} strokeLinecap="round" />
 
-const SPECTRUM_LINES = [48, 92, 134, 198, 224, 286, 338, 392, 434, 488, 536] as const;
+      {/* Torso, Single Desert Hump, Curved Neck & Raised Sniffing Muzzle */}
+      <path
+        d="M -52,-54 C -46,-84 -24,-112 0,-112 C 22,-112 34,-86 48,-76 C 62,-68 72,-92 78,-118 C 82,-134 94,-138 112,-134 C 118,-132 118,-122 106,-118 C 94,-114 90,-98 84,-74 C 78,-50 62,-38 38,-40 L -36,-42 C -48,-42 -54,-46 -52,-54 Z"
+        fill="#1B150E"
+        stroke="rgba(236, 199, 126, 0.36)"
+        strokeWidth={1.6}
+      />
+      {/* Tufted Tail */}
+      <path d="M -50,-56 Q -64,-44 -60,-28" fill="none" stroke="#1B150E" strokeWidth={4} strokeLinecap="round" />
+    </g>
+  );
+};
 
-export const Scene07Bukti2017: React.FC = () => {
+export const Scene07KompasGurun: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ch = CHAPTERS[6];
   const localSec = frame / fps;
-  const globalSec = ch.start + localSec;
 
-  const paperUrl = useProceduralSurface('cotton-paper');
-  const castIronUrl = useProceduralSurface('cast-iron');
+  const sandUrl = useProceduralSurface('desert-sand');
 
-  // Real Natural Earth World Map inside upper archival frame (x: 104..1336, y: 455..965)
-  const worldMap = useMemo(() => buildNaturalEarthMap(116, 470, 1208, 485), []);
+  const windReach = easeOutCubic(prog(localSec, 0.4, 3.8));
+  const caravanWalk = easeInOutCubic(prog(localSec, 0.2, 12.2));
 
-  const slewProg = easeOutCubic(prog(globalSec, 86.7, 89.4));
-  const specProg = easeOutExpo(prog(globalSec, 90.8, 92.4));
-  const stampProg = easeOutExpo(prog(globalSec, 93.4, 94.2));
+  // Real world-atlas Orthographic Earth inset centered on Arabian/East-African Monsoon Belt
+  const aridGlobe = useMemo(
+    () => buildOrthographicGlobe(236, 584, 96, 44 + localSec * 1.4, 16, false),
+    [Math.floor(localSec * 30)],
+  );
 
-  // Target astrometric reticle coordinates for NGC 4993
-  const targetX = 1095;
-  const targetY = 548;
+  // Marching-squares topographic sand-dune isolines
+  const duneContours = useMemo(() => {
+    const gw = 52;
+    const gh = 26;
+    const vals = new Array<number>(gw * gh);
+    for (let j = 0; j < gh; j++) {
+      for (let i = 0; i < gw; i++) {
+        const ridge = Math.sin(i * 0.22 + j * 0.14) * 0.32;
+        const n = fbm2D('s7-dune-iso', i * 0.12, j * 0.12, 3) * 0.38;
+        vals[j * gw + i] = 0.5 + ridge + n;
+      }
+    }
+    const gen = contours().size([gw, gh]).thresholds([0.28, 0.42, 0.56, 0.7]);
+    const pathGen = geoPath();
+    return gen(vals).map((c) => pathGen(c) || '');
+  }, []);
 
-  // Telescope tube elevation angle slewing from zenith (82 deg) to target (44 deg)
-  const tubeDeg = interpolate(slewProg, [0, 1], [-82, -44]);
+  const caravanBaseX = interpolate(caravanWalk, [0, 1], [235, 435]);
 
   return (
     <AbsoluteFill>
       <MatteCanvasGround
         topColor={ch.groundTop}
         bottomColor={ch.groundBottom}
-        surfaceKind="suede-slate"
-        surfaceOpacity={0.26}
-        warmLampX={54}
-        warmLampY={36}
+        surfaceKind="monsoon-slate"
+        surfaceOpacity={0.24}
+        warmLampX={72}
+        warmLampY={44}
       />
 
       <DocumentaryHeader
         eyebrow={ch.eyebrow}
-        figure={globalSec >= 95.1 ? '130 JT' : '70'}
-        unit={globalSec >= 95.1 ? 'TAHUN CAHAYA' : 'TELESKOP DUNIA'}
-        subtitle="17 AGUSTUS 2017 · KILATAN KILONOVA GW170817 DI GALAKSI NGC 4993"
+        figure="80 KM"
+        unit="KOMPAS AROMA"
+        subtitle="HEMBUSAN GEOSMIN MENUNTUN MANUSIA PURBA & UNTA KE MATA AIR"
         localSec={localSec}
-        accentColor={IDENTITY.bullion24k}
+        accentColor={IDENTITY.amberSpore}
       />
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <defs>
-          <clipPath id="s7-map-frame">
-            <rect x={104} y={455} width={1232} height={515} />
+          <clipPath id="s7-panorama">
+            <rect x={112} y={452} width={1216} height={896} />
           </clipPath>
-          <clipPath id="s7-dome-shell">
-            <path d="M 152,1355 A 168,168 0 0,1 488,1355 Z" />
+          <clipPath id="s7-dune-mask">
+            <path d="M 112,1055 Q 385,975 685,1035 T 1328,995 L 1328,1348 L 112,1348 Z" />
           </clipPath>
-          <linearGradient id="s7-spectrum-band" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#4A586E" />
-            <stop offset="28%" stopColor="#6B7E78" />
-            <stop offset="56%" stopColor="#C89B48" />
-            <stop offset="82%" stopColor="#B85C38" />
-            <stop offset="100%" stopColor="#6E2E22" />
+          <linearGradient id="s7-sky-dusk" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#1A1610" />
+            <stop offset="58%" stopColor="#262017" />
+            <stop offset="100%" stopColor="#1B2A28" />
+          </linearGradient>
+          <linearGradient id="s7-rain-shaft" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(182, 210, 210, 0.42)" />
+            <stop offset="100%" stopColor="rgba(122, 158, 115, 0.14)" />
           </linearGradient>
         </defs>
 
-        {/* ================================================================ */}
-        {/* UPPER ARCHIVAL NATURAL EARTH WORLD OBSERVATORY NETWORK MAP        */}
-        {/* ================================================================ */}
-        <g clipPath="url(#s7-map-frame)">
-          <rect x={104} y={455} width={1232} height={515} fill="#0F151C" />
-          <path d={worldMap.graticulePath} fill="none" stroke="rgba(237, 232, 221, 0.08)" strokeWidth={1} />
-          <path
-            d={worldMap.landPath}
-            fill="#27313A"
-            stroke="rgba(212, 160, 62, 0.36)"
-            strokeWidth={1.1}
-          />
+        <g clipPath="url(#s7-panorama)">
+          <rect x={112} y={452} width={1216} height={896} fill="url(#s7-sky-dusk)" />
 
-          {/* Synchronized Sightlines from Global Observatories Locking onto NGC 4993 */}
-          {GLOBAL_OBSERVATORIES.map((obs, idx) => {
-            const pt = worldMap.project(obs.lon, obs.lat);
-            if (!pt) return null;
-            const lineP = clamp01((globalSec - 86.8 - obs.delay) / 1.15);
-            const arcD = `M ${pt[0].toFixed(1)},${pt[1].toFixed(1)} Q ${(
-              (pt[0] + targetX) * 0.5
-            ).toFixed(1)},${(Math.min(pt[1], targetY) - 65).toFixed(1)} ${targetX},${targetY}`;
-            return (
-              <g key={idx}>
-                <TrimPath
-                  d={arcD}
-                  progress={lineP}
-                  stroke={IDENTITY.bullionLight}
-                  strokeWidth={1.6}
-                  opacity={0.72}
+          {/* ============================================================== */}
+          {/* FAR-RIGHT HORIZON: DISTANT MONSOON RAINSTORM & GREEN OASIS     */}
+          {/* ============================================================== */}
+          <g transform="translate(955, 515)">
+            {/* Slanted Virga / Rain Curtain Shaft */}
+            <polygon points="85,115 315,115 275,495 45,495" fill="url(#s7-rain-shaft)" />
+            {Array.from({ length: 16 }).map((_, ri) => {
+              const rx = 75 + ri * 15;
+              const u = (localSec * 0.95 + ri * 0.13) % 1;
+              return (
+                <line
+                  key={ri}
+                  x1={rx}
+                  y1={125 + u * 310}
+                  x2={rx - 10}
+                  y2={175 + u * 310}
+                  stroke={IDENTITY.rainMist}
+                  strokeWidth={1.3}
+                  opacity={0.38 * (1 - u * 0.5)}
                 />
-                <circle cx={pt[0]} cy={pt[1]} r={5.5} fill={IDENTITY.bullion24k} stroke="#FAF0CA" strokeWidth={1.5} />
-                <circle
-                  cx={pt[0]}
-                  cy={pt[1]}
-                  r={12 + Math.sin(localSec * 3 + idx) * 3}
-                  fill="none"
-                  stroke="rgba(232, 199, 119, 0.42)"
-                  strokeWidth={1.1}
-                />
-                <text
-                  x={pt[0]}
-                  y={pt[1] + 22}
-                  textAnchor="middle"
-                  fill="rgba(237, 232, 221, 0.72)"
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={12}
-                  fontWeight={600}
-                >
-                  {obs.name}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Astrometric Target Reticle Plate: Galaxy NGC 4993 Kilonova */}
-          <g transform={`translate(${targetX}, ${targetY})`}>
-            <circle cx={0} cy={0} r={58} fill="rgba(16, 20, 26, 0.88)" stroke={IDENTITY.bullionLight} strokeWidth={1.8} />
-            <circle cx={0} cy={0} r={34} fill="rgba(212, 160, 62, 0.28)" />
-            <circle cx={0} cy={0} r={11} fill="#FAF2D6" />
-            <line x1={-68} y1={0} x2={-22} y2={0} stroke={IDENTITY.bullionLight} strokeWidth={1.5} />
-            <line x1={22} y1={0} x2={68} y2={0} stroke={IDENTITY.bullionLight} strokeWidth={1.5} />
-            <line x1={0} y1={-68} x2={0} y2={-22} stroke={IDENTITY.bullionLight} strokeWidth={1.5} />
-            <line x1={0} y1={22} x2={0} y2={68} stroke={IDENTITY.bullionLight} strokeWidth={1.5} />
-            <text
-              x={-76}
-              y={-36}
-              textAnchor="end"
-              fill={IDENTITY.bullionLight}
-              fontFamily={IDENTITY.fontMono}
-              fontSize={16}
-              fontWeight={700}
-              letterSpacing="0.12em"
-            >
-              NGC 4993
-            </text>
-            <text
-              x={-76}
-              y={-14}
-              textAnchor="end"
-              fill={IDENTITY.ivoryText}
-              fontFamily={IDENTITY.fontMono}
-              fontSize={14}
-            >
-              RA 13h 09m · DEC -23°
-            </text>
+              );
+            })}
+            {/* Layered Monsoon Cumulonimbus Cloud Anvil */}
+            <path
+              d="M 28,124 C 8,124 -4,104 12,88 C 18,62 48,48 78,56 C 102,26 156,22 184,52 C 218,38 264,52 274,84 C 306,86 322,124 288,124 Z"
+              fill="#3A4C4F"
+              stroke="rgba(222, 236, 236, 0.38)"
+              strokeWidth={1.8}
+            />
           </g>
-        </g>
 
-        {/* Map Frame Border & Caption */}
-        <rect
-          x={104}
-          y={455}
-          width={1232}
-          height={515}
-          fill="none"
-          stroke="rgba(237, 232, 221, 0.28)"
-          strokeWidth={1.8}
-        />
-        <text
-          x={126}
-          y={488}
-          fill={IDENTITY.stoneText}
-          fontFamily={IDENTITY.fontMono}
-          fontSize={16}
-          fontWeight={600}
-          letterSpacing="0.16em"
-        >
-          JARINGAN LIGO · VIRGO · 70 OBSERVATORIUM OPTIK & INFRAMERAH
-        </text>
-
-        {/* ================================================================ */}
-        {/* LOWER-LEFT: ARCHITECTURAL RESEARCH OBSERVATORY CUTAWAY           */}
-        {/* ================================================================ */}
-        <g>
-          {/* Rocky Andean Mountain Summit Silhouette */}
-          <polygon
-            points="104,1645 148,1485 235,1468 415,1468 502,1492 536,1645"
-            fill="#1D2228"
-            stroke="rgba(237,232,221,0.22)"
-            strokeWidth={1.5}
+          {/* Back Sand Dune Ridge */}
+          <path
+            d="M 112,1022 Q 445,932 775,998 T 1328,965 L 1328,1120 L 112,1120 Z"
+            fill="#4B3823"
           />
 
-          {/* Cylindrical Concrete Observatory Pier */}
-          <rect
-            x={152}
-            y={1355}
-            width={336}
-            height={115}
-            fill="#262C34"
-            stroke="rgba(237,232,221,0.34)"
+          {/* Foreground Hillshaded Aeolian Sand Dunes + Topographic Isolines */}
+          <g clipPath="url(#s7-dune-mask)">
+            <rect x={112} y={965} width={1216} height={385} fill="#6B4F31" />
+            {sandUrl && (
+              <image
+                href={sandUrl}
+                x={112}
+                y={965}
+                width={1216}
+                height={385}
+                preserveAspectRatio="none"
+                opacity={0.78}
+              />
+            )}
+            <g transform="translate(112, 965) scale(23.4, 14.8)" opacity={0.22}>
+              {duneContours.map((cd, idx) => (
+                <path key={idx} d={cd} fill="none" stroke="#F0DFC2" strokeWidth={0.07} />
+              ))}
+            </g>
+          </g>
+
+          {/* Verdant Oasis Basin & Sprouting Desert Flora on Far Right */}
+          <ellipse
+            cx={1135}
+            cy={1032}
+            rx={148}
+            ry={26}
+            fill="#2E4C46"
+            stroke={IDENTITY.mossLight}
             strokeWidth={1.8}
           />
-          {/* Control Room Warm Slit Windows */}
-          {[188, 252, 376, 430].map((wx, i) => (
-            <rect key={i} x={wx} y={1395} width={28} height={18} fill="#D9A84E" opacity={0.85} />
+          {[1025, 1075, 1195, 1242].map((px, pi) => (
+            <g key={pi} transform={`translate(${px}, 1024)`}>
+              <path d="M 0,0 Q -8,-28 -22,-42 M 0,0 Q 2,-34 0,-50 M 0,0 Q 10,-26 24,-38" fill="none" stroke={IDENTITY.mossLight} strokeWidth={2.8} strokeLinecap="round" />
+            </g>
+          ))}
+          <text
+            x={1135}
+            y={1092}
+            textAnchor="middle"
+            fill={IDENTITY.mossLight}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={16}
+            fontWeight={700}
+            letterSpacing="0.14em"
+          >
+            MATA AIR & TANAH SUBUR
+          </text>
+
+          {/* ============================================================== */}
+          {/* LONG-RANGE GEOSMIN WIND PLUMES TRAVELING FROM OASIS TO CARAVAN */}
+          {/* ============================================================== */}
+          {[
+            `M 1085,935 C 885,845 695,935 ${caravanBaseX + 185},895`,
+            `M 1095,885 C 875,785 685,882 ${caravanBaseX + 195},858`,
+            `M 1075,975 C 895,905 705,982 ${caravanBaseX + 175},928`,
+          ].map((wd, wi) => (
+            <TrimPath
+              key={wi}
+              d={wd}
+              progress={windReach}
+              stroke={wi === 1 ? IDENTITY.mossLight : IDENTITY.amberLight}
+              strokeWidth={3}
+              strokeDasharray="14 10"
+              opacity={0.82}
+            />
           ))}
 
-          {/* Brushed Steel Geodesic Dome Left Half + Cutaway Interior Right Half */}
-          <path d="M 152,1355 A 168,168 0 0,1 488,1355 Z" fill="#13181E" stroke="rgba(237,232,221,0.4)" strokeWidth={2} />
-          {castIronUrl && (
-            <g clipPath="url(#s7-dome-shell)" opacity={0.45}>
-              <image href={castIronUrl} x={148} y={1180} width={172} height={180} preserveAspectRatio="none" />
+          {/* Desert Caravan: Ancestral Human Tracker + Two Dromedary Camels */}
+          <g transform={`translate(${caravanBaseX}, 1036)`}>
+            {/* Trailing Camel */}
+            <DromedaryCamelSilhouette
+              x={-95}
+              y={10}
+              scale={0.78}
+              stridePhase={localSec * 4.2 + 1.4}
+            />
+            {/* Lead Camel Sniffing Upwind */}
+            <DromedaryCamelSilhouette
+              x={48}
+              y={0}
+              scale={0.96}
+              stridePhase={localSec * 4.2}
+            />
+            {/* Ancestral Human Guide With Walking Staff */}
+            <g transform="translate(178, 4)">
+              <circle cx={0} cy={-74} r={8.5} fill="#1B150E" stroke="rgba(236,199,126,0.4)" strokeWidth={1.2} />
+              <path
+                d="M -9,-62 L 9,-62 L 13,-28 L 7,-28 L 10,0 L 2,0 L -1,-26 L -6,0 L -14,0 L -8,-28 L -13,-28 Z"
+                fill="#1B150E"
+              />
+              <line x1={16} y1={-82} x2={22} y2={0} stroke={IDENTITY.amberLight} strokeWidth={2.4} />
             </g>
-          )}
-          {/* Dome Structural Arch Ribs */}
-          <path d="M 192,1355 A 128,168 0 0,1 320,1187" fill="none" stroke="rgba(237,232,221,0.28)" strokeWidth={1.5} />
-          <line x1={320} y1={1187} x2={320} y2={1355} stroke="rgba(237,232,221,0.35)" strokeWidth={2} />
-
-          {/* Internal Azimuth Fork Pier & Slewing Serrurier Truss Optical Telescope */}
-          <rect x={302} y={1312} width={36} height={43} fill="#464E56" />
-          <g transform={`translate(320, 1312) rotate(${tubeDeg + 90})`}>
-            {/* Primary Mirror Cell */}
-            <rect x={-34} y={-12} width={68} height={24} fill="#5C6670" stroke="#EDE8DD" strokeWidth={1.5} />
-            {/* Serrurier Steel Truss Tube */}
-            <rect x={-26} y={-142} width={52} height={130} fill="rgba(30, 36, 44, 0.72)" stroke="#C2C9CF" strokeWidth={1.8} />
-            <polyline
-              points="-26,-12 26,-56 -26,-98 26,-142"
-              fill="none"
-              stroke="rgba(237,232,221,0.45)"
-              strokeWidth={1.4}
-            />
-            <polyline
-              points="26,-12 -26,-56 26,-98 -26,-142"
-              fill="none"
-              stroke="rgba(237,232,221,0.45)"
-              strokeWidth={1.4}
-            />
-            {/* Secondary Mirror Baffle & Optical Beam Cone */}
-            <line x1={-30} y1={-142} x2={30} y2={-142} stroke={IDENTITY.bullionLight} strokeWidth={3} />
-            <polygon
-              points="-24,-142 -68,-380 68,-380 24,-142"
-              fill="rgba(232, 199, 119, 0.11)"
-            />
           </g>
-          <circle cx={320} cy={1312} r={9} fill={IDENTITY.bullion24k} stroke="#FAF0CA" strokeWidth={1.8} />
+
+          {/* ============================================================== */}
+          {/* TOP-LEFT INSET: REAL WORLD-ATLAS MONSOON BELT GLOBE + COMPASS  */}
+          {/* ============================================================== */}
+          <g opacity={easeOutCubic(prog(localSec, 0.5, 1.4))}>
+            <circle cx={236} cy={584} r={96} fill="#121D20" stroke="rgba(236,199,126,0.42)" strokeWidth={2} />
+            <path d={aridGlobe.graticulePath} fill="none" stroke="rgba(207,220,217,0.12)" strokeWidth={0.8} />
+            <path d={aridGlobe.landPath} fill="#465744" stroke="rgba(236,199,126,0.34)" strokeWidth={0.9} />
+            {/* Engraved Compass Rose Cardinal Cross */}
+            <g transform="translate(415, 584)">
+              <circle cx={0} cy={0} r={48} fill="rgba(16, 20, 18, 0.85)" stroke={IDENTITY.amberSpore} strokeWidth={1.6} />
+              <polygon points="0,-40 7,-7 0,0 -7,-7" fill={IDENTITY.amberLight} />
+              <polygon points="0,40 6,7 0,0 -6,7" fill={IDENTITY.stoneText} />
+              <polygon points="40,0 7,6 0,0 7,-6" fill={IDENTITY.mossLight} />
+              <polygon points="-40,0 -7,6 0,0 -7,-6" fill={IDENTITY.stoneText} />
+              <text x={0} y={70} textAnchor="middle" fill={IDENTITY.amberLight} fontFamily={IDENTITY.fontMono} fontSize={14} fontWeight={700} letterSpacing="0.14em">
+                KOMPAS HIDUP
+              </text>
+            </g>
+          </g>
         </g>
-      </svg>
 
-      {/* ================================================================ */}
-      {/* LOWER-RIGHT: TILTED ARCHIVAL SPECTROGRAPH LOG CARD               */}
-      {/* ================================================================ */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 558,
-          top: 1032,
-          width: 776,
-          padding: '26px 32px 88px',
-          backgroundColor: IDENTITY.paperCream,
-          backgroundImage: paperUrl ? `url(${paperUrl})` : undefined,
-          backgroundSize: 'cover',
-          border: '1.5px solid rgba(46, 36, 24, 0.38)',
-          boxShadow: '0 24px 46px rgba(0, 0, 0, 0.56)',
-          transform: `translateY(${(1 - specProg) * 44}px) rotate(1.3deg)`,
-          opacity: clamp01(specProg * 1.5),
-          boxSizing: 'border-box',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            borderBottom: '2px solid #251F18',
-            paddingBottom: 8,
-            marginBottom: 14,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: IDENTITY.fontEditorial,
-              fontSize: 24,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              color: IDENTITY.paperInk,
-            }}
-          >
-            SPEKTROSKOPI · GW170817
-          </span>
-          <span
-            style={{
-              fontFamily: IDENTITY.fontMono,
-              fontSize: 17,
-              fontWeight: 600,
-              color: IDENTITY.paperMuted,
-            }}
-          >
-            VLT / X-SHOOTER
-          </span>
-        </div>
+        <rect
+          x={112}
+          y={452}
+          width={1216}
+          height={896}
+          fill="none"
+          stroke="rgba(216, 161, 72, 0.34)"
+          strokeWidth={2}
+        />
 
-        <div
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 16,
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            color: IDENTITY.paperMuted,
-            marginBottom: 8,
-          }}
-        >
-          GARIS SERAPAN UNSUR BERAT (700 – 1.800 nm)
-        </div>
-
-        {/* Muted Non-Neon Optical Absorption Spectrum Strip */}
-        <svg width={696} height={82} style={{ display: 'block', marginBottom: 14 }}>
+        {/* Bottom Evolutionary Survival Plaque */}
+        <g transform="translate(112, 1402)">
           <rect
             x={0}
             y={0}
-            width={696}
-            height={62}
-            fill="url(#s7-spectrum-band)"
-            stroke="#251F18"
-            strokeWidth={1.5}
+            width={1216}
+            height={196}
+            fill="rgba(19, 18, 15, 0.94)"
+            stroke="rgba(168, 196, 160, 0.36)"
+            strokeWidth={1.8}
           />
-          {SPECTRUM_LINES.map((lx, i) => (
-            <line
-              key={i}
-              x1={lx * 1.18}
-              y1={0}
-              x2={lx * 1.18}
-              y2={62}
-              stroke="#191510"
-              strokeWidth={i % 3 === 0 ? 4 : 2}
-              opacity={0.85}
-            />
-          ))}
-          <text x={4} y={79} fill={IDENTITY.paperMuted} fontFamily={IDENTITY.fontMono} fontSize={13}>
-            700 nm
-          </text>
-          <text x={348} y={79} textAnchor="middle" fill={IDENTITY.paperInk} fontFamily={IDENTITY.fontMono} fontSize={13} fontWeight={700}>
-            JEJAK EMAS (79 Au) & PLATINA (78 Pt)
-          </text>
-          <text x={692} y={79} textAnchor="end" fill={IDENTITY.paperMuted} fontFamily={IDENTITY.fontMono} fontSize={13}>
-            1.800 nm
-          </text>
-        </svg>
-
-        {[
-          { k: 'SUMBER SINYAL', v: 'TABRAKAN 2 BINTANG NEUTRON' },
-          { k: 'JARAK GALAKSI', v: '130 JUTA TAHUN CAHAYA' },
-          { k: 'UNSUR BARU', v: 'EMAS (Au) & PLATINA (Pt)' },
-        ].map((row, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '7px 0',
-              borderBottom: idx < 2 ? `1px dashed ${IDENTITY.paperRule}` : 'none',
-              fontFamily: IDENTITY.fontMono,
-              fontSize: 18,
-            }}
+          <text
+            x={46}
+            y={56}
+            fill={IDENTITY.mossLight}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={17}
+            fontWeight={700}
+            letterSpacing="0.16em"
           >
-            <span style={{ color: IDENTITY.paperMuted, fontWeight: 600 }}>{row.k}</span>
-            <span style={{ color: IDENTITY.paperInk, fontWeight: 700 }}>{row.v}</span>
-          </div>
-        ))}
-
-        <div
-          style={{
-            position: 'absolute',
-            left: 32,
-            bottom: 24,
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            color: IDENTITY.paperMuted,
-          }}
-        >
-          REF: ESO-VLT · LIGO-VIRGO
-        </div>
-
-        {stampProg > 0.02 && (
-          <div
-            style={{
-              position: 'absolute',
-              right: 28,
-              bottom: 16,
-              padding: '6px 16px',
-              border: `3.5px solid ${IDENTITY.sagePatina}`,
-              color: IDENTITY.sagePatina,
-              backgroundColor: 'rgba(239, 231, 214, 0.94)',
-              fontFamily: IDENTITY.fontEditorial,
-              fontSize: 25,
-              fontWeight: 700,
-              letterSpacing: '0.16em',
-              transform: `rotate(-5.5deg) scale(${interpolate(stampProg, [0, 1], [1.6, 1])})`,
-            }}
+            WARISAN SELEKSI ALAM MAMALIA DARAT
+          </text>
+          <text
+            x={46}
+            y={114}
+            fill={IDENTITY.ivoryText}
+            fontFamily={IDENTITY.fontEditorial}
+            fontSize={38}
+            fontWeight={700}
+            letterSpacing="0.04em"
           >
-            BUKTI LANGSUNG 2017
-          </div>
-        )}
-      </div>
+            BAU GEOSMIN = PETA MENUJU AIR & TANAMAN HIJAU
+          </text>
+          <text
+            x={46}
+            y={156}
+            fill={IDENTITY.stoneText}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={16}
+            letterSpacing="0.1em"
+          >
+            OTAK KITA MENGAITKAN AROMA BAKTERI TANAH DENGAN RASA AMAN & LEGA
+          </text>
+        </g>
+      </svg>
     </AbsoluteFill>
   );
 };
 
 // ============================================================================
-// SCENE 08 — FOSIL BINTANG MATI & CTA KOMENTAR NAYSI (99.502s – 112.267s)
+// SCENE 08 — PARADOKS IKAN "BAU TANAH" & CTA KOMENTAR (102.270s – 116.556s)
 // ============================================================================
 
-export const Scene08FosilBintang: React.FC = () => {
+export const Scene08ParadoksGeosmin: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ch = CHAPTERS[7];
   const localSec = frame / fps;
   const globalSec = ch.start + localSec;
 
-  const voronoiGoldUrl = useProceduralSurface('voronoi-gold');
-  const stellarUrl = useProceduralSurface('stellar-convection');
+  const teakUrl = useProceduralSurface('teak-wood');
 
-  const handSp = spring({ frame, fps, config: { damping: 18, stiffness: 78, mass: 1.0 } });
-  const floatY = Math.sin(localSec * 1.45) * 10;
+  const stageSp = spring({ frame, fps, config: { damping: 18, stiffness: 80, mass: 1.0 } });
 
-  // Interactive Naysi comment bar entrance during final sentence (107.4s .. 112.27s)
-  const ctaProg = easeOutExpo(prog(globalSec, 107.35, 108.15));
-  const sampleComment = 'Cincin emas di jari manis';
-  const typedLen = Math.floor(clamp01((globalSec - 108.05) / 1.95) * sampleComment.length);
-  const cursorVisible = Math.floor(localSec * 2.5) % 2 === 0;
+  // Narrator asks final question at 110.16s ("Saat gerimis pertama turun, kamu tim langsung keluar...")
+  const ctaProg = easeOutExpo(prog(globalSec, 110.05, 110.85));
+  const sampleComment = 'Tim langsung keluar teras hirup bau gerimis!';
+  const typedLen = Math.floor(clamp01((globalSec - 110.7) / 2.4) * sampleComment.length);
+  const cursorOn = Math.floor(localSec * 2.5) % 2 === 0;
 
   return (
     <AbsoluteFill>
       <MatteCanvasGround
         topColor={ch.groundTop}
         bottomColor={ch.groundBottom}
-        surfaceKind="walnut-grain"
+        surfaceKind="teak-wood"
         surfaceOpacity={0.34}
         warmLampX={50}
         warmLampY={42}
@@ -477,161 +386,323 @@ export const Scene08FosilBintang: React.FC = () => {
 
       <DocumentaryHeader
         eyebrow={ch.eyebrow}
-        figure="> 4,6"
-        unit="MILIAR THN"
-        subtitle="FOSIL BINTANG MATI · LEBIH TUA DARI MATAHARI & BUMI"
+        figure="1 ZAT"
+        unit="DUA NASIB"
+        subtitle="DIBENCI LIDAH PADA IKAN AIR TAWAR · DIPUJA HIDUNG SAAT HUJAN"
         localSec={localSec}
-        accentColor={IDENTITY.bullion24k}
+        accentColor={IDENTITY.amberSpore}
       />
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <defs>
-          <clipPath id="s8-sun-medallion">
-            <circle cx={255} cy={625} r={68} />
+          <clipPath id="s8-window-glass">
+            <rect x={806} y={564} width={452} height={412} />
           </clipPath>
-          <linearGradient id="s8-skin-palm" x1="0" y1="0" x2="0.2" y2="1">
-            <stop offset="0%" stopColor="#DDA57E" />
-            <stop offset="52%" stopColor="#B97B55" />
-            <stop offset="100%" stopColor="#7C4B30" />
-          </linearGradient>
-          <linearGradient id="s8-skin-finger" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E6B28D" />
-            <stop offset="100%" stopColor="#9C6240" />
+          <linearGradient id="s8-fish-glaze" x1="0" y1="0" x2="1" y2="0.6">
+            <stop offset="0%" stopColor="#8A5732" />
+            <stop offset="52%" stopColor="#5C371E" />
+            <stop offset="100%" stopColor="#382010" />
           </linearGradient>
         </defs>
 
-        {/* Comparative Timeline Medallions: Sun (4.6B yrs) vs Gold Atom (>4.6B yrs) */}
-        <g opacity={easeOutCubic(clamp01(localSec / 0.85))}>
-          <circle cx={255} cy={625} r={68} fill="#B85A28" />
-          {stellarUrl && (
-            <g clipPath="url(#s8-sun-medallion)">
-              <image href={stellarUrl} x={182} y={552} width={146} height={146} />
-            </g>
-          )}
-          <circle cx={255} cy={625} r={68} fill="none" stroke="rgba(237,232,221,0.4)" strokeWidth={2} />
-          <text x={255} y={722} textAnchor="middle" fill={IDENTITY.ivoryText} fontFamily={IDENTITY.fontMono} fontSize={16} fontWeight={600} letterSpacing="0.12em">
-            MATAHARI
-          </text>
-          <text x={255} y={744} textAnchor="middle" fill={IDENTITY.stoneText} fontFamily={IDENTITY.fontMono} fontSize={14}>
-            4,6 MILIAR THN
-          </text>
-
-          <FacetedGoldNugget
-            cx={1185}
-            cy={625}
-            size={54}
-            goldTexUrl={voronoiGoldUrl}
-            rotation={localSec * 9}
-          />
-          <text x={1185} y={722} textAnchor="middle" fill={IDENTITY.bullionLight} fontFamily={IDENTITY.fontMono} fontSize={16} fontWeight={700} letterSpacing="0.12em">
-            INTI EMASMU
-          </text>
-          <text x={1185} y={744} textAnchor="middle" fill={IDENTITY.stoneText} fontFamily={IDENTITY.fontMono} fontSize={14}>
-            LAHIR SEBELUMNYA
-          </text>
-        </g>
-
-        {/* Rotating Engraved Brass Astrolabe & Guilloché Halo */}
-        <GuillocheRosette
-          cx={720}
-          cy={835 + floatY}
-          R={315}
-          r={68}
-          d={98}
-          stroke="rgba(212, 160, 62, 0.22)"
-          rotationDeg={localSec * 5.5}
-        />
-        <circle
-          cx={720}
-          cy={835 + floatY}
-          r={335}
-          fill="none"
-          stroke="rgba(237, 232, 221, 0.16)"
-          strokeWidth={1.3}
-          strokeDasharray="3 9"
-        />
-
-        {/* Floating Three-Quarter 24K Gold Heirloom Band */}
-        <g transform={`translate(0, ${floatY})`}>
-          <Illustrated24KGoldRing
-            cx={720}
-            cy={815}
-            rx={232}
-            ry={82}
-            bandHeight={78}
-            goldTexUrl={voronoiGoldUrl}
-            shimmerPhase={localSec * 1.5}
-          />
-        </g>
-
-        {/* Refined 2D Editorial Illustrated Open Human Hand & Tailored Cuff */}
         <g
-          transform={`translate(0, ${(1 - handSp) * 65})`}
-          opacity={clamp01(handSp * 1.25)}
+          transform={`translate(0, ${(1 - stageSp) * 45})`}
+          opacity={clamp01(stageSp * 1.3)}
         >
-          {/* Soft Shadow Cast by Floating Gold Ring onto Upturned Palm */}
-          <ellipse cx={730} cy={1145} rx={155} ry={22} fill="rgba(0, 0, 0, 0.36)" />
+          {/* ============================================================== */}
+          {/* LEFT PANEL: FRESHWATER FISH ("BAU TANAH" ON LELE & GURAME)     */}
+          {/* ============================================================== */}
+          <g transform="translate(104, 468)">
+            <rect
+              x={0}
+              y={0}
+              width={588}
+              height={768}
+              fill="rgba(22, 18, 15, 0.92)"
+              stroke="rgba(182, 99, 67, 0.48)"
+              strokeWidth={2}
+            />
+            {teakUrl && (
+              <image
+                href={teakUrl}
+                x={0}
+                y={0}
+                width={588}
+                height={768}
+                preserveAspectRatio="none"
+                opacity={0.18}
+              />
+            )}
 
-          {/* Back Articulated Fingers (Ring & Little Finger) for True 2D Depth */}
-          <path
-            d="M 790,1222 C 885,1208 978,1194 1046,1188 C 1072,1186 1084,1208 1062,1222 C 998,1246 896,1264 795,1272 Z"
-            fill="#8D5638"
-          />
-          <path
-            d="M 775,1194 C 892,1174 1004,1158 1084,1150 C 1112,1148 1122,1174 1096,1189 C 1022,1216 908,1236 785,1246 Z"
-            fill="#A16745"
-          />
+            <rect x={36} y={34} width={228} height={38} fill={IDENTITY.stampRust} />
+            <text
+              x={150}
+              y={59}
+              textAnchor="middle"
+              fill={IDENTITY.ivoryText}
+              fontFamily={IDENTITY.fontMono}
+              fontSize={16}
+              fontWeight={700}
+              letterSpacing="0.14em"
+            >
+              DI LIDAH: DIBENCI
+            </text>
 
-          {/* Middle & Index Fingers */}
-          <path
-            d="M 745,1168 C 874,1144 998,1126 1092,1118 C 1120,1116 1130,1144 1102,1160 C 1018,1188 892,1208 758,1220 Z"
-            fill="url(#s8-skin-finger)"
-          />
+            {/* Handcrafted Ceramic Platter */}
+            <ellipse cx={294} cy={386} rx={232} ry={148} fill="rgba(0,0,0,0.45)" />
+            <ellipse
+              cx={294}
+              cy={376}
+              rx={226}
+              ry={142}
+              fill="#EAE2D2"
+              stroke="#B8AE9B"
+              strokeWidth={4}
+            />
+            <ellipse
+              cx={294}
+              cy={376}
+              rx={186}
+              ry={112}
+              fill="#DFD5C2"
+              stroke="rgba(90, 76, 56, 0.28)"
+              strokeWidth={1.6}
+            />
 
-          {/* Main Anatomical Palm, Thenar Thumb Mound & Forearm */}
-          <path
-            d="M 332,1345 L 448,1236 C 504,1184 568,1148 648,1134 C 742,1118 878,1104 996,1094 C 1024,1092 1034,1120 1006,1134 C 920,1162 818,1178 742,1190 C 818,1194 934,1198 1018,1206 C 1044,1210 1042,1238 1012,1246 C 908,1274 786,1298 664,1312 C 566,1324 476,1342 396,1372 Z"
-            fill="url(#s8-skin-palm)"
-            stroke="rgba(255, 228, 202, 0.28)"
-            strokeWidth={1.6}
-          />
+            {/* Garnish: Fresh Banana Leaf & Calamansi Lime Half */}
+            <ellipse cx={275} cy={382} rx={152} ry={78} transform="rotate(-8, 275, 382)" fill="#4D6B43" />
+            <circle cx={418} cy={432} r={24} fill="#8FA84E" stroke="#4D6326" strokeWidth={2} />
+            <circle cx={418} cy={432} r={18} fill="#D8C85C" />
 
-          {/* Articulated Opposable Thumb Resting Above Palm */}
-          <path
-            d="M 488,1222 C 542,1164 616,1122 698,1108 C 726,1104 736,1132 710,1146 C 650,1176 594,1212 548,1254 Z"
-            fill="#DFAA84"
-            stroke="rgba(104, 58, 34, 0.35)"
-            strokeWidth={1.4}
-          />
-          {/* Subtle Warm Fingernail Highlights on Thumb & Fingertips */}
-          <ellipse cx={702} cy={1122} rx={13} ry={6} transform="rotate(-14, 702, 1122)" fill="rgba(248, 224, 204, 0.42)" />
-          <ellipse cx={1004} cy={1112} rx={14} ry={5.5} transform="rotate(-6, 1004, 1112)" fill="rgba(248, 224, 204, 0.38)" />
-          <ellipse cx={1102} cy={1136} rx={14} ry={5.5} transform="rotate(-5, 1102, 1136)" fill="rgba(248, 224, 204, 0.34)" />
-          <ellipse cx={1094} cy={1168} rx={13} ry={5} transform="rotate(-4, 1094, 1168)" fill="rgba(248, 224, 204, 0.28)" />
+            {/* Illustrated Whole Freshwater Gurame / Lele With Characteristic Barbels */}
+            <g transform="translate(286, 374) rotate(-9)">
+              {/* Caudal Fan Tail */}
+              <path
+                d="M -138,4 L -192,-38 C -182,-8 -182,16 -188,42 Z"
+                fill="#4D2E19"
+                stroke="#29170B"
+                strokeWidth={1.6}
+              />
+              {/* Dorsal & Ventral Fins */}
+              <path d="M -68,-40 Q 0,-66 64,-34 Z" fill="#633C21" />
+              <path d="M -52,38 Q 8,58 56,34 Z" fill="#52311A" />
+              {/* Roasted Whole Fish Body */}
+              <path
+                d="M -146,4 C -96,-52 38,-56 138,-14 C 164,-2 164,14 138,24 C 38,56 -96,48 -146,4 Z"
+                fill="url(#s8-fish-glaze)"
+                stroke="#2B180B"
+                strokeWidth={2}
+              />
+              {/* Diagonal Grill Score Marks */}
+              {[-62, -22, 18, 58].map((gx, gi) => (
+                <line
+                  key={gi}
+                  x1={gx}
+                  y1={-28}
+                  x2={gx - 18}
+                  y2={28}
+                  stroke="rgba(32, 16, 6, 0.65)"
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                />
+              ))}
+              <circle cx={116} cy={-4} r={5.5} fill="#EAE2D2" />
+              <circle cx={117} cy={-4} r={2.8} fill="#1A120B" />
+              {/* Characteristic Lele / Freshwater Whisker Barbels */}
+              <path
+                d="M 152,2 C 178,-12 198,-8 210,6 M 150,10 C 176,22 196,26 212,18"
+                fill="none"
+                stroke="#3B2212"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+              />
+            </g>
 
-          {/* Subtle Engraved Woodcut Palmar & Knuckle Crease Lines */}
-          <path
-            d="M 556,1236 Q 668,1212 778,1218 M 595,1268 Q 710,1252 835,1254 M 886,1112 Q 892,1126 888,1138 M 916,1204 Q 922,1218 918,1232"
+            {/* Rising Muddy-Flavor Geosmin Vapor Wisps */}
+            {[-55, 0, 55].map((vx, vi) => {
+              const shift = Math.sin(localSec * 2 + vi) * 8;
+              return (
+                <path
+                  key={vi}
+                  d={`M ${294 + vx},258 C ${282 + vx + shift},215 ${308 + vx - shift},178 ${294 + vx},138`}
+                  fill="none"
+                  stroke="rgba(182, 132, 88, 0.55)"
+                  strokeWidth={2.6}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+
+            <text
+              x={294}
+              y={628}
+              textAnchor="middle"
+              fill={IDENTITY.ivoryText}
+              fontFamily={IDENTITY.fontEditorial}
+              fontSize={36}
+              fontWeight={700}
+              letterSpacing="0.04em"
+            >
+              IKAN LELE & GURAME
+            </text>
+            <text
+              x={294}
+              y={668}
+              textAnchor="middle"
+              fill={IDENTITY.lateriteClay}
+              fontFamily={IDENTITY.fontMono}
+              fontSize={17}
+              fontWeight={700}
+              letterSpacing="0.12em"
+            >
+              SENSASI "BAU TANAH / LUMPUR"
+            </text>
+            <text
+              x={294}
+              y={704}
+              textAnchor="middle"
+              fill={IDENTITY.stoneText}
+              fontFamily={IDENTITY.fontMono}
+              fontSize={14}
+              letterSpacing="0.08em"
+            >
+              RESEPTOR RASA MENOLAK GEOSMIN DI AIR
+            </text>
+          </g>
+
+          {/* ============================================================== */}
+          {/* RIGHT PANEL: OPEN WOODEN WINDOW & TROPICAL EVENING DRIZZLE     */}
+          {/* ============================================================== */}
+          <g transform="translate(748, 468)">
+            <rect
+              x={0}
+              y={0}
+              width={588}
+              height={768}
+              fill="rgba(16, 22, 20, 0.92)"
+              stroke="rgba(122, 158, 115, 0.48)"
+              strokeWidth={2}
+            />
+            <rect x={36} y={34} width={228} height={38} fill={IDENTITY.mossDeep} />
+            <text
+              x={150}
+              y={59}
+              textAnchor="middle"
+              fill={IDENTITY.ivoryText}
+              fontFamily={IDENTITY.fontMono}
+              fontSize={16}
+              fontWeight={700}
+              letterSpacing="0.14em"
+            >
+              DI HIDUNG: DIPUJA
+            </text>
+          </g>
+
+          {/* Tropical Rain View Through Open Teak Casement Window */}
+          <g clipPath="url(#s8-window-glass)">
+            <rect x={806} y={564} width={452} height={412} fill="#142324" />
+            {/* Lush Wet Tropical Foliage Outside Window */}
+            <path
+              d="M 806,976 C 835,882 895,846 968,876 C 995,818 1075,808 1132,864 C 1178,832 1234,858 1258,912 L 1258,976 Z"
+              fill="#2A4637"
+            />
+            <path
+              d="M 835,976 Q 892,895 954,918 Q 1036,862 1118,915 Q 1185,884 1248,976 Z"
+              fill="#3F664D"
+            />
+            {/* Falling Silver Evening Drizzle Outside */}
+            {Array.from({ length: 22 }).map((_, ri) => {
+              const u = (localSec * 0.88 + ri * 0.09) % 1;
+              const rx = 825 + (ri * 47) % 420;
+              const ry = 568 + u * 360;
+              return (
+                <line
+                  key={ri}
+                  x1={rx}
+                  y1={ry}
+                  x2={rx - 8}
+                  y2={ry + 38}
+                  stroke={IDENTITY.rainMist}
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  opacity={0.46}
+                />
+              );
+            })}
+            {/* Fragrant Petrichor Breeze Entering Through Open Window */}
+            {[
+              'M 1185,845 C 1095,795 995,855 865,785',
+              'M 1205,785 C 1105,735 1005,795 875,725',
+            ].map((bd, bi) => (
+              <TrimPath
+                key={bi}
+                d={bd}
+                progress={clamp01(localSec / 2.2)}
+                stroke={bi === 0 ? IDENTITY.amberLight : IDENTITY.mossLight}
+                strokeWidth={2.8}
+                strokeDasharray="10 8"
+              />
+            ))}
+          </g>
+
+          {/* Handcrafted Wooden Window Frame & Louvered Shutters */}
+          <rect
+            x={806}
+            y={564}
+            width={452}
+            height={412}
             fill="none"
-            stroke="rgba(92, 48, 26, 0.36)"
-            strokeWidth={1.8}
-            strokeLinecap="round"
+            stroke="#7B5434"
+            strokeWidth={14}
           />
+          <line x1={1032} y1={564} x2={1032} y2={976} stroke="#634227" strokeWidth={8} />
+          <line x1={784} y1={982} x2={1280} y2={982} stroke="#966A45" strokeWidth={12} />
 
-          {/* Crisp Cream Shirt Cuff & Tailored Charcoal Jacket Sleeve */}
-          <polygon
-            points="318,1315 352,1292 426,1374 390,1398"
-            fill={IDENTITY.paperCream}
-            stroke="#2B241C"
-            strokeWidth={1.5}
+          <text
+            x={1042}
+            y={1096}
+            textAnchor="middle"
+            fill={IDENTITY.ivoryText}
+            fontFamily={IDENTITY.fontEditorial}
+            fontSize={36}
+            fontWeight={700}
+            letterSpacing="0.04em"
+          >
+            GERIMIS SORE HARI
+          </text>
+          <text
+            x={1042}
+            y={1136}
+            textAnchor="middle"
+            fill={IDENTITY.mossLight}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={17}
+            fontWeight={700}
+            letterSpacing="0.12em"
+          >
+            AROMA SEGAR & MENENANGKAN
+          </text>
+          <text
+            x={1042}
+            y={1172}
+            textAnchor="middle"
+            fill={IDENTITY.stoneText}
+            fontFamily={IDENTITY.fontMono}
+            fontSize={14}
+            letterSpacing="0.08em"
+          >
+            HIDUNG MEMUJA GEOSMIN DI UDARA
+          </text>
+
+          {/* ============================================================== */}
+          {/* CENTER BRIDGING MEDALLION: IDENTICAL GEOSMIN C12H22O MOLECULE  */}
+          {/* ============================================================== */}
+          <GeosminBrassMedallion
+            cx={720}
+            cy={848}
+            radius={92}
+            rotationDeg={Math.sin(localSec * 0.9) * 4}
           />
-          <polygon
-            points="212,1388 324,1308 402,1396 278,1448"
-            fill="#1E201D"
-            stroke="rgba(237, 232, 221, 0.26)"
-            strokeWidth={1.8}
-          />
-          <circle cx={326} cy={1366} r={5.5} fill={IDENTITY.bullion24k} />
         </g>
       </svg>
 
@@ -640,14 +711,14 @@ export const Scene08FosilBintang: React.FC = () => {
         <div
           style={{
             position: 'absolute',
-            left: 148,
-            right: 148,
-            top: 1505,
+            left: 132,
+            right: 132,
+            top: 1445,
             height: 118,
             borderRadius: 59,
-            backgroundColor: 'rgba(20, 19, 17, 0.92)',
-            border: '1.6px solid rgba(212, 160, 62, 0.38)',
-            boxShadow: '0 22px 46px rgba(0, 0, 0, 0.58)',
+            backgroundColor: 'rgba(18, 21, 19, 0.94)',
+            border: '1.8px solid rgba(216, 161, 72, 0.44)',
+            boxShadow: '0 22px 46px rgba(0, 0, 0, 0.6)',
             display: 'flex',
             alignItems: 'center',
             padding: '0 22px',
@@ -660,7 +731,7 @@ export const Scene08FosilBintang: React.FC = () => {
               width: 74,
               height: 74,
               borderRadius: '50%',
-              background: `linear-gradient(135deg, ${IDENTITY.terracottaWarm} 0%, ${IDENTITY.terracottaStamp} 100%)`,
+              background: `linear-gradient(135deg, ${IDENTITY.mossSage} 0%, ${IDENTITY.mossDeep} 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -679,42 +750,42 @@ export const Scene08FosilBintang: React.FC = () => {
             style={{
               flex: 1,
               fontFamily: IDENTITY.fontBody,
-              fontSize: 33,
+              fontSize: 28,
               fontWeight: 600,
               color: IDENTITY.ivoryText,
               letterSpacing: '-0.01em',
-              display: 'flex',
-              alignItems: 'center',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
             }}
           >
-            <span>{sampleComment.slice(0, typedLen)}</span>
+            {sampleComment.slice(0, typedLen)}
             <span
               style={{
                 display: 'inline-block',
-                width: 3.5,
-                height: 36,
+                width: 3,
+                height: 30,
+                backgroundColor: IDENTITY.amberSpore,
                 marginLeft: 4,
-                backgroundColor: IDENTITY.bullion24k,
-                opacity: cursorVisible ? 1 : 0,
+                verticalAlign: 'middle',
+                opacity: cursorOn ? 1 : 0,
               }}
             />
           </div>
 
           <div
             style={{
-              width: 68,
-              height: 68,
+              width: 66,
+              height: 66,
               borderRadius: '50%',
-              backgroundColor: 'rgba(237, 232, 221, 0.08)',
-              border: '1px solid rgba(237, 232, 221, 0.2)',
+              backgroundColor: 'rgba(242, 239, 232, 0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-              <path d="M3 20L21 12L3 4V10L15 12L3 14V20Z" fill={IDENTITY.ivoryText} />
+            <svg width={28} height={28} viewBox="0 0 24 24">
+              <path d="M 3,20 L 21,12 L 3,4 L 3,10 L 15,12 L 3,14 Z" fill={IDENTITY.ivoryText} />
             </svg>
           </div>
         </div>
