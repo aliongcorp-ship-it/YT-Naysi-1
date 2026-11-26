@@ -132,8 +132,8 @@ export const Scene07Seoul2003: React.FC<SceneRenderProps> = ({
           style={{
             textAlign: 'center',
             marginTop: 34,
-            opacity: yearAppear * (1 - chartPhase * 0.92),
-            transform: `translateY(${-chartPhase * 45}px)`,
+            opacity: yearAppear * clamp01(1 - chartPhase * 1.45),
+            transform: `translateY(${-chartPhase * 55}px)`,
           }}
         >
           <div
@@ -845,8 +845,8 @@ export const Scene08DitutupLancar: React.FC<SceneRenderProps> = ({
         {commentAppear > 0.01 && (
           <div
             style={{
-              width: 1180,
-              margin: '62px auto 0 auto',
+              width: 1248,
+              margin: '58px auto 0 auto',
               opacity: commentAppear,
               transform: `translateY(${(1 - commentAppear) * 32}px) scale(${0.95 + commentAppear * 0.05})`,
             }}
@@ -854,7 +854,7 @@ export const Scene08DitutupLancar: React.FC<SceneRenderProps> = ({
             <div
               style={{
                 position: 'relative',
-                height: 138,
+                height: 136,
                 borderRadius: 34,
                 background:
                   'linear-gradient(180deg, rgba(31, 35, 38, 0.96) 0%, rgba(21, 24, 26, 0.98) 100%)',
@@ -862,15 +862,15 @@ export const Scene08DitutupLancar: React.FC<SceneRenderProps> = ({
                 boxShadow: '0 30px 70px rgba(0, 0, 0, 0.65)',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '0 28px 0 30px',
-                gap: 24,
+                padding: '0 26px 0 28px',
+                gap: 22,
               }}
             >
               {/* N Avatar Circle */}
               <div
                 style={{
-                  width: 82,
-                  height: 82,
+                  width: 78,
+                  height: 78,
                   borderRadius: '50%',
                   background:
                     'linear-gradient(145deg, #FF6A3D 0%, #D93B18 100%)',
@@ -878,7 +878,7 @@ export const Scene08DitutupLancar: React.FC<SceneRenderProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontFamily: IDENTITY.fontDisplay,
-                  fontSize: 44,
+                  fontSize: 42,
                   fontWeight: 700,
                   color: '#FFFFFF',
                   flexShrink: 0,
@@ -893,7 +893,7 @@ export const Scene08DitutupLancar: React.FC<SceneRenderProps> = ({
                 style={{
                   flex: 1,
                   fontFamily: IDENTITY.fontBody,
-                  fontSize: 33,
+                  fontSize: 29,
                   fontWeight: 500,
                   color: IDENTITY.ivory,
                   whiteSpace: 'nowrap',

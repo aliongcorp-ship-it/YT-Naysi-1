@@ -603,14 +603,14 @@ export const Scene06DelapanPuluh: React.FC<SceneRenderProps> = ({
             }}
           >
             <PrecisionBridgeDial
-              title="JEMBATAN UTARA (A → U)"
-              subtitle="BENGKAK 2× LIPAT"
+              title="JEMBATAN UTARA · A→U"
+              subtitle="2× LIPAT"
               minutes={bridgeMin}
               cars={bridgeCars}
             />
             <PrecisionBridgeDial
-              title="JEMBATAN SELATAN (S → B)"
-              subtitle="BENGKAK 2× LIPAT"
+              title="JEMBATAN SELATAN · S→B"
+              subtitle="2× LIPAT"
               minutes={bridgeMin}
               cars={bridgeCars}
             />

@@ -1995,8 +1995,8 @@ export const Scene02DuaJalur: React.FC<SceneRenderProps> = ({
   );
 
   const totalCars = Math.round(interpolate(countUpP, [0, 1], [0, 4000]));
-  const northCars = Math.round(interpolate(splitP, [0, 1], [1000, 2000]));
-  const southCars = Math.round(interpolate(splitP, [0, 1], [1000, 2000]));
+  const northCars = Math.round(totalCars * 0.5);
+  const southCars = totalCars - northCars;
 
   return (
     <div style={{position: 'absolute', inset: 0}}>

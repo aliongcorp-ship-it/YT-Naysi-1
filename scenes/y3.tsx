@@ -179,12 +179,17 @@ const ProgressiveCaptionBar: React.FC<{
       <div
         style={{
           maxWidth: 1210,
-          textAlign: 'center',
-          lineHeight: 1.32,
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'baseline',
+          columnGap: 16,
+          rowGap: 10,
+          lineHeight: 1.26,
           fontFamily: IDENTITY.fontBody,
-          fontSize: 56,
+          fontSize: 55,
           fontWeight: 700,
-          letterSpacing: '-0.015em',
+          letterSpacing: '-0.012em',
           textShadow: '0 8px 28px rgba(0, 0, 0, 0.72)',
         }}
       >
@@ -207,21 +212,20 @@ const ProgressiveCaptionBar: React.FC<{
             : 1;
 
           return (
-            <React.Fragment key={`${ws}-${idx}`}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  color,
-                  fontWeight: isCurrent || emph === 1 ? 800 : 700,
-                  transform: `scale(${wordPop})`,
-                  textShadow: isCurrent
-                    ? '0 0 28px rgba(246, 200, 68, 0.42), 0 6px 20px rgba(0,0,0,0.85)'
-                    : '0 6px 22px rgba(0,0,0,0.78)',
-                }}
-              >
-                {wordText}
-              </span>{' '}
-            </React.Fragment>
+            <span
+              key={`${ws}-${idx}`}
+              style={{
+                display: 'inline-block',
+                color,
+                fontWeight: isCurrent || emph === 1 ? 800 : 700,
+                transform: `scale(${wordPop})`,
+                textShadow: isCurrent
+                  ? '0 0 28px rgba(246, 200, 68, 0.42), 0 6px 20px rgba(0,0,0,0.85)'
+                  : '0 6px 22px rgba(0,0,0,0.78)',
+              }}
+            >
+              {wordText}
+            </span>
           );
         })}
       </div>
