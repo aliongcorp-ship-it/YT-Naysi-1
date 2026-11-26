@@ -13,9 +13,12 @@
     "@fontsource/instrument-serif": "^5.2.8",
     "@remotion/cli": "4.0.547",
     "@remotion/media-utils": "4.0.547",
+    "@remotion/motion-blur": "4.0.547",
+    "@remotion/noise": "4.0.547",
     "@remotion/paths": "4.0.547",
     "@remotion/renderer": "4.0.547",
     "@remotion/shapes": "4.0.547",
+    "@remotion/transitions": "4.0.547",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remotion": "4.0.547"

@@ -7,16 +7,17 @@ import {
   delayRender,
   interpolate,
   registerRoot,
+  spring,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
 import {
-  Lembar01Oktober1582,
-  Lembar02KalenderJulian,
-  Lembar03SelisihSebelasMenit,
-  Lembar04AkumulasiSepuluhHari,
-} from './kalender';
+  Lembar01CincinAsing,
+  Lembar02GunungMagma,
+  Lembar03BintangBesi,
+  Lembar04TabrakanNeutron,
+} from './emas';
 import {
   CHAPTERS,
   IDENTITY,
@@ -26,8 +27,8 @@ import {
   getActiveCard,
   getActiveChapterIndex,
 } from './script';
-import { Lembar05ReformasiGregorius, Lembar06RumusKabisat } from './y1';
-import { Lembar07EfekDomino, Lembar08CekPonselmu } from './y2';
+import { Lembar05RatusanBulan, Lembar06HujanMeteorPurba } from './y1';
+import { Lembar07Observatorium2017, Lembar08FosilBintang } from './y2';
 
 // ============================================================================
 // DETERMINISTIC LOCAL FONT LOADER (ZERO NETWORK CALLS DURING RENDER)
@@ -57,8 +58,8 @@ const FONT_ASSETS = [
   },
 ] as const;
 
-const useAlmanacFonts = (): boolean => {
-  const [handle] = useState(() => delayRender('Load Naysi Almanac Fonts'));
+const useCelestialFonts = (): boolean => {
+  const [handle] = useState(() => delayRender('Load Naysi Celestial Fonts'));
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -96,76 +97,101 @@ const useAlmanacFonts = (): boolean => {
 };
 
 // ============================================================================
-// CHAPTER COMPONENT REGISTRY (8 LEMBAR)
+// CHAPTER COMPONENT REGISTRY (8 FULL-BLEED OBJECT SCENES)
 // ============================================================================
 
 const renderLembarByIndex = (idx: number): React.ReactNode => {
   switch (idx) {
     case 0:
-      return <Lembar01Oktober1582 />;
+      return <Lembar01CincinAsing />;
     case 1:
-      return <Lembar02KalenderJulian />;
+      return <Lembar02GunungMagma />;
     case 2:
-      return <Lembar03SelisihSebelasMenit />;
+      return <Lembar03BintangBesi />;
     case 3:
-      return <Lembar04AkumulasiSepuluhHari />;
+      return <Lembar04TabrakanNeutron />;
     case 4:
-      return <Lembar05ReformasiGregorius />;
+      return <Lembar05RatusanBulan />;
     case 5:
-      return <Lembar06RumusKabisat />;
+      return <Lembar06HujanMeteorPurba />;
     case 6:
-      return <Lembar07EfekDomino />;
+      return <Lembar07Observatorium2017 />;
     case 7:
     default:
-      return <Lembar08CekPonselmu />;
+      return <Lembar08FosilBintang />;
   }
 };
 
 // ============================================================================
-// PHYSICAL FOLIO STACK STAGE (SLIDE & SETTLE PAGE TRANSITION)
+// PHYSICAL FOLIO STACK STAGE (ANGLED SPRING SHEET-SLIDE TRANSITION)
+// Exact physical folio stack & angled slide-over transition of ref_indo!
 // ============================================================================
 
+const SheetPlacementBox: React.FC<{ readonly children: React.ReactNode }> = ({
+  children,
+}) => (
+  <div
+    style={{
+      position: 'absolute',
+      left: 36,
+      top: 98,
+      width: 1368,
+      height: 1738,
+    }}
+  >
+    {children}
+  </div>
+);
+
 const FolioStackStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
+  const { fps } = useVideoConfig();
   const activeIdx = getActiveChapterIndex(sec);
   const currentChapter = CHAPTERS[activeIdx];
-  const localSec = sec - currentChapter.start;
-  const slideWindow = 0.44;
+  const localSec = Math.max(0, sec - currentChapter.start);
+  const slideWindow = 0.48;
   const isSlidingIn = activeIdx > 0 && localSec < slideWindow;
-  const slideP = isSlidingIn ? easeOutCubic(localSec / slideWindow) : 1;
 
-  // Opening gentle lift for Lembar 01
+  const slideSpring =
+    activeIdx > 0
+      ? spring({
+          frame: Math.max(0, Math.round(localSec * fps)),
+          fps,
+          config: { damping: 21, stiffness: 135, mass: 0.92 },
+        })
+      : 1;
+
   const firstSheetOpen =
     activeIdx === 0 ? easeOutCubic(clamp01(sec / 0.36)) : 1;
 
   return (
     <AbsoluteFill style={{ overflow: 'hidden' }}>
-      {/* Keep Previous Lembar Resting Underneath While New Lembar Slides Over It */}
+      {/* Previous Lembar Resting Underneath While Next Sheet Slides Over It */}
       {isSlidingIn ? (
         <AbsoluteFill
           style={{
-            filter: `brightness(${1 - 0.24 * slideP})`,
-            transform: `scale(${1 - 0.012 * slideP})`,
+            filter: `brightness(${1 - 0.28 * slideSpring})`,
+            transform: `scale(${1 - 0.014 * slideSpring})`,
           }}
         >
-          {renderLembarByIndex(activeIdx - 1)}
+          <SheetPlacementBox>{renderLembarByIndex(activeIdx - 1)}</SheetPlacementBox>
         </AbsoluteFill>
       ) : null}
 
-      {/* Active Lembar Sliding Onto the Physical Folio Stack */}
+      {/* Active Physical Plate Sliding & Settling onto the Stack */}
       <AbsoluteFill
         style={{
           opacity: activeIdx === 0 ? firstSheetOpen : 1,
           transform:
             activeIdx === 0
               ? `translateY(${(1 - firstSheetOpen) * 26}px)`
-              : `translateX(${(1 - slideP) * 1420}px) rotate(${(1 - slideP) * 2.1}deg)`,
+              : `translateX(${(1 - slideSpring) * 1440}px) rotate(${(1 - slideSpring) * 2.3}deg)`,
           transformOrigin: '50% 85%',
           filter: isSlidingIn
-            ? 'drop-shadow(-34px 18px 46px rgba(0, 0, 0, 0.72))'
+            ? 'drop-shadow(-38px 20px 48px rgba(0, 0, 0, 0.78))'
             : undefined,
         }}
       >
-        {renderLembarByIndex(activeIdx)}
+        <SheetPlacementBox>{renderLembarByIndex(activeIdx)}</SheetPlacementBox>
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -173,6 +199,9 @@ const FolioStackStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
 
 // ============================================================================
 // WHISPER-SYNCED PROGRESSIVE GOLD-HIGHLIGHT CAPTION STAGE
+// Exact concept of 1-HfPa9AVLJGtTqdDyVI8lObiSQQjMzIe:
+//  - Short 5-10 word conversational clauses
+//  - Spoken = warm white, active word = 24K gold, upcoming = muted gray
 // ============================================================================
 
 const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
@@ -183,7 +212,6 @@ const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
   if (!activeCardObj) return null;
   const { card } = activeCardObj;
 
-  // Smooth card enter & exit envelope
   const enterP = clamp01((sec - card.start) / 0.11);
   const exitP = clamp01((card.end - sec) / 0.11);
   const cardAlpha = Math.min(enterP, exitP);
@@ -208,7 +236,7 @@ const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
     >
       <div
         style={{
-          maxWidth: 1216,
+          maxWidth: 1224,
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: 'center',
@@ -236,7 +264,7 @@ const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
 
           const pop = isCurrent
             ? 1 +
-              0.042 *
+              0.044 *
                 Math.sin(
                   clamp01((sec - ws) / Math.max(0.08, we - ws)) * Math.PI,
                 )
@@ -251,8 +279,8 @@ const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
                 fontWeight: isCurrent || emph === 1 ? 800 : 700,
                 transform: `scale(${pop})`,
                 textShadow: isCurrent
-                  ? '0 0 30px rgba(244, 190, 68, 0.42), 0 6px 22px rgba(0, 0, 0, 0.88)'
-                  : '0 6px 22px rgba(0, 0, 0, 0.82)',
+                  ? '0 0 32px rgba(245, 188, 56, 0.46), 0 6px 22px rgba(0, 0, 0, 0.90)'
+                  : '0 6px 22px rgba(0, 0, 0, 0.84)',
               }}
             >
               {wordText}
@@ -292,7 +320,7 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
             height: 15,
             borderRadius: 3,
             background: IDENTITY.captionGold,
-            boxShadow: '0 0 14px rgba(244, 190, 68, 0.45)',
+            boxShadow: '0 0 14px rgba(245, 188, 56, 0.48)',
           }}
         />
         <span
@@ -303,12 +331,22 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
             letterSpacing: '0.20em',
             color: 'rgba(245, 242, 235, 0.88)',
           }}
+        />
+        <span
+          style={{
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 25,
+            fontWeight: 700,
+            letterSpacing: '0.20em',
+            color: 'rgba(245, 242, 235, 0.88)',
+            marginLeft: -14,
+          }}
         >
           {VIDEO_SPEC.seriesLeft}
         </span>
       </div>
 
-      {/* Top-Right Series Category: NAYSI · SEJARAH */}
+      {/* Top-Right Series Category: NAYSI · KOSMOS */}
       <div
         style={{
           position: 'absolute',
@@ -324,7 +362,7 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
         {VIDEO_SPEC.seriesRight}
       </div>
 
-      {/* Bottom-Left Active Chapter Indicator */}
+      {/* Bottom-Left Active Chapter Slug */}
       <div
         style={{
           position: 'absolute',
@@ -367,7 +405,7 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
                     ? 'rgba(245, 242, 235, 0.46)'
                     : 'rgba(245, 242, 235, 0.16)',
                 boxShadow: isCurrent
-                  ? '0 0 12px rgba(244, 190, 68, 0.6)'
+                  ? '0 0 12px rgba(245, 188, 56, 0.65)'
                   : 'none',
               }}
             />
@@ -390,8 +428,8 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
           style={{
             width: `${progressPct}%`,
             height: '100%',
-            background: `linear-gradient(90deg, #D95B38 0%, ${IDENTITY.captionGold} 100%)`,
-            boxShadow: '0 0 16px rgba(244, 190, 68, 0.5)',
+            background: `linear-gradient(90deg, ${IDENTITY.kilonovaRed} 0%, ${IDENTITY.captionGold} 100%)`,
+            boxShadow: '0 0 16px rgba(245, 188, 56, 0.5)',
           }}
         />
       </div>
@@ -404,12 +442,11 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
 // ============================================================================
 
 export const NaysiEpisode: React.FC = () => {
-  useAlmanacFonts();
+  useCelestialFonts();
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const sec = frame / fps;
 
-  // Clean fade-to-black in final 0.35s
   const endFade = interpolate(
     frame,
     [durationInFrames - Math.round(0.35 * fps), durationInFrames - 1],
@@ -421,20 +458,14 @@ export const NaysiEpisode: React.FC = () => {
     <AbsoluteFill
       style={{
         backgroundColor: IDENTITY.bgStudio,
-        backgroundImage: `radial-gradient(90% 55% at 50% 35%, #171A21 0%, ${IDENTITY.bgStudio} 62%, ${IDENTITY.bgStudioDeep} 100%)`,
+        backgroundImage: `radial-gradient(90% 55% at 50% 35%, #161822 0%, ${IDENTITY.bgStudio} 62%, ${IDENTITY.bgStudioDeep} 100%)`,
       }}
     >
-      {/* Master Indonesian Male VO + Horological Underscore (MP3, Zero WAV) */}
       <Audio src={staticFile('audio/master.mp3')} volume={1} />
 
       <AbsoluteFill style={{ opacity: endFade }}>
-        {/* Physical Folio Stack Stage (Upper ~72% of 2K Vertical Frame) */}
         <FolioStackStage sec={sec} />
-
-        {/* Dedicated Dark Theater Caption Stage (Lower ~24% of Frame) */}
         <CaptionStage sec={sec} />
-
-        {/* Precision Studio HUD */}
         <StudioHud sec={sec} />
       </AbsoluteFill>
     </AbsoluteFill>
