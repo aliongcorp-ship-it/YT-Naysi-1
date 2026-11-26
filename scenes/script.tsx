@@ -37,26 +37,33 @@ export const VIDEO_SPEC = {
 } as const;
 
 export const IDENTITY = {
-  bgStudio: '#0B0C10',
-  bgStudioDeep: '#06070A',
-  vellumTop: '#F3EDE1',
-  vellumMid: '#EAE1D0',
-  vellumDeep: '#DDD2BC',
-  obsidian: '#151412',
-  ink: '#1A1714',
-  inkSoft: '#4B453C',
-  inkMuted: '#7C7365',
-  goldBright: '#FFD978',
-  goldPure: '#E5A92B',
-  goldDeep: '#9E6814',
-  goldShadow: '#593708',
-  kilonovaRed: '#B83926',
-  cosmosDark: '#0A1020',
-  cosmosMid: '#152442',
-  neutronCyan: '#8BE8FF',
-  captionWhite: '#F5F2EB',
-  captionGold: '#F5BC38',
-  captionDim: 'rgba(245, 242, 235, 0.28)',
+  obsidianVoid: '#05070B',
+  cosmosAbyss: '#090E1A',
+  cosmosDeep: '#0E1729',
+  cosmosNebula: '#1A2744',
+  velvetSlate: '#0C0E14',
+  walnutDark: '#1A110B',
+  goldSpecular: '#FFF8DC',
+  goldBright: '#FFE082',
+  gold24k: '#F2B830',
+  goldBrushed: '#C98A1C',
+  goldBurnished: '#7D4E09',
+  goldShadow: '#3A2103',
+  kilonovaViolet: '#7B4AE2',
+  kilonovaMagenta: '#D6458B',
+  magmaCore: '#FF6B2B',
+  ironCold: '#8B9BB0',
+  ironDark: '#2A3342',
+  neutronIce: '#7CE8FF',
+  glassBg: 'rgba(13, 18, 30, 0.74)',
+  glassBgWarm: 'rgba(24, 19, 14, 0.78)',
+  glassStroke: 'rgba(255, 255, 255, 0.14)',
+  glassGoldStroke: 'rgba(242, 184, 48, 0.36)',
+  hudText: '#B8C0CC',
+  hudMuted: 'rgba(184, 192, 204, 0.54)',
+  captionWhite: '#F3F5F8',
+  captionGold: '#F5B841',
+  captionDim: 'rgba(214, 222, 235, 0.36)',
   fontSerif: "'Fraunces', Georgia, serif",
   fontBody: "'Plus Jakarta Sans', -apple-system, sans-serif",
   fontDisplay: "'Space Grotesk', -apple-system, sans-serif",
@@ -203,6 +210,13 @@ export const CHAPTERS: readonly ChapterSpec[] = [
 export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 export const easeOutCubic = (t: number): number => 1 - Math.pow(1 - clamp01(t), 3);
+
+export const easeOutQuint = (t: number): number => 1 - Math.pow(1 - clamp01(t), 5);
+
+export const smoothstep = (t: number): number => {
+  const x = clamp01(t);
+  return x * x * (3 - 2 * x);
+};
 
 export const easeInOutCubic = (t: number): number => {
   const x = clamp01(t);

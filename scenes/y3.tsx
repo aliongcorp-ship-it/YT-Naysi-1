@@ -3,288 +3,243 @@ import {
   AbsoluteFill,
   Audio,
   Composition,
+  Sequence,
+  cancelRender,
   continueRender,
   delayRender,
-  interpolate,
   registerRoot,
-  spring,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
 import {
-  Lembar01CincinAsing,
-  Lembar02GunungMagma,
-  Lembar03BintangBesi,
-  Lembar04TabrakanNeutron,
-} from './emas';
-import {
   CHAPTERS,
   IDENTITY,
   VIDEO_SPEC,
   clamp01,
+  easeInOutCubic,
   easeOutCubic,
   getActiveCard,
   getActiveChapterIndex,
 } from './script';
-import { Lembar05RatusanBulan, Lembar06HujanMeteorPurba } from './y1';
-import { Lembar07Observatorium2017, Lembar08FosilBintang } from './y2';
+import {
+  Scene01LogamAsing,
+  Scene02KurirMagma,
+  Scene03MentokDiBesi,
+  Scene04TabrakanNeutron,
+} from './emas';
+import { Scene05RatusanBulan, Scene06HujanMeteor } from './y1';
+import { Scene07Bukti2017, Scene08FosilBintang } from './y2';
 
 // ============================================================================
-// DETERMINISTIC LOCAL FONT LOADER (ZERO NETWORK CALLS DURING RENDER)
+// DETERMINISTIC LOCAL FONT LOADER (ZERO EXTERNAL NETWORK FETCHES)
 // ============================================================================
 
-const FONT_ASSETS = [
+const FONT_DEFINITIONS: ReadonlyArray<{
+  family: string;
+  file: string;
+  weight: string;
+  style: string;
+}> = [
   { family: 'Fraunces', file: 'fonts/fraunces-black.ttf', weight: '900', style: 'normal' },
   { family: 'Fraunces', file: 'fonts/fraunces-semibold.ttf', weight: '600', style: 'normal' },
-  { family: 'Fraunces', file: 'fonts/fraunces-italic.ttf', weight: '400', style: 'italic' },
-  {
-    family: 'Plus Jakarta Sans',
-    file: 'fonts/plus-jakarta-sans.woff2',
-    weight: '400 800',
-    style: 'normal',
-  },
-  {
-    family: 'Space Grotesk',
-    file: 'fonts/space-grotesk.woff2',
-    weight: '500 700',
-    style: 'normal',
-  },
-  {
-    family: 'JetBrains Mono',
-    file: 'fonts/jetbrains-mono.woff2',
-    weight: '400 800',
-    style: 'normal',
-  },
-] as const;
+  { family: 'Fraunces', file: 'fonts/fraunces-italic.ttf', weight: '600', style: 'italic' },
+  { family: 'Plus Jakarta Sans', file: 'fonts/plus-jakarta-sans.woff2', weight: '400 800', style: 'normal' },
+  { family: 'Space Grotesk', file: 'fonts/space-grotesk.woff2', weight: '500 700', style: 'normal' },
+  { family: 'JetBrains Mono', file: 'fonts/jetbrains-mono.woff2', weight: '400 700', style: 'normal' },
+  { family: 'Instrument Serif', file: 'fonts/instrument-serif-regular.woff2', weight: '400', style: 'normal' },
+  { family: 'Instrument Serif', file: 'fonts/instrument-serif-italic.woff2', weight: '400', style: 'italic' },
+];
 
-const useCelestialFonts = (): boolean => {
-  const [handle] = useState(() => delayRender('Load Naysi Celestial Fonts'));
-  const [ready, setReady] = useState(false);
+const useLocalFonts = (): boolean => {
+  const [loaded, setLoaded] = useState(false);
+  const [handle] = useState(() => delayRender('Loading local Naysi typography'));
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
     Promise.all(
-      FONT_ASSETS.map(async (f) => {
-        const face = new FontFace(f.family, `url('${staticFile(f.file)}')`, {
-          weight: f.weight,
-          style: f.style,
+      FONT_DEFINITIONS.map(async (def) => {
+        const face = new FontFace(def.family, `url('${staticFile(def.file)}')`, {
+          weight: def.weight,
+          style: def.style,
         });
-        const loaded = await face.load();
-        document.fonts.add(loaded);
+        const loadedFace = await face.load();
+        document.fonts.add(loadedFace);
       }),
     )
       .then(() => {
-        if (mounted) {
-          setReady(true);
+        if (!cancelled) {
+          setLoaded(true);
           continueRender(handle);
         }
       })
       .catch((err) => {
-        console.error('Font load error:', err);
-        if (mounted) {
-          setReady(true);
-          continueRender(handle);
-        }
+        cancelRender(err);
       });
 
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, [handle]);
 
-  return ready;
+  return loaded;
 };
 
 // ============================================================================
-// CHAPTER COMPONENT REGISTRY (8 FULL-BLEED OBJECT SCENES)
+// FULL-BLEED 1440x2560 SCENE ROUTER WITH OPTICAL CROSS-DISSOLVE TRANSITIONS
 // ============================================================================
 
-const renderLembarByIndex = (idx: number): React.ReactNode => {
-  switch (idx) {
-    case 0:
-      return <Lembar01CincinAsing />;
-    case 1:
-      return <Lembar02GunungMagma />;
-    case 2:
-      return <Lembar03BintangBesi />;
-    case 3:
-      return <Lembar04TabrakanNeutron />;
-    case 4:
-      return <Lembar05RatusanBulan />;
-    case 5:
-      return <Lembar06HujanMeteorPurba />;
-    case 6:
-      return <Lembar07Observatorium2017 />;
-    case 7:
-    default:
-      return <Lembar08FosilBintang />;
-  }
-};
+const SCENE_COMPONENTS: readonly React.FC[] = [
+  Scene01LogamAsing,
+  Scene02KurirMagma,
+  Scene03MentokDiBesi,
+  Scene04TabrakanNeutron,
+  Scene05RatusanBulan,
+  Scene06HujanMeteor,
+  Scene07Bukti2017,
+  Scene08FosilBintang,
+];
 
-// ============================================================================
-// PHYSICAL FOLIO STACK STAGE (ANGLED SPRING SHEET-SLIDE TRANSITION)
-// Exact physical folio stack & angled slide-over transition of ref_indo!
-// ============================================================================
+const TRANSITION_FRAMES = 28; // ~0.31s silky optical cross-dissolve @ 90fps
 
-const SheetPlacementBox: React.FC<{ readonly children: React.ReactNode }> = ({
-  children,
-}) => (
-  <div
-    style={{
-      position: 'absolute',
-      left: 36,
-      top: 98,
-      width: 1368,
-      height: 1738,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const FolioStackStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
-  const { fps } = useVideoConfig();
-  const activeIdx = getActiveChapterIndex(sec);
-  const currentChapter = CHAPTERS[activeIdx];
-  const localSec = Math.max(0, sec - currentChapter.start);
-  const slideWindow = 0.48;
-  const isSlidingIn = activeIdx > 0 && localSec < slideWindow;
-
-  const slideSpring =
-    activeIdx > 0
-      ? spring({
-          frame: Math.max(0, Math.round(localSec * fps)),
-          fps,
-          config: { damping: 21, stiffness: 135, mass: 0.92 },
-        })
-      : 1;
-
-  const firstSheetOpen =
-    activeIdx === 0 ? easeOutCubic(clamp01(sec / 0.36)) : 1;
+const FullBleedChapterStage: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
 
   return (
-    <AbsoluteFill style={{ overflow: 'hidden' }}>
-      {/* Previous Lembar Resting Underneath While Next Sheet Slides Over It */}
-      {isSlidingIn ? (
-        <AbsoluteFill
-          style={{
-            filter: `brightness(${1 - 0.28 * slideSpring})`,
-            transform: `scale(${1 - 0.014 * slideSpring})`,
-          }}
-        >
-          <SheetPlacementBox>{renderLembarByIndex(activeIdx - 1)}</SheetPlacementBox>
-        </AbsoluteFill>
-      ) : null}
+    <AbsoluteFill style={{ backgroundColor: IDENTITY.obsidianVoid }}>
+      {CHAPTERS.map((ch, idx) => {
+        const startFrame = Math.round(ch.start * fps);
+        const endFrame =
+          idx === CHAPTERS.length - 1
+            ? durationInFrames
+            : Math.round(ch.end * fps);
 
-      {/* Active Physical Plate Sliding & Settling onto the Stack */}
-      <AbsoluteFill
-        style={{
-          opacity: activeIdx === 0 ? firstSheetOpen : 1,
-          transform:
-            activeIdx === 0
-              ? `translateY(${(1 - firstSheetOpen) * 26}px)`
-              : `translateX(${(1 - slideSpring) * 1440}px) rotate(${(1 - slideSpring) * 2.3}deg)`,
-          transformOrigin: '50% 85%',
-          filter: isSlidingIn
-            ? 'drop-shadow(-38px 20px 48px rgba(0, 0, 0, 0.78))'
-            : undefined,
-        }}
-      >
-        <SheetPlacementBox>{renderLembarByIndex(activeIdx)}</SheetPlacementBox>
-      </AbsoluteFill>
+        const seqFrom = startFrame;
+        // Keep outgoing chapter alive during incoming chapter's dissolve window
+        const seqEnd =
+          idx < CHAPTERS.length - 1
+            ? Math.min(durationInFrames, endFrame + TRANSITION_FRAMES)
+            : durationInFrames;
+        const seqDur = Math.max(1, seqEnd - seqFrom);
+
+        if (frame < seqFrom - 2 || frame > seqEnd + 2) {
+          return null;
+        }
+
+        const fadeProgress =
+          idx === 0
+            ? 1
+            : easeInOutCubic(clamp01((frame - startFrame) / TRANSITION_FRAMES));
+
+        const enterScale = idx === 0 ? 1 : 1.028 - 0.028 * fadeProgress;
+        const SceneComp = SCENE_COMPONENTS[idx];
+
+        return (
+          <Sequence
+            key={ch.slug}
+            from={seqFrom}
+            durationInFrames={seqDur}
+            layout="none"
+          >
+            <AbsoluteFill
+              style={{
+                zIndex: 10 + idx,
+                opacity: fadeProgress,
+                transform: `scale(${enterScale})`,
+                transformOrigin: '50% 45%',
+              }}
+            >
+              <SceneComp />
+            </AbsoluteFill>
+          </Sequence>
+        );
+      })}
     </AbsoluteFill>
   );
 };
 
 // ============================================================================
-// WHISPER-SYNCED PROGRESSIVE GOLD-HIGHLIGHT CAPTION STAGE
-// Exact concept of 1-HfPa9AVLJGtTqdDyVI8lObiSQQjMzIe:
-//  - Short 5-10 word conversational clauses
-//  - Spoken = warm white, active word = 24K gold, upcoming = muted gray
+// GIANT CRISP PROGRESSIVE WORD-BY-WORD CAPTION STAGE (EXACT GPS STYLE)
 // ============================================================================
 
-const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
-  const activeIdx = getActiveChapterIndex(sec);
-  const ch = CHAPTERS[activeIdx];
-  const activeCardObj = getActiveCard(ch, sec);
+const CaptionStage: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
 
-  if (!activeCardObj) return null;
-  const { card } = activeCardObj;
+  const chIdx = getActiveChapterIndex(sec);
+  const ch = CHAPTERS[chIdx];
+  const active = getActiveCard(ch, sec);
+  if (!active) return null;
 
-  const enterP = clamp01((sec - card.start) / 0.11);
-  const exitP = clamp01((card.end - sec) / 0.11);
-  const cardAlpha = Math.min(enterP, exitP);
-  const liftY = (1 - easeOutCubic(enterP)) * 12;
+  const { card } = active;
+  const fadeIn = easeOutCubic(clamp01((sec - card.start) / 0.14));
+  const fadeOut = easeOutCubic(clamp01((card.end - sec) / 0.11));
+  const opacity = Math.min(fadeIn, fadeOut);
+  const liftY = (1 - fadeIn) * 14;
 
   return (
     <div
       style={{
         position: 'absolute',
-        left: 72,
-        right: 72,
-        top: 1862,
-        height: 556,
+        left: 96,
+        right: 96,
+        top: 1835,
+        height: 450,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         pointerEvents: 'none',
-        opacity: cardAlpha,
-        transform: `translateY(${liftY}px)`,
-        zIndex: 40,
+        zIndex: 90,
+        opacity,
+        transform: `translate3d(0, ${liftY}px, 0)`,
       }}
     >
       <div
         style={{
-          maxWidth: 1224,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          alignItems: 'baseline',
-          columnGap: 17,
-          rowGap: 10,
-          lineHeight: 1.25,
+          maxWidth: 1230,
+          textAlign: 'center',
           fontFamily: IDENTITY.fontBody,
-          fontSize: 58,
+          fontSize: 66,
           fontWeight: 700,
-          letterSpacing: '-0.014em',
+          lineHeight: 1.28,
+          letterSpacing: '-0.02em',
         }}
       >
-        {card.words.map(([wordText, ws, we, emph], idx) => {
-          const nextWord = idx + 1 < card.words.length ? card.words[idx + 1] : null;
-          const handoffEnd = nextWord ? nextWord[1] - 0.01 : we + 0.18;
-          const isCurrent = sec >= ws - 0.015 && sec < handoffEnd;
-          const isSpoken = sec >= ws - 0.015;
+        {card.words.map((w, idx) => {
+          const [word, wStart, wEnd] = w;
+          const nextStart =
+            idx + 1 < card.words.length ? card.words[idx + 1][1] : wEnd + 0.18;
 
-          const color = isCurrent
-            ? IDENTITY.captionGold
-            : isSpoken
-              ? IDENTITY.captionWhite
-              : IDENTITY.captionDim;
+          const isCurrent = sec >= wStart - 0.02 && sec < nextStart;
+          const isSpoken = sec >= nextStart;
 
-          const pop = isCurrent
-            ? 1 +
-              0.044 *
-                Math.sin(
-                  clamp01((sec - ws) / Math.max(0.08, we - ws)) * Math.PI,
-                )
-            : 1;
+          let color: string = IDENTITY.captionDim;
+          let textShadow = '0 4px 18px rgba(0, 0, 0, 0.75)';
+
+          if (isCurrent) {
+            color = IDENTITY.captionGold;
+            textShadow =
+              '0 0 38px rgba(245, 184, 65, 0.58), 0 4px 18px rgba(0, 0, 0, 0.92)';
+          } else if (isSpoken) {
+            color = IDENTITY.captionWhite;
+            textShadow = '0 4px 18px rgba(0, 0, 0, 0.90)';
+          }
 
           return (
-            <span
-              key={`${card.start}-${idx}`}
-              style={{
-                display: 'inline-block',
-                color,
-                fontWeight: isCurrent || emph === 1 ? 800 : 700,
-                transform: `scale(${pop})`,
-                textShadow: isCurrent
-                  ? '0 0 32px rgba(245, 188, 56, 0.46), 0 6px 22px rgba(0, 0, 0, 0.90)'
-                  : '0 6px 22px rgba(0, 0, 0, 0.84)',
-              }}
-            >
-              {wordText}
-            </span>
+            <React.Fragment key={idx}>
+              <span
+                style={{
+                  color,
+                  textShadow,
+                  display: 'inline-block',
+                }}
+              >
+                {word}
+              </span>
+              {idx < card.words.length - 1 ? ' ' : ''}
+            </React.Fragment>
           );
         })}
       </div>
@@ -293,143 +248,141 @@ const CaptionStage: React.FC<{ readonly sec: number }> = ({ sec }) => {
 };
 
 // ============================================================================
-// NAYSI STUDIO HUD CHROME (TOP BRANDING, CHAPTER FOOTER, PROGRESS BAR)
+// MINIMAL FLOATING NAYSI SERIES HUD & CINEMA GRADE OVERLAY
 // ============================================================================
 
-const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
-  const activeIdx = getActiveChapterIndex(sec);
-  const ch = CHAPTERS[activeIdx];
-  const progressPct = clamp01(sec / VIDEO_SPEC.durationSec) * 100;
+const StudioHud: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const sec = frame / fps;
+  const chIdx = getActiveChapterIndex(sec);
+  const ch = CHAPTERS[chIdx];
+  const progressPct = clamp01(frame / Math.max(1, durationInFrames - 1)) * 100;
 
   return (
-    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 50 }}>
-      {/* Top-Left Brand Lockup: ▪ NAYSI */}
+    <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 110 }}>
+      {/* Soft Cinema Edge Vignette */}
       <div
         style={{
           position: 'absolute',
-          left: 46,
-          top: 34,
+          inset: 0,
+          boxShadow: 'inset 0 0 180px rgba(0, 0, 0, 0.62)',
+        }}
+      />
+
+      {/* Top Header Bar: ■ NAYSI  |  NAYSI · KOSMOS */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 84,
+          left: 104,
+          right: 104,
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
+          justifyContent: 'space-between',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+          <span
+            style={{
+              width: 15,
+              height: 15,
+              borderRadius: 3.5,
+              backgroundColor: '#D89624',
+              boxShadow: '0 0 14px rgba(216, 150, 36, 0.55)',
+              display: 'inline-block',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: IDENTITY.fontDisplay,
+              fontSize: 26,
+              fontWeight: 700,
+              letterSpacing: '0.22em',
+              color: IDENTITY.hudText,
+            }}
+          >
+            {VIDEO_SPEC.seriesLeft}
+          </span>
+        </div>
+
+        <div
+          style={{
+            fontFamily: IDENTITY.fontMono,
+            fontSize: 22,
+            fontWeight: 500,
+            letterSpacing: '0.22em',
+            color: IDENTITY.hudMuted,
+          }}
+        >
+          {VIDEO_SPEC.seriesRight}
+        </div>
+      </div>
+
+      {/* Bottom Footer Bar: 01 — BUKAN DARI BUMI  |  8 Progress Dashes */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 72,
+          left: 104,
+          right: 104,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <div
           style={{
-            width: 15,
-            height: 15,
-            borderRadius: 3,
-            background: IDENTITY.captionGold,
-            boxShadow: '0 0 14px rgba(245, 188, 56, 0.48)',
-          }}
-        />
-        <span
-          style={{
             fontFamily: IDENTITY.fontMono,
-            fontSize: 25,
-            fontWeight: 700,
-            letterSpacing: '0.20em',
-            color: 'rgba(245, 242, 235, 0.88)',
-          }}
-        />
-        <span
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 25,
-            fontWeight: 700,
-            letterSpacing: '0.20em',
-            color: 'rgba(245, 242, 235, 0.88)',
-            marginLeft: -14,
+            fontSize: 22,
+            fontWeight: 500,
+            letterSpacing: '0.16em',
+            color: IDENTITY.hudMuted,
           }}
         >
-          {VIDEO_SPEC.seriesLeft}
-        </span>
+          {ch.num} — {ch.hud}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          {CHAPTERS.map((item, i) => {
+            const isActive = i === chIdx;
+            const isPast = i < chIdx;
+            return (
+              <span
+                key={item.num}
+                style={{
+                  width: isActive ? 22 : 16,
+                  height: 3.5,
+                  borderRadius: 2,
+                  backgroundColor: isActive
+                    ? '#E59D28'
+                    : isPast
+                    ? 'rgba(229, 157, 40, 0.36)'
+                    : 'rgba(255, 255, 255, 0.16)',
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
 
-      {/* Top-Right Series Category: NAYSI · KOSMOS */}
-      <div
-        style={{
-          position: 'absolute',
-          right: 46,
-          top: 36,
-          fontFamily: IDENTITY.fontMono,
-          fontSize: 22,
-          fontWeight: 600,
-          letterSpacing: '0.20em',
-          color: 'rgba(245, 242, 235, 0.48)',
-        }}
-      >
-        {VIDEO_SPEC.seriesRight}
-      </div>
-
-      {/* Bottom-Left Active Chapter Slug */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 46,
-          bottom: 48,
-          fontFamily: IDENTITY.fontMono,
-          fontSize: 22,
-          fontWeight: 600,
-          letterSpacing: '0.18em',
-          color: 'rgba(245, 242, 235, 0.62)',
-        }}
-      >
-        {ch.num} — {ch.hud}
-      </div>
-
-      {/* Bottom-Right 8 Chapter Dashes */}
-      <div
-        style={{
-          position: 'absolute',
-          right: 46,
-          bottom: 56,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        {CHAPTERS.map((item, idx) => {
-          const isCurrent = idx === activeIdx;
-          const isDone = idx < activeIdx;
-          return (
-            <div
-              key={item.num}
-              style={{
-                width: isCurrent ? 30 : 18,
-                height: 4,
-                borderRadius: 2,
-                background: isCurrent
-                  ? IDENTITY.captionGold
-                  : isDone
-                    ? 'rgba(245, 242, 235, 0.46)'
-                    : 'rgba(245, 242, 235, 0.16)',
-                boxShadow: isCurrent
-                  ? '0 0 12px rgba(245, 188, 56, 0.65)'
-                  : 'none',
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Bottom-Edge Continuous Progress Bar */}
+      {/* Bottom Glowing Progress Hairline */}
       <div
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
-          height: 8,
-          background: 'rgba(255, 255, 255, 0.06)',
+          height: 6,
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
         }}
       >
         <div
           style={{
             width: `${progressPct}%`,
             height: '100%',
-            background: `linear-gradient(90deg, ${IDENTITY.kilonovaRed} 0%, ${IDENTITY.captionGold} 100%)`,
-            boxShadow: '0 0 16px rgba(245, 188, 56, 0.5)',
+            background: 'linear-gradient(90deg, #C87E16 0%, #F5B841 100%)',
+            boxShadow: '0 0 18px rgba(245, 184, 65, 0.65)',
           }}
         />
       </div>
@@ -438,54 +391,37 @@ const StudioHud: React.FC<{ readonly sec: number }> = ({ sec }) => {
 };
 
 // ============================================================================
-// MASTER COMPOSITION: NAYSI (1440×2560 @ 90 FPS)
+// MASTER COMPOSITION & REMOTION ROOT
 // ============================================================================
 
 export const NaysiEpisode: React.FC = () => {
-  useCelestialFonts();
-  const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-  const sec = frame / fps;
-
-  const endFade = interpolate(
-    frame,
-    [durationInFrames - Math.round(0.35 * fps), durationInFrames - 1],
-    [1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
+  const fontsReady = useLocalFonts();
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: IDENTITY.bgStudio,
-        backgroundImage: `radial-gradient(90% 55% at 50% 35%, #161822 0%, ${IDENTITY.bgStudio} 62%, ${IDENTITY.bgStudioDeep} 100%)`,
-      }}
-    >
-      <Audio src={staticFile('audio/master.mp3')} volume={1} />
-
-      <AbsoluteFill style={{ opacity: endFade }}>
-        <FolioStackStage sec={sec} />
-        <CaptionStage sec={sec} />
-        <StudioHud sec={sec} />
-      </AbsoluteFill>
+    <AbsoluteFill style={{ backgroundColor: IDENTITY.obsidianVoid }}>
+      <Audio src={staticFile('audio/master.mp3')} />
+      {fontsReady && (
+        <>
+          <FullBleedChapterStage />
+          <CaptionStage />
+          <StudioHud />
+        </>
+      )}
     </AbsoluteFill>
   );
 };
 
 export const RemotionRoot: React.FC = () => {
   return (
-    <>
-      <Composition
-        id={VIDEO_SPEC.id}
-        component={NaysiEpisode}
-        durationInFrames={VIDEO_SPEC.durationInFrames}
-        fps={VIDEO_SPEC.fps}
-        width={VIDEO_SPEC.width}
-        height={VIDEO_SPEC.height}
-      />
-    </>
+    <Composition
+      id={VIDEO_SPEC.id}
+      component={NaysiEpisode}
+      durationInFrames={VIDEO_SPEC.durationInFrames}
+      fps={VIDEO_SPEC.fps}
+      width={VIDEO_SPEC.width}
+      height={VIDEO_SPEC.height}
+    />
   );
 };
 
 registerRoot(RemotionRoot);
-export default RemotionRoot;

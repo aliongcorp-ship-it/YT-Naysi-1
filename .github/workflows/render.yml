@@ -119,21 +119,21 @@ jobs:
               -of default=noprint_wrappers=1 "$VIDEO_OUT"
           } | tee out/qa/probe.txt
 
-          TIMES=(3.15 7.90 10.92 15.50 24.50 31.80 40.80 48.90 57.80 64.90 71.90 79.40 88.10 96.20 104.90 110.50)
+          TIMES=(2.10 7.90 10.90 15.60 25.50 32.10 39.80 48.90 55.80 63.80 71.80 79.60 84.80 94.60 104.20 110.20)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
             ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
           done
-          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x0B0C10" "out/qa/qa_sheet_1.jpg"
-          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x0B0C10" "out/qa/qa_sheet_2.jpg"
+          ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x05070B" "out/qa/qa_sheet_1.jpg"
+          ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x05070B" "out/qa/qa_sheet_2.jpg"
           ffmpeg -y -v error -ss 7.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 15.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
-          ffmpeg -y -v error -ss 31.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 15.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
+          ffmpeg -y -v error -ss 32.10 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
           ffmpeg -y -v error -ss 48.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
-          ffmpeg -y -v error -ss 64.90 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
-          ffmpeg -y -v error -ss 79.40 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 88.10 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 110.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -ss 63.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 79.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 94.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 110.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
           rm -f out/qa/f_*.jpg
 
           cat << 'PAKET_EOF' > "out/Paket YouTube - Emas di Jarimu Bukan Buatan Bumi.txt"
@@ -164,8 +164,6 @@ jobs:
 
           Naysi — penjelasan singkat soal sains, sejarah, dan angka di baliknya.
           Kerja sama: elths.i09@gmail.com
-
-          #Shorts #Astronomi #Sains #FaktaUnik #Emas
 
           Hashtag:
           #Shorts #Astronomi #Sains #FaktaUnik #Emas
