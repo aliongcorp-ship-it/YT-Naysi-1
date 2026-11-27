@@ -157,19 +157,24 @@ export const Scene07KompasGurun: React.FC = () => {
   const camelWalk = clamp01(prog(globalSec, 93.4, 102.2));
   const stars = easeOutCubic(prog(localSec, 0.2, 2.0));
 
-  const dunePaths = useMemo(() => {
-    const rnd = makeRng(4477);
-    return [0, 1, 2, 3].map((i) => {
-      const baseY = 1290 + i * 150;
-      const amp = 60 - i * 8;
-      let d = `M -60,${baseY}`;
-      for (let x = 0; x <= 1560; x += 60) {
-        const y = baseY - Math.sin((x + i * 220) / 300) * amp - rnd() * 8;
-        d += ` Q ${x - 30},${y - amp * 0.35} ${x},${y}`;
-      }
-      return `${d} L 1560,2560 L -60,2560 Z`;
-    });
-  }, []);
+  const dune = (baseY: number, amp: number, phase: number, freq: number): string => {
+    let d = `M -80,${baseY}`;
+    for (let x = 0; x <= 1600; x += 40) {
+      const y =
+        baseY -
+        Math.sin((x + phase * 90) / freq) * amp -
+        Math.sin((x * 0.63) / (freq * 0.85) + phase) * amp * 0.42 -
+        Math.sin((x * 1.7) / freq + phase * 2) * amp * 0.14;
+      d += ` L ${x},${y.toFixed(1)}`;
+    }
+    return `${d} L 1600,2600 L -80,2600 Z`;
+  };
+
+  const duneFar = dune(1158, 26, 0.2, 240);
+  const duneMid = dune(1298, 40, 1.1, 210);
+  const duneWalk = dune(1462, 44, 2.4, 260);
+  const duneNear = dune(1790, 72, 3.1, 300);
+  const duneFront = dune(2110, 96, 4.3, 340);
 
   const horizonY = 1290;
 
@@ -180,155 +185,169 @@ export const Scene07KompasGurun: React.FC = () => {
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <defs>
           <linearGradient id="s7-sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0A0C13" />
-            <stop offset="34%" stopColor="#1B1A1C" />
-            <stop offset="62%" stopColor="#3A2A1E" />
-            <stop offset="82%" stopColor="#6E4A2A" />
-            <stop offset="100%" stopColor="#8D6034" />
+            <stop offset="0%" stopColor="#080A11" />
+            <stop offset="28%" stopColor="#141420" />
+            <stop offset="56%" stopColor="#2E2620" />
+            <stop offset="78%" stopColor="#5C4026" />
+            <stop offset="100%" stopColor="#8A5F36" />
           </linearGradient>
-          <linearGradient id="s7-dune1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7A5430" />
-            <stop offset="100%" stopColor="#5A3C22" />
+          <linearGradient id="s7-far" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7E5B36" />
+            <stop offset="100%" stopColor="#6A4828" />
           </linearGradient>
-          <linearGradient id="s7-dune2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#5A3B22" />
-            <stop offset="100%" stopColor="#3D2816" />
+          <linearGradient id="s7-mid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6A4728" />
+            <stop offset="100%" stopColor="#4C301A" />
           </linearGradient>
-          <linearGradient id="s7-dune3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3A2515" />
-            <stop offset="100%" stopColor="#241609" />
+          <linearGradient id="s7-walk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#52351C" />
+            <stop offset="100%" stopColor="#33200F" />
           </linearGradient>
-          <linearGradient id="s7-dune4" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1B1108" />
-            <stop offset="100%" stopColor="#0B0704" />
+          <linearGradient id="s7-near" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2A1A0C" />
+            <stop offset="100%" stopColor="#170D05" />
+          </linearGradient>
+          <linearGradient id="s7-front" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#120A04" />
+            <stop offset="100%" stopColor="#080502" />
+          </linearGradient>
+          <linearGradient id="s7-water" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6B6E52" />
+            <stop offset="42%" stopColor="#4E5644" />
+            <stop offset="100%" stopColor="#2A2E22" />
           </linearGradient>
           <linearGradient id="s7-plume" x1="1" y1="0" x2="0" y2="0">
-            <stop offset="0%" stopColor="rgba(232, 190, 116, 0.05)" />
-            <stop offset="60%" stopColor="rgba(236, 198, 128, 0.5)" />
-            <stop offset="100%" stopColor="rgba(240, 216, 168, 0.8)" />
+            <stop offset="0%" stopColor="rgba(232, 190, 116, 0.02)" />
+            <stop offset="55%" stopColor="rgba(238, 200, 130, 0.62)" />
+            <stop offset="100%" stopColor="rgba(246, 220, 170, 0.92)" />
           </linearGradient>
-          <radialGradient id="s7-glow" cx="78%" cy="70%" r="46%">
-            <stop offset="0%" stopColor="rgba(246, 200, 132, 0.22)" />
+          <radialGradient id="s7-glow" cx="80%" cy="58%" r="42%">
+            <stop offset="0%" stopColor="rgba(246, 198, 128, 0.3)" />
             <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
         </defs>
 
         {/* sky */}
-        <rect x={0} y={0} width={1440} height={horizonY + 90} fill="url(#s7-sky)" />
+        <rect x={0} y={0} width={1440} height={1400} fill="url(#s7-sky)" />
 
-        {/* stars, fading as dawn warmth takes over */}
+        {/* stars, thinning toward the warm horizon */}
         <g opacity={stars * 0.9}>
-          {Array.from({ length: 92 }).map((_, i) => {
+          {Array.from({ length: 96 }).map((_, i) => {
             const sx = hash2(i, 3, 7) * 1440;
-            const sy = hash2(i, 5, 13) * (horizonY - 260);
-            const tw = 0.4 + 0.6 * Math.abs(Math.sin(localSec * 0.9 + i));
-            return <circle key={i} cx={sx} cy={sy} r={hash2(i, 9, 3) * 1.7 + 0.4} fill="rgba(236, 230, 212, 0.9)" opacity={tw * (1 - sy / horizonY)} />;
+            const sy = hash2(i, 5, 13) * 900;
+            const tw = 0.35 + 0.65 * Math.abs(Math.sin(localSec * 0.8 + i));
+            return <circle key={i} cx={sx} cy={sy} r={hash2(i, 9, 3) * 1.6 + 0.35} fill="rgba(238, 232, 214, 0.92)" opacity={tw * (1 - sy / 1100)} />;
           })}
         </g>
 
-        {/* horizon glow */}
-        <rect x={0} y={horizonY - 340} width={1440} height={430} fill="url(#s7-glow)" />
+        <rect x={0} y={700} width={1440} height={600} fill="url(#s7-glow)" />
 
-        {/* far dune line */}
-        <path d={dunePaths[0]} fill="url(#s7-dune1)" opacity={0.9} transform={`translate(${-localSec * 2.2}, 0)`} />
-        <path d={dunePaths[1]} fill="url(#s7-dune2)" transform={`translate(${-localSec * 4.4}, 6)`} />
+        {/* far dunes */}
+        <path d={duneFar} fill="url(#s7-far)" transform={`translate(${-localSec * 1.6}, 0)`} />
+        <path d={duneFar} fill="none" stroke="rgba(250, 214, 158, 0.16)" strokeWidth={2} transform={`translate(${-localSec * 1.6}, 0)`} />
+        <path d={duneMid} fill="url(#s7-mid)" transform={`translate(${-localSec * 3.2}, 0)`} />
+        <path d={duneMid} fill="none" stroke="rgba(250, 216, 160, 0.12)" strokeWidth={1.6} transform={`translate(${-localSec * 3.2}, 0)`} />
 
-        {/* camels crossing the middle band */}
-        <g opacity={camelsIn} transform={`translate(${-80 + camelWalk * 150}, 0)`}>
-          <ellipse cx={620} cy={1428} rx={280} ry={16} fill="rgba(0,0,0,0.22)" />
-          <Camel x={520} y={1400} s={1.12} walk={camelWalk * 3.2} color="#241609" />
-          <Camel x={676} y={1418} s={0.96} walk={camelWalk * 3.2 + 0.35} color="#1D1107" />
-          <Camel x={796} y={1434} s={0.8} walk={camelWalk * 3.2 + 0.62} color="#180D05" />
-          {/* the herder */}
-          <g transform="translate(880, 1436)">
-            <ellipse cx={0} cy={0} rx={16} ry={4} fill="rgba(0,0,0,0.3)" />
-            <path d="M -6,-2 L -4,-40 L 6,-40 L 8,-2 Z" fill="#170C05" />
-            <path d="M -6,-40 C -6,-52 6,-52 6,-40 Z" fill="#170C05" />
-            <line x1={8} y1={-30} x2={26} y2={-6} stroke="#170C05" strokeWidth={3} />
+        {/* the walking surface, then the caravan and the waterhole on top of it */}
+        <path d={duneWalk} fill="url(#s7-walk)" transform={`translate(${-localSec * 6}, 0)`} />
+
+        <g transform={`translate(${-90 + camelWalk * 160}, 0)`} opacity={camelsIn}>
+          <ellipse cx={600} cy={1424} rx={260} ry={16} fill="rgba(0,0,0,0.26)" />
+          <Camel x={500} y={1396} s={1.05} walk={camelWalk * 3.2} color="#1B1108" />
+          <Camel x={648} y={1412} s={0.9} walk={camelWalk * 3.2 + 0.34} color="#170D06" />
+          <Camel x={762} y={1426} s={0.76} walk={camelWalk * 3.2 + 0.6} color="#130A04" />
+          <g transform="translate(846, 1432)">
+            <ellipse cx={0} cy={0} rx={14} ry={4} fill="rgba(0,0,0,0.32)" />
+            <path d="M -6,-2 L -4,-38 L 6,-38 L 8,-2 Z" fill="#150B04" />
+            <path d="M -6,-38 C -6,-50 6,-50 6,-38 Z" fill="#150B04" />
+            <line x1={8} y1={-28} x2={24} y2={-4} stroke="#150B04" strokeWidth={2.6} />
           </g>
         </g>
 
-        {/* mid + near dunes */}
-        <path d={dunePaths[2]} fill="url(#s7-dune3)" transform={`translate(${-localSec * 7}, 0)`} />
-        {/* waterhole, reeds and reflection */}
+        {/* waterhole */}
         <g>
-          <ellipse cx={1082} cy={1520} rx={252} ry={62} fill="#2B1E12" />
-          <ellipse cx={1082} cy={1514} rx={236} ry={52} fill="#3E4A42" />
-          <ellipse cx={1082} cy={1514} rx={236} ry={52} fill="url(#s7-glow)" opacity={0.7} />
-          {Array.from({ length: 7 }).map((_, i) => (
-            <ellipse key={i} cx={1082 - 150 + i * 48} cy={1506 + (i % 3) * 12} rx={44 - i * 2} ry={5} fill="rgba(214, 226, 210, 0.16)" />
+          <ellipse cx={1078} cy={1462} rx={256} ry={58} fill="rgba(12, 8, 4, 0.5)" />
+          <ellipse cx={1078} cy={1454} rx={244} ry={50} fill="url(#s7-water)" />
+          <ellipse cx={1078} cy={1454} rx={244} ry={50} fill="url(#s7-glow)" opacity={0.8} />
+          {Array.from({ length: 9 }).map((_, i) => (
+            <ellipse key={i} cx={1078 - 170 + i * 44} cy={1444 + (i % 3) * 12} rx={50 - i * 2} ry={4.4} fill="rgba(232, 214, 172, 0.16)" />
           ))}
-          {Array.from({ length: 13 }).map((_, i) => {
-            const rx = 872 + i * 38;
-            const sway = Math.sin(localSec * 0.8 + i) * 5;
+          {/* far bank + reeds */}
+          <path d="M 836,1442 C 900,1424 980,1428 1040,1436 C 1120,1446 1200,1438 1318,1428 L 1318,1460 L 836,1460 Z" fill="rgba(38, 32, 20, 0.8)" />
+          {Array.from({ length: 15 }).map((_, i) => {
+            const rx = 866 + i * 30;
+            const sway = Math.sin(localSec * 0.7 + i) * 5;
             return (
               <g key={i}>
-                <path d={`M ${rx},${1528} C ${rx + sway},${1486} ${rx + 10 + sway},${1452} ${rx + 4 + sway * 1.6},${1420}`} fill="none" stroke="#4C5B3E" strokeWidth={2.6} strokeLinecap="round" />
-                <path d={`M ${rx + 2 + sway * 1.6},${1424} l -8,-14 M ${rx + 2 + sway * 1.6},${1424} l 10,-16`} fill="none" stroke="#5F7048" strokeWidth={2} strokeLinecap="round" />
+                <path d={`M ${rx},${1444} C ${rx + sway},${1404} ${rx + 9 + sway},${1372} ${rx + 3 + sway * 1.6},${1340}`} fill="none" stroke="#4B5738" strokeWidth={2.6} strokeLinecap="round" />
+                <path d={`M ${rx + 1 + sway * 1.6},${1344} l -8,-15 M ${rx + 1 + sway * 1.6},${1344} l 9,-17 M ${rx + 1 + sway * 1.6},${1344} l 1,-20`} fill="none" stroke="#5C6B44" strokeWidth={1.8} strokeLinecap="round" />
               </g>
             );
           })}
         </g>
 
-        <path d={dunePaths[3]} fill="url(#s7-dune4)" transform={`translate(${-localSec * 11}, 0)`} />
-        {sand && <image href={sand} x={0} y={1840} width={1440} height={760} opacity={0.16} preserveAspectRatio="none" />}
-
-        {/* the geosmin plume: a light ribbon carried on the wind */}
+        {/* the geosmin plume, carried from the waterhole toward the caravan */}
         <g opacity={plume * 0.95}>
           {[0, 1, 2].map((i) => (
             <path
               key={i}
-              d={`M ${1060},${1470 - i * 26} C ${880},${1400 - i * 30} ${700},${1330 - i * 18} ${470},${1352 - i * 34} S ${250},${1300 - i * 20} ${110},${1246 - i * 26}`}
+              d={`M ${1060},${1436 - i * 22} C ${880},${1372 - i * 26} ${700},${1316 - i * 18} ${470},${1336 - i * 30} S ${250},${1290 - i * 18} ${112},${1240 - i * 24}`}
               fill="none"
               stroke="url(#s7-plume)"
               strokeWidth={9 - i * 2.4}
               strokeLinecap="round"
-              opacity={0.7 - i * 0.16}
-              strokeDasharray={i === 0 ? undefined : `${26 + i * 16} ${18 + i * 10}`}
-              strokeDashoffset={-plume * 160}
+              opacity={0.62 - i * 0.14}
+              strokeDasharray={i === 0 ? undefined : `${28 + i * 16} ${20 + i * 10}`}
+              strokeDashoffset={-plume * 150}
             />
           ))}
-          {Array.from({ length: 14 }).map((_, i) => {
-            const t = i / 13;
-            const px = 1060 - t * 940;
-            const py = 1470 - t * 210 + Math.sin(t * 5) * 22;
-            return <circle key={i} cx={px} cy={py} r={1.6 + (i % 3)} fill="rgba(244, 214, 158, 0.7)" opacity={clamp01(plume * 1.5 - t * 0.7)} />;
+          {Array.from({ length: 16 }).map((_, i) => {
+            const t = i / 15;
+            const px = 1060 - t * 950;
+            const py = 1436 - t * 196 + Math.sin(t * 5.2) * 22;
+            return <circle key={i} cx={px} cy={py} r={1.5 + (i % 3)} fill="rgba(246, 218, 166, 0.78)" opacity={clamp01(plume * 1.5 - t * 0.7)} />;
           })}
         </g>
+
+        {/* near + foreground dunes, softly lit along the crest */}
+        <path d={duneNear} fill="url(#s7-near)" transform={`translate(${-localSec * 12}, 0)`} />
+        <path d={duneNear} fill="none" stroke="rgba(226, 176, 118, 0.14)" strokeWidth={2.4} transform={`translate(${-localSec * 12}, -2)`} />
+        <path d={duneFront} fill="url(#s7-front)" transform={`translate(${-localSec * 20}, 0)`} />
+        {sand && <image href={sand} x={0} y={2060} width={1440} height={540} opacity={0.1} preserveAspectRatio="none" />}
 
         {/* drifting sand */}
-        <g opacity={0.42}>
-          {Array.from({ length: 40 }).map((_, i) => {
-            const sp = 30 + (i % 7) * 12;
+        <g opacity={0.4}>
+          {Array.from({ length: 44 }).map((_, i) => {
+            const sp = 26 + (i % 7) * 14;
             const px = (i * 137 + localSec * sp) % 1500 - 30;
-            const py = 1350 + ((i * 71) % 700);
-            return <circle key={i} cx={px} cy={py} r={0.8 + (i % 3) * 0.6} fill="rgba(224, 196, 152, 0.7)" />;
+            const py = 1300 + ((i * 71) % 760);
+            return <circle key={i} cx={px} cy={py} r={0.8 + (i % 3) * 0.6} fill="rgba(228, 200, 156, 0.7)" />;
           })}
         </g>
 
-        {/* compass, etched in brass */}
-        <CompassRose x={1216} y={430} r={132} p={prog(globalSec, 96.9, 99.0)} color="rgba(226, 194, 138, 0.8)" />
+        {/* compass */}
+        <CompassRose x={1216} y={420} r={128} p={prog(globalSec, 96.9, 99.0)} color="rgba(228, 196, 140, 0.82)" />
 
-        {/* ---------------- typography: vertical masthead ------------------ */}
+        {/* typography */}
         <g opacity={reveal}>
-          <g transform="translate(78, 900) rotate(-90)">
-            <text x={0} y={0} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={126} letterSpacing="-0.02em">
+          <g transform="translate(150, 940) rotate(-90)">
+            <text x={0} y={0} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={104} letterSpacing="-0.02em">
               Kompas
             </text>
           </g>
           <g transform="translate(96, 1290)">
-            <RuleLine x1={0} y1={0} x2={260 * easeOutCubic(prog(localSec, 0.5, 1.8))} y2={0} color="rgba(216, 198, 166, 0.42)" />
-            <Mono x={0} y={38} text="AROMA SEBAGAI PETA" size={17} color="rgba(230, 216, 190, 0.68)" tracking={0.2} />
-            <Mono x={0} y={66} text="± 80 KM DARI SUMBER AIR" size={14} color="rgba(212, 198, 172, 0.46)" tracking={0.14} weight={400} />
+            <RuleLine x1={0} y1={0} x2={250 * easeOutCubic(prog(localSec, 0.5, 1.8))} y2={0} color="rgba(216, 198, 166, 0.4)" />
+            <Mono x={0} y={34} text="AROMA SEBAGAI PETA" size={16} color="rgba(232, 218, 192, 0.7)" tracking={0.2} />
+            <Mono x={0} y={60} text="± 80 KM DARI SUMBER AIR" size={13} color="rgba(214, 200, 174, 0.46)" tracking={0.14} weight={400} />
           </g>
         </g>
 
         <g opacity={easeOutCubic(prog(globalSec, 97.4, 99.4))}>
-          <Mono x={92} y={1760} text="NALURI YANG DIWARISKAN" size={16} color={art.accent} tracking={0.3} />
-          <text x={90} y={1838} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={44} fontWeight={500} letterSpacing="-0.02em">
+          <Mono x={92} y={1844} text="NALURI YANG DIWARISKAN" size={16} color={art.accent} tracking={0.3} />
+          <text x={90} y={1920} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={44} fontWeight={500} letterSpacing="-0.02em">
             gurun menyimpan arah
           </text>
-          <text x={90} y={1892} fill="rgba(238, 228, 208, 0.66)" fontFamily={IDENTITY.fontGrotesk} fontSize={30} fontWeight={400}>
+          <text x={90} y={1970} fill="rgba(238, 228, 208, 0.6)" fontFamily={IDENTITY.fontGrotesk} fontSize={28} fontWeight={400}>
             dalam bentuk yang bisa dihirup
           </text>
         </g>
@@ -553,8 +572,8 @@ export const Scene08StillLife: React.FC = () => {
         <RuleLine x1={0} y1={420} x2={1440} y2={420} color="rgba(240, 220, 184, 0.14)" width={2} />
 
         {/* ---------------- left: the plate and the fish ---------------- */}
-        <g opacity={1 - zoom * 0.85}>
-          <CatfishPlate x={462} y={880} s={1.02} p={fishIn} uid="s8-fish" />
+        <g opacity={clamp01(1 - zoom * 1.3)}>
+          <CatfishPlate x={470} y={890} s={1.06} p={fishIn} uid="s8-fish" />
 
           <g opacity={easeOutCubic(prog(globalSec, 103.0, 104.4))}>
             <Mono x={96} y={552} text="DI LIDAH — DIBENCI" size={18} color="#C0703F" tracking={0.26} />
@@ -569,7 +588,7 @@ export const Scene08StillLife: React.FC = () => {
         {/* ---------------- right: the window with rain ---------------- */}
         <g transform={`translate(${cxW}, ${cyW}) scale(${zoomS}) translate(${-cxW}, ${-cyW})`}>
           <RainWindow x={winX} y={winY} w={winW} h={winH} p={windowIn} uid="s8-win" localSec={localSec} />
-          <g opacity={easeOutCubic(prog(globalSec, 103.4, 104.9)) * (1 - zoom * 0.9)}>
+          <g opacity={easeOutCubic(prog(globalSec, 103.4, 104.9)) * clamp01(1 - zoom * 1.5)}>
             <Mono x={winX} y={winY - 34} text="DI HIDUNG — DIPUJA" size={18} color="#B7A46A" tracking={0.24} />
             <Mono x={winX + winW} y={winY - 34} text="GERIMIS 17.40" size={14} color="rgba(220, 210, 186, 0.5)" anchor="end" tracking={0.14} weight={400} />
           </g>
@@ -641,7 +660,7 @@ export const Scene08StillLife: React.FC = () => {
 
         {/* top marginalia */}
         <g opacity={easeOutCubic(prog(localSec, 0.3, 1.6)) * (1 - zoom)}>
-          <Mono x={96} y={330} text="SATU MOLEKUL · DUA WAJAH" size={18} color="rgba(224, 210, 182, 0.62)" tracking={0.3} />
+          <Mono x={96} y={300} text="SATU MOLEKUL · DUA WAJAH" size={18} color="rgba(224, 210, 182, 0.62)" tracking={0.3} />
           <RuleLine x1={96} y1={352} x2={372} y2={352} color="rgba(206, 190, 160, 0.28)" />
         </g>
       </svg>

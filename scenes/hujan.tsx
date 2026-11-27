@@ -560,8 +560,8 @@ export const SoilSlab: React.FC<{
     return Array.from({ length: 26 }).map(() => ({
       px: 60 + rnd() * (w - 120),
       py: 26 + rnd() * (d - 52),
-      r: 3 + rnd() * 8,
-      a: 0.18 + rnd() * 0.4,
+      r: 2.4 + rnd() * 5.6,
+      a: 0.07 + rnd() * 0.18,
     }));
   }, [seed, w, d]);
 
@@ -865,18 +865,18 @@ export const Scene01RuangTakar: React.FC = () => {
             <text x={100} y={470} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
               BUKAN
             </text>
-            <text x={100} y={592} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
+            <text x={100} y={620} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
               AROMA
             </text>
-            <text x={100} y={714} fill="none" stroke={art.ink} strokeWidth={1.6} opacity={0.62} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
+            <text x={100} y={766} fill="none" stroke={art.ink} strokeWidth={1.6} opacity={0.62} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
               AIR
             </text>
             {/* rust strike-through draws across the word */}
             <line
               x1={100}
-              y1={676}
-              x2={100 + 300 * strike}
-              y2={676 + 12 * strike}
+              y1={730}
+              x2={100 + 330 * strike}
+              y2={742 + strike * 10}
               stroke={IDENTITY.stampRust}
               strokeWidth={7}
               strokeLinecap="round"
@@ -885,8 +885,8 @@ export const Scene01RuangTakar: React.FC = () => {
           </g>
 
           <g opacity={subIn} transform={`translate(0, ${(1 - subIn) * 18})`}>
-            <Mono x={104} y={786} text="AIR HUJAN MURNI TIDAK PUNYA BAU" size={24} color="rgba(236, 230, 214, 0.86)" tracking={0.16} />
-            <text x={102} y={852} fill={art.accent} fontFamily={IDENTITY.fontFraunces} fontSize={44} fontStyle="italic">
+            <Mono x={104} y={836} text="AIR HUJAN MURNI TIDAK PUNYA BAU" size={24} color="rgba(236, 230, 214, 0.86)" tracking={0.16} />
+            <text x={102} y={902} fill={art.accent} fontFamily={IDENTITY.fontFraunces} fontSize={44} fontStyle="italic">
               yang kita hirup adalah parfum tanah
             </text>
           </g>
@@ -901,29 +901,34 @@ export const Scene01RuangTakar: React.FC = () => {
 
           {/* ---------------- macro laterite slab bleeding off right -------- */}
           <g>
-            <SoilSlab x={366} y={1160} w={1170} d={250} h={120} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(246, 214, 160, 0.34)" />
+            <SoilSlab x={330} y={1146} w={1250} d={300} h={158} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(246, 214, 160, 0.34)" />
             {/* standing water film in the slab depressions */}
-            <ellipse cx={706} cy={1276} rx={96} ry={20} fill="rgba(150, 190, 192, 0.2)" />
-            <ellipse cx={706} cy={1274} rx={62} ry={11} fill="rgba(196, 224, 222, 0.16)" />
+            <ellipse cx={706} cy={1300} rx={116} ry={24} fill="rgba(150, 190, 192, 0.18)" />
+            <ellipse cx={706} cy={1297} rx={74} ry={13} fill="rgba(206, 230, 226, 0.2)" />
+            <ellipse cx={1146} cy={1322} rx={90} ry={17} fill="rgba(150, 190, 192, 0.14)" />
 
             {/* first drop + crown */}
-            <DropStreak x={706} y={960 + firstDrop * 300} len={110} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
-            <ImpactCrown x={706} y={1276} p={clamp01((firstDrop - 0.92) * 6)} scale={1.25} />
-            <DropStreak x={1140} y={920 + secondDrop * 350} len={86} opacity={secondDrop > 0 && secondDrop < 1 ? 0.7 : 0} />
-            <ImpactCrown x={1140} y={1304} p={clamp01((secondDrop - 0.94) * 6)} scale={0.85} />
+            <DropStreak x={706} y={946 + firstDrop * 330} len={118} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
+            {localSec > 1.62 && localSec < 2.85 && (
+              <ImpactCrown x={706} y={1300} p={clamp01((localSec - 1.62) / 0.85)} scale={1.35} />
+            )}
+            <DropStreak x={1146} y={886 + secondDrop * 380} len={92} opacity={secondDrop > 0 && secondDrop < 1 ? 0.75 : 0} />
+            {localSec > 3.42 && localSec < 4.5 && (
+              <ImpactCrown x={1146} y={1322} p={clamp01((localSec - 3.42) / 0.8)} scale={0.92} />
+            )}
 
             {/* the chemical trap blooming out of the soil */}
             <g opacity={trapIn} transform={`translate(0, ${(1 - trapIn) * 40})`}>
-              <g transform="translate(936, 1242)">
+              <g transform="translate(952, 1300)">
                 <IsoCrystal x={0} y={0} s={30} h={46 * latticeIn} opacity={latticeIn} />
                 <IsoCrystal x={58} y={16} s={22} h={64 * latticeIn} hue={['#F6E3B4', '#D3A963', '#8F6A34']} opacity={latticeIn} />
                 <IsoCrystal x={-48} y={20} s={18} h={38 * latticeIn} hue={['#EBD6A6', '#C39A54', '#7C5C2C']} opacity={latticeIn * 0.9} />
                 <IsoCrystal x={26} y={-16} s={14} h={30 * latticeIn} opacity={latticeIn * 0.8} />
               </g>
-              <VapourWisps x={962} y={1210} p={vapour} count={4} height={330} />
+              <VapourWisps x={978} y={1268} p={vapour} count={4} height={330} />
               <LeaderLabel
-                from={[936, 1240]}
-                to={[1236, 1046]}
+                from={[952, 1298]}
+                to={[1250, 1086]}
                 text="GEOSMIN · C₁₂H₂₂O"
                 sub="ALKOHOL BISIKLIK TANAH"
                 color="rgba(226, 206, 166, 0.8)"
@@ -936,13 +941,13 @@ export const Scene01RuangTakar: React.FC = () => {
 
           {/* ---------------- marginalia: thin measured notes ----------------- */}
           <g opacity={trapIn * 0.9}>
-            <RuleLine x1={104} y1={1530} x2={612} y2={1530} color="rgba(200, 190, 166, 0.28)" />
-            <Mono x={104} y={1572} text="JEBAKAN KIMIA" size={17} color={IDENTITY.stampRust} tracking={0.26} />
-            <Mono x={104} y={1604} text="DIPASANG BAKTERI TANAH UNTUK MENYEBAR SPORA" size={15} color="rgba(214, 206, 188, 0.6)" tracking={0.12} weight={400} />
-            <Mono x={1336} y={1572} text="BEAR & THOMAS · 1964" size={15} color="rgba(214, 206, 188, 0.5)" tracking={0.16} anchor="end" weight={400} />
-            <RuleLine x1={104} y1={1690} x2={1336} y2={1690} color="rgba(200, 190, 166, 0.2)" />
-            <Mono x={104} y={1732} text="AMBANG BAU MANUSIA TERHADAP GEOSMIN" size={15} color="rgba(214, 206, 188, 0.44)" tracking={0.16} weight={400} />
-            <Mono x={1336} y={1732} text="5 BAGIAN PER TRILIUN" size={17} color={IDENTITY.amberLight} tracking={0.2} anchor="end" />
+            <RuleLine x1={104} y1={1668} x2={612} y2={1668} color="rgba(200, 190, 166, 0.28)" />
+            <Mono x={104} y={1708} text="JEBAKAN KIMIA" size={17} color={IDENTITY.stampRust} tracking={0.26} />
+            <Mono x={104} y={1740} text="DIPASANG BAKTERI TANAH UNTUK MENYEBAR SPORA" size={15} color="rgba(214, 206, 188, 0.6)" tracking={0.12} weight={400} />
+            <Mono x={1336} y={1708} text="BEAR & THOMAS · 1964" size={15} color="rgba(214, 206, 188, 0.5)" tracking={0.16} anchor="end" weight={400} />
+            <RuleLine x1={104} y1={1826} x2={1336} y2={1826} color="rgba(200, 190, 166, 0.2)" />
+            <Mono x={104} y={1866} text="AMBANG BAU MANUSIA TERHADAP GEOSMIN" size={15} color="rgba(214, 206, 188, 0.44)" tracking={0.16} weight={400} />
+            <Mono x={1336} y={1866} text="5 BAGIAN PER TRILIUN" size={17} color={IDENTITY.amberLight} tracking={0.2} anchor="end" />
           </g>
         </g>
       </svg>
@@ -1002,7 +1007,7 @@ const HighSpeedFrame: React.FC<{
   label: string;
   uid: string;
 }> = ({ x, y, w, h, phase, p, label, uid }) => {
-  const surfaceY = y + h * 0.62;
+  const surfaceY = y + h * 0.56;
   const cx = x + w * 0.5;
 
   const bubbleP = phase === 'perangkap' ? clamp01(p) : phase === 'letupan' || phase === 'kabut' ? 1 : 0;
@@ -1032,7 +1037,7 @@ const HighSpeedFrame: React.FC<{
         <rect x={x} y={y} width={w} height={h} fill={`url(#${uid}-lamp)`} />
 
         {/* porous soil cross-section */}
-        <SoilGrainBand x={x} y={surfaceY} w={w} h={h * 0.44} seed={phase.length + 3} opaque={0.96} />
+        <SoilGrainBand x={x} y={surfaceY} w={w} h={h * 0.46} seed={phase.length + 3} opaque={0.98} />
         {/* dark voids between grains = air capillaries */}
         {Array.from({ length: 7 }).map((_, i) => (
           <ellipse
@@ -1060,18 +1065,18 @@ const HighSpeedFrame: React.FC<{
         {/* falling drop */}
         {(phase === 'jatuh' || (phase === 'hentakan' && p < 0.2)) && (
           <g opacity={phase === 'jatuh' ? 0.95 : 0.6}>
-            <ellipse cx={cx} cy={y + h * (0.16 + clamp01(p) * 0.28)} rx={9} ry={13} fill="rgba(226, 242, 242, 0.9)" />
+            <ellipse cx={cx} cy={y + h * (0.14 + clamp01(p) * 0.3)} rx={12} ry={17} fill="rgba(228, 244, 244, 0.94)" />
             <line x1={cx} y1={y + h * (0.02 + clamp01(p) * 0.28)} x2={cx} y2={y + h * (0.14 + clamp01(p) * 0.28)} stroke="rgba(220, 238, 238, 0.34)" strokeWidth={2} />
           </g>
         )}
 
         {/* impact crown + trapped bubble */}
-        {crownP > 0.02 && <ImpactCrown x={cx} y={surfaceY} p={crownP} scale={1.05} />}
+        {crownP > 0.02 && <ImpactCrown x={cx} y={surfaceY} p={crownP} scale={1.3} />}
 
         {bubbleP > 0.02 && (
           <g>
             {/* the air pocket dragged under the drop */}
-            <ellipse cx={cx} cy={surfaceY + 46} rx={30} ry={20} fill="rgba(206, 228, 228, 0.16)" stroke="rgba(232, 246, 244, 0.66)" strokeWidth={1.6} />
+            <ellipse cx={cx} cy={surfaceY + 56} rx={44} ry={28} fill="rgba(206, 228, 228, 0.16)" stroke="rgba(232, 246, 244, 0.66)" strokeWidth={1.6} />
             <ellipse cx={cx - 8} cy={surfaceY + 40} rx={9} ry={5} fill="rgba(255, 255, 255, 0.5)" />
             {/* rising chain */}
             {Array.from({ length: 6 }).map((_, i) => {
@@ -1081,7 +1086,7 @@ const HighSpeedFrame: React.FC<{
               const bx = cx + Math.sin(i * 1.7 + p * 2) * (10 + i * 1.6);
               return (
                 <g key={i} opacity={0.45 + rise * 0.5}>
-                  <circle cx={bx} cy={by} r={3.6 + i * 0.9} fill="rgba(214, 236, 234, 0.18)" stroke="rgba(240, 250, 248, 0.7)" strokeWidth={1.1} />
+                  <circle cx={bx} cy={by} r={5 + i * 1.4} fill="rgba(214, 236, 234, 0.18)" stroke="rgba(240, 250, 248, 0.7)" strokeWidth={1.1} />
                   <circle cx={bx - 1.2} cy={by - 1.2} r={(3.6 + i * 0.9) * 0.34} fill="rgba(255,255,255,0.7)" />
                 </g>
               );
@@ -1102,7 +1107,7 @@ const HighSpeedFrame: React.FC<{
             const py = surfaceY - 10 + Math.sin(ang) * dist - life * 40;
             return (
               <g key={i} opacity={clamp01(1.2 - life * 0.8)}>
-                <circle cx={px} cy={py} r={2 + rndB * 5} fill="rgba(228, 240, 236, 0.72)" />
+                <circle cx={px} cy={py} r={2.6 + rndB * 6.4} fill="rgba(230, 242, 238, 0.78)" />
                 {rndA > 0.62 && <circle cx={px} cy={py} r={1.6 + rndB * 3} fill="rgba(208, 168, 104, 0.9)" />}
               </g>
             );
@@ -1133,9 +1138,13 @@ const HighSpeedFrame: React.FC<{
         <rect x={x + 13} y={y + 13} width={w - 26} height={h - 26} fill="none" stroke="rgba(214, 228, 224, 0.16)" strokeWidth={1} />
       </g>
 
-      {/* burned-in lab label */}
-      <Mono x={x + 26} y={y + h - 26} text={label} size={17} color="rgba(226, 234, 228, 0.78)" tracking={0.24} />
-      <circle cx={x + 16} cy={y + h - 31} r={4} fill="rgba(226, 190, 120, 0.9)" />
+      {/* burned-in lab label, only on the frame that sits in the gate */}
+      {label.length > 0 && (
+        <g>
+          <Mono x={x + 30} y={y + h - 26} text={label} size={17} color="rgba(232, 238, 232, 0.82)" tracking={0.26} />
+          <circle cx={x + 19} cy={y + h - 31} r={4} fill="rgba(226, 190, 120, 0.92)" />
+        </g>
+      )}
     </g>
   );
 };
@@ -1143,11 +1152,11 @@ const HighSpeedFrame: React.FC<{
 export const Scene02StripCepat: React.FC = () => {
   const { art, localSec, globalSec } = useChapterClock(1);
 
-  const stripW = 848;
-  const frameW = stripW - 96;
-  const frameH = 566;
-  const stripX = 296;
-  const stepGap = 640;
+  const stripW = 940;
+  const frameW = stripW - 100;
+  const frameH = 604;
+  const stripX = 250;
+  const stepGap = 668;
 
   // strip advances as each measurement lands; eased between 5 stations
   const stations = [
@@ -1170,7 +1179,7 @@ export const Scene02StripCepat: React.FC = () => {
   const phaseStart = [11.62, 15.66, 18.06, 20.62, 22.92];
 
   const flicker = 0.94 + 0.06 * Math.sin(localSec * 47) * Math.sin(localSec * 13.4);
-  const stripTop = 900;
+  const stripTop = 868;
 
   return (
     <AbsoluteFill>
@@ -1189,6 +1198,17 @@ export const Scene02StripCepat: React.FC = () => {
       </svg>
 
       <DustMotes count={54} seed={12} color="rgba(240, 224, 192, 0.55)" y0={120} y1={2100} />
+
+      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
+        <defs>
+          <linearGradient id="s2-top" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(6, 8, 9, 0.94)" />
+            <stop offset="60%" stopColor="rgba(6, 8, 9, 0.34)" />
+            <stop offset="100%" stopColor="rgba(6, 8, 9, 0)" />
+          </linearGradient>
+        </defs>
+        <rect x={0} y={0} width={1440} height={300} fill="url(#s2-top)" />
+      </svg>
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         {/* ---------------- the film strip ---------------- */}
@@ -1234,7 +1254,7 @@ export const Scene02StripCepat: React.FC = () => {
                   h={frameH}
                   phase={ph}
                   p={p}
-                  label={labels[i]}
+                  label={Math.abs(i - pos) < 0.45 ? labels[i] : ''}
                   uid={`s2-${i}`}
                 />
               </g>
@@ -1264,18 +1284,21 @@ export const Scene02StripCepat: React.FC = () => {
             <RuleLine x1={0} y1={48} x2={430} y2={48} color="rgba(200, 192, 172, 0.28)" />
           </g>
 
-          {/* measured comparison written straight on the dark, no plaque */}
+          {/* measured comparison: a slate note laid over the strip, no card */}
           <g opacity={easeOutCubic(prog(globalSec, 21.2, 22.4))}>
-            <RuleLine x1={92} y1={1600} x2={586} y2={1600} color="rgba(206, 196, 172, 0.24)" />
-            <Mono x={92} y={1636} text="GERIMIS PELAN" size={16} color={art.accent} tracking={0.24} />
-            <text x={90} y={1696} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={40} fontWeight={500} letterSpacing="-0.01em">
-              gelembung meletup
-            </text>
-            <RuleLine x1={640} y1={1600} x2={1348} y2={1600} color="rgba(206, 196, 172, 0.24)" />
-            <Mono x={640} y={1636} text="HUJAN DERAS" size={16} color="rgba(190, 196, 188, 0.5)" tracking={0.24} />
-            <text x={638} y={1696} fill="rgba(232, 228, 216, 0.34)" fontFamily={IDENTITY.fontGrotesk} fontSize={40} fontWeight={500} letterSpacing="-0.01em">
-              gelembung gagal
-            </text>
+            <defs>
+              <linearGradient id="s2-scrim" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(6, 8, 8, 0)" />
+                <stop offset="34%" stopColor="rgba(6, 8, 8, 0.86)" />
+                <stop offset="100%" stopColor="rgba(6, 8, 8, 0.94)" />
+              </linearGradient>
+            </defs>
+            <rect x={250} y={1600} width={940} height={260} fill="url(#s2-scrim)" />
+            <RuleLine x1={286} y1={1660} x2={1154} y2={1660} color="rgba(206, 196, 172, 0.26)" />
+            <Mono x={286} y={1700} text="GERIMIS PELAN" size={16} color={art.accent} tracking={0.26} />
+            <Mono x={286} y={1734} text="gelembung sempat meletup" size={26} color="rgba(240, 234, 220, 0.94)" tracking={0.02} weight={600} />
+            <Mono x={1154} y={1700} text="HUJAN DERAS" size={16} color="rgba(198, 202, 194, 0.44)" tracking={0.26} anchor="end" />
+            <Mono x={1154} y={1734} text="gelembung gagal terbentuk" size={26} color="rgba(226, 222, 210, 0.34)" tracking={0.02} anchor="end" weight={600} />
           </g>
         </g>
       </svg>
@@ -1289,44 +1312,119 @@ export const Scene02StripCepat: React.FC = () => {
 // 8. SCENE 03 — "CAWAN AGAR": A LIVING CULTURE PLATE IN OBLIQUE LIGHT
 // ============================================================================
 
-const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: number; raised?: boolean }> = ({
+const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: number; raised?: boolean; seed: number; dry?: number }> = ({
   cx,
   cy,
   r,
   tone,
   grow,
   raised = false,
+  seed,
+  dry = 0,
 }) => {
   const rr = r * easeOutCubic(grow);
   if (rr < 0.4) return null;
-  const base = ['#C7A265', '#D6C193', '#A97F49', '#E0D3B4', '#8E6A3C'][Math.floor(tone * 5) % 5];
-  const edge = ['#EBD9AE', '#F1E6C8', '#C9A268', '#F4EBD6', '#A98352'][Math.floor(tone * 5) % 5];
+  const palette = [
+    ['#B08A4E', '#D8BC85', '#7C5C2C'],
+    ['#C7B58A', '#E6DAC0', '#8E7C55'],
+    ['#8E6C3C', '#B99B62', '#5E4522'],
+    ['#D6C9A6', '#EFE6CE', '#9C8A66'],
+    ['#A2763F', '#CBAE76', '#6B4C22'],
+  ][Math.floor(tone * 5) % 5];
+
+  const blob = useMemo(() => {
+    const n = 44;
+    const pts: [number, number][] = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const k =
+        1 +
+        0.1 * Math.sin(3 * a + seed * 1.7) +
+        0.07 * Math.sin(5 * a + seed * 2.9) +
+        0.045 * Math.sin(9 * a + seed * 4.3) +
+        0.03 * Math.sin(15 * a + seed);
+      pts.push([Math.cos(a) * rr * k, Math.sin(a) * rr * k]);
+    }
+    return pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ') + ' Z';
+  }, [rr, seed]);
+
   return (
-    <g opacity={clamp01(grow * 1.6)}>
-      {raised && <ellipse cx={cx + rr * 0.16} cy={cy + rr * 0.2} rx={rr * 1.02} ry={rr * 0.88} fill="rgba(20, 12, 6, 0.42)" />}
-      <circle cx={cx} cy={cy} r={rr} fill={base} opacity={0.9} />
-      <circle cx={cx} cy={cy} r={rr} fill="none" stroke={edge} strokeWidth={1.4} opacity={0.6} />
-      {/* concentric growth rings */}
-      {[0.74, 0.5, 0.28].map((k, i) => (
-        <circle key={i} cx={cx} cy={cy} r={rr * k} fill="none" stroke="rgba(60, 42, 22, 0.16)" strokeWidth={1.1} />
-      ))}
-      {/* fuzzy aerial mycelium rim */}
-      {Array.from({ length: 18 }).map((_, i) => {
-        const a = (i / 18) * Math.PI * 2 + tone * 5;
-        const len = rr * (0.1 + hash2(i, Math.round(tone * 90), 5) * 0.2);
+    <g transform={`translate(${cx}, ${cy})`} opacity={clamp01(grow * 1.7)}>
+      {raised && <path d={blob} transform="translate(4, 6)" fill="rgba(16, 10, 4, 0.5)" />}
+      <path d={blob} fill={palette[0]} />
+      <defs>
+        <radialGradient id={`col-${seed}`} cx="34%" cy="30%" r="76%">
+          <stop offset="0%" stopColor={palette[1]} stopOpacity={0.9} />
+          <stop offset="58%" stopColor={palette[0]} stopOpacity={0.5} />
+          <stop offset="100%" stopColor={palette[2]} stopOpacity={0.72} />
+        </radialGradient>
+        <clipPath id={`colclip-${seed}`}>
+          <path d={blob} />
+        </clipPath>
+      </defs>
+      <path d={blob} fill={`url(#col-${seed})`} />
+      <g clipPath={`url(#colclip-${seed})`}>
+        {/* concentric growth wave, offset from centre for a hand-made look */}
+        {[0.82, 0.62, 0.42, 0.24].map((k, i) => (
+          <ellipse
+            key={i}
+            cx={rr * 0.12 * Math.sin(seed + i)}
+            cy={rr * 0.1 * Math.cos(seed * 1.3 + i)}
+            rx={rr * k}
+            ry={rr * k * 0.94}
+            fill="none"
+            stroke={`rgba(60, 42, 20, ${0.2 - i * 0.03})`}
+            strokeWidth={1.5}
+            strokeDasharray={i % 2 === 0 ? undefined : '7 9'}
+          />
+        ))}
+        {/* mottled speckle */}
+        {Array.from({ length: 26 }).map((_, i) => {
+          const a = hash2(i, Math.round(seed), 17) * Math.PI * 2;
+          const rad = hash2(i, Math.round(seed), 29) * rr * 0.88;
+          return (
+            <circle
+              key={i}
+              cx={Math.cos(a) * rad}
+              cy={Math.sin(a) * rad}
+              r={1.4 + hash2(i, 5, 3) * 4}
+              fill={i % 3 === 0 ? 'rgba(255, 246, 220, 0.34)' : 'rgba(52, 36, 16, 0.22)'}
+            />
+          );
+        })}
+        {/* dry, cracked rim as the colony starves */}
+        {dry > 0.02 &&
+          Array.from({ length: 7 }).map((_, i) => {
+            const a = (i / 7) * Math.PI * 2 + seed;
+            return (
+              <path
+                key={i}
+                d={`M 0,0 L ${Math.cos(a) * rr * 0.96},${Math.sin(a) * rr * 0.96}`}
+                stroke={`rgba(30, 18, 8, ${0.24 * dry})`}
+                strokeWidth={2.4}
+                strokeLinecap="round"
+              />
+            );
+          })}
+      </g>
+
+      {/* fuzzy aerial mycelium around the rim */}
+      {Array.from({ length: 30 }).map((_, i) => {
+        const a = (i / 30) * Math.PI * 2;
+        const len = rr * (0.05 + hash2(i, Math.round(seed * 7), 5) * 0.16);
         return (
           <line
             key={`f${i}`}
-            x1={cx + Math.cos(a) * rr * 0.94}
-            y1={cy + Math.sin(a) * rr * 0.94}
-            x2={cx + Math.cos(a) * (rr + len)}
-            y2={cy + Math.sin(a) * (rr + len)}
-            stroke="rgba(240, 228, 198, 0.4)"
-            strokeWidth={1}
+            x1={Math.cos(a) * rr * 0.97}
+            y1={Math.sin(a) * rr * 0.97}
+            x2={Math.cos(a) * (rr + len)}
+            y2={Math.sin(a) * (rr + len)}
+            stroke="rgba(240, 228, 198, 0.34)"
+            strokeWidth={1.1}
           />
         );
       })}
-      <circle cx={cx - rr * 0.3} cy={cy - rr * 0.32} r={rr * 0.34} fill="rgba(255, 246, 222, 0.16)" />
+      <path d={blob} fill="none" stroke={palette[1]} strokeWidth={1.6} opacity={0.6} />
     </g>
   );
 };
@@ -1453,8 +1551,8 @@ export const Scene03CawanAgar: React.FC = () => {
   const plate = useTex('brass-plate');
 
   const cx = 720;
-  const cy = 968;
-  const R = 520;
+  const cy = 996;
+  const R = 596;
 
   const dishIn = easeOutExpo(prog(localSec, 0.1, 1.6));
   const colonyGrow = prog(globalSec, 26.9, 33.0);
@@ -1467,33 +1565,55 @@ export const Scene03CawanAgar: React.FC = () => {
 
   const colonies = useMemo(() => {
     const rnd = makeRng(9102);
-    return Array.from({ length: 30 }).map(() => {
+    const clusters = Array.from({ length: 6 }).map(() => {
       const a = rnd() * Math.PI * 2;
-      const rad = 60 + rnd() * (R - 120);
-      return {
-        cx: Math.cos(a) * rad,
-        cy: Math.sin(a) * rad,
-        r: 26 + rnd() * 92,
-        tone: rnd(),
-        delay: rnd() * 0.5,
-      };
+      const rad = 90 + rnd() * (R - 230);
+      return { cx: Math.cos(a) * rad, cy: Math.sin(a) * rad };
     });
+    const out: { cx: number; cy: number; r: number; tone: number; delay: number; seed: number }[] = [];
+    clusters.forEach((c, ci) => {
+      const n = 4 + Math.floor(rnd() * 4);
+      for (let i = 0; i < n; i++) {
+        const a = rnd() * Math.PI * 2;
+        const rad = 20 + rnd() * 120;
+        const px = c.cx + Math.cos(a) * rad;
+        const py = c.cy + Math.sin(a) * rad;
+        if (Math.hypot(px, py) > R - 70) continue;
+        out.push({
+          cx: px,
+          cy: py,
+          r: 22 + rnd() * (i === 0 ? 96 : 58),
+          tone: rnd(),
+          delay: rnd() * 0.45,
+          seed: ci * 31 + i * 7 + 3,
+        });
+      }
+    });
+    return out;
   }, [R]);
 
   const filaments = useMemo(() => {
     const rnd = makeRng(551);
-    return Array.from({ length: 9 }).map((_, i) => {
-      const a = -Math.PI * 0.86 + i * 0.17 + rnd() * 0.06;
-      const r0 = 60 + rnd() * 90;
+    return Array.from({ length: 13 }).map((_, i) => {
+      const a = -Math.PI * 0.92 + i * 0.21 + rnd() * 0.08;
+      const r0 = 40 + rnd() * 120;
       const x0 = Math.cos(a) * r0;
       const y0 = Math.sin(a) * r0;
-      const len = 200 + rnd() * 150;
-      const bend = (rnd() - 0.5) * 90;
+      const len = 170 + rnd() * 190;
+      const bend = (rnd() - 0.5) * 130;
       const x1 = x0 + Math.cos(a) * len + bend;
-      const y1 = y0 + Math.sin(a) * len * 0.55;
-      const cxp = x0 + Math.cos(a) * len * 0.5 + bend * 0.8;
-      const cyp = y0 + Math.sin(a) * len * 0.3;
-      return { d: `M ${x0},${y0} Q ${cxp},${cyp} ${x1},${y1}`, tip: [x1, y1] as [number, number], len, delay: rnd() * 0.22 };
+      const y1 = y0 + Math.sin(a) * len * 0.7;
+      const cxp = x0 + Math.cos(a) * len * 0.42 + bend * 0.9;
+      const cyp = y0 + Math.sin(a) * len * 0.28;
+      const bx = x0 + (x1 - x0) * 0.55 + 44;
+      const by = y0 + (y1 - y0) * 0.55 - 26;
+      return {
+        d: `M ${x0},${y0} Q ${cxp},${cyp} ${x1},${y1}`,
+        branch: `M ${bx},${by} q 30,-26 62,-30`,
+        branchTip: [bx + 62, by - 30] as [number, number],
+        tip: [x1, y1] as [number, number],
+        delay: rnd() * 0.3,
+      };
     });
   }, []);
 
@@ -1524,7 +1644,7 @@ export const Scene03CawanAgar: React.FC = () => {
           <ellipse cx={cx + 18} cy={cy + R * 0.92} rx={R * 0.92} ry={R * 0.2} fill="rgba(0,0,0,0.6)" />
 
           {/* dish body / agar */}
-          <circle cx={cx} cy={cy} r={R} fill="#2A1F13" />
+          <circle cx={cx} cy={cy} r={R} fill="#170F07" />
           <g>
             <defs>
               <clipPath id="s3-agar">
@@ -1533,7 +1653,7 @@ export const Scene03CawanAgar: React.FC = () => {
             </defs>
             <g clipPath="url(#s3-agar)">
               {agarUrl && <image href={agarUrl} x={cx - R} y={cy - R} width={R * 2} height={R * 2} opacity={0.55} />}
-              <circle cx={cx} cy={cy} r={R} fill="rgba(70, 52, 28, 0.5)" />
+              <circle cx={cx} cy={cy} r={R} fill="rgba(58, 40, 20, 0.62)" />
               {/* oblique light sweeping across wet agar */}
               <ellipse cx={cx - R * 0.28} cy={cy - R * 0.34} rx={R * 0.76} ry={R * 0.5} fill="rgba(248, 220, 170, 0.14)" />
               {/* radial pouring striations */}
@@ -1562,6 +1682,8 @@ export const Scene03CawanAgar: React.FC = () => {
                     tone={c.tone}
                     grow={clamp01(colonyGrow * 1.5 - c.delay)}
                     raised={i % 3 === 0}
+                    seed={c.seed}
+                    dry={drought}
                   />
                 ))}
               </g>
@@ -1589,8 +1711,10 @@ export const Scene03CawanAgar: React.FC = () => {
                   const gp = clamp01((filamentGrow - f.delay * 2) / 0.8);
                   return (
                     <g key={i}>
-                      <StreptoFilament d={f.d} p={gp} color="rgba(236, 226, 202, 0.9)" />
-                      <SpiralSporeChain x={f.tip[0]} y={f.tip[1]} len={62} p={gp} rot={(i - 4) * 7} />
+                      <StreptoFilament d={f.d} p={gp} color="rgba(238, 228, 204, 0.88)" />
+                      <StreptoFilament d={f.branch} p={clamp01(gp * 1.5 - 0.5)} color="rgba(232, 220, 194, 0.7)" />
+                      <SpiralSporeChain x={f.tip[0]} y={f.tip[1]} len={66} p={gp} rot={(i - 6) * 6} />
+                      <SpiralSporeChain x={f.branchTip[0]} y={f.branchTip[1]} len={44} p={clamp01(gp * 1.6 - 0.5)} rot={(i - 3) * 9} r={4.2} color="#E4C895" />
                     </g>
                   );
                 })}
@@ -1599,20 +1723,15 @@ export const Scene03CawanAgar: React.FC = () => {
               {/* drought: agar dries & splits */}
               {drought > 0.02 && (
                 <g opacity={clamp01(drought * 1.4)}>
-                  {Array.from({ length: 7 }).map((_, i) => {
-                    const a = (i / 7) * Math.PI * 2 + 0.4;
-                    const r0 = R * 0.16;
-                    const r1 = R * (0.55 + (i % 3) * 0.14);
-                    return (
-                      <path
-                        key={i}
-                        d={`M ${cx + Math.cos(a) * r0},${cy + Math.sin(a) * r0} L ${cx + Math.cos(a + 0.16) * r1},${cy + Math.sin(a + 0.16) * r1} L ${cx + Math.cos(a - 0.1) * (r1 + 46)},${cy + Math.sin(a - 0.1) * (r1 + 46)}`}
-                        fill="none"
-                        stroke="rgba(28, 16, 8, 0.55)"
-                        strokeWidth={2.6}
-                        strokeLinecap="round"
-                      />
-                    );
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const a = (i / 5) * Math.PI * 2 + 0.9;
+                    const pts: string[] = [];
+                    for (let k = 0; k < 5; k++) {
+                      const rad = R * (0.94 - k * 0.17);
+                      const aa = a + Math.sin(k * 1.7 + i) * 0.12;
+                      pts.push(`${k === 0 ? 'M' : 'L'} ${cx + Math.cos(aa) * rad},${cy + Math.sin(aa) * rad}`);
+                    }
+                    return <path key={i} d={pts.join(' ')} fill="none" stroke="rgba(24, 14, 6, 0.5)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />;
                   })}
                   <circle cx={cx} cy={cy} r={R - 12} fill="rgba(64, 44, 26, 0.28)" />
                 </g>
@@ -1623,13 +1742,13 @@ export const Scene03CawanAgar: React.FC = () => {
                 <g>
                   {Array.from({ length: 9 }).map((_, i) => {
                     const a = (i / 9) * Math.PI * 2 + 0.9;
-                    const rad = 60 + (i % 4) * 78;
+                    const rad = 70 + (i % 4) * 96;
                     return (
                       <FrostCrystal
                         key={i}
                         x={cx + Math.cos(a) * rad}
                         y={cy + Math.sin(a) * rad}
-                        size={26 + (i % 3) * 16}
+                        size={38 + (i % 3) * 26}
                         p={clamp01(bloom * 1.6 - i * 0.06)}
                         rot={i * 23}
                       />
@@ -1674,14 +1793,14 @@ export const Scene03CawanAgar: React.FC = () => {
 
         {/* ---------------- scientific name set in a living serif ---------- */}
         <g>
-          <InkReveal x={84} y={1478} p={nameIn} dir="up" pad={10}>
-            <text x={84} y={1618} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={132} letterSpacing="-0.02em">
+          <InkReveal x={84} y={1566} p={nameIn} dir="up" pad={10}>
+            <text x={84} y={1690} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={124} letterSpacing="-0.02em">
               Streptomyces
             </text>
           </InkReveal>
           <g opacity={easeOutCubic(prog(globalSec, 31.0, 32.2))}>
-            <RuleLine x1={92} y1={1652} x2={92 + 620 * easeOutCubic(prog(globalSec, 31.0, 32.4))} y2={1652} color="rgba(206, 190, 160, 0.36)" />
-            <Mono x={92} y={1692} text="BAKTERI BENANG · PENGHASIL 2/3 ANTIBIOTIK DUNIA" size={17} color="rgba(222, 212, 190, 0.7)" tracking={0.14} />
+            <RuleLine x1={92} y1={1734} x2={92 + 620 * easeOutCubic(prog(globalSec, 31.0, 32.4))} y2={1734} color="rgba(206, 190, 160, 0.36)" />
+            <Mono x={92} y={1776} text="BAKTERI BENANG · PENGHASIL 2/3 ANTIBIOTIK DUNIA" size={17} color="rgba(222, 212, 190, 0.7)" tracking={0.14} />
           </g>
         </g>
 
@@ -1705,103 +1824,86 @@ export const Scene03CawanAgar: React.FC = () => {
 
 const PlasterNose: React.FC<{ x: number; y: number; s: number; p: number; uid: string }> = ({ x, y, s, p, uid }) => {
   const outline =
-    'M 268,6 C 246,52 226,84 218,112 C 210,138 190,150 178,166 C 158,190 146,212 138,236 C 126,268 110,284 100,302 C 90,320 88,334 98,342 C 88,350 82,362 94,372 C 76,384 72,402 92,412 C 72,428 68,456 88,470 C 114,492 162,502 212,506 L 306,506 L 306,6 Z';
+    'M 300,0 L 252,0 C 244,34 236,58 228,78 C 220,96 210,104 204,118 C 198,134 194,152 186,170 C 176,192 156,206 148,222 C 142,234 148,244 162,246 C 174,248 182,244 190,240 C 186,252 176,262 160,268 C 150,272 146,282 154,288 C 140,296 136,310 148,318 C 138,330 140,346 152,354 C 146,372 156,390 174,398 C 200,410 246,416 300,418 Z';
+
   return (
     <g transform={`translate(${x}, ${y}) scale(${s})`}>
       <defs>
         <clipPath id={`${uid}-face`}>
           <path d={outline} />
         </clipPath>
-        <linearGradient id={`${uid}-plaster`} x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0%" stopColor="#F4EBD8" />
-          <stop offset="52%" stopColor="#E4D6BE" />
-          <stop offset="100%" stopColor="#BFA98A" />
+        <linearGradient id={`${uid}-plaster`} x1="0" y1="0" x2="1" y2="0.5">
+          <stop offset="0%" stopColor="#FAF3E2" />
+          <stop offset="46%" stopColor="#EADFC6" />
+          <stop offset="100%" stopColor="#BDA98A" />
         </linearGradient>
         <linearGradient id={`${uid}-scent`} x1="1" y1="0" x2="0" y2="0">
           <stop offset="0%" stopColor="rgba(158, 59, 42, 0)" />
-          <stop offset="100%" stopColor="rgba(158, 59, 42, 0.85)" />
+          <stop offset="100%" stopColor="rgba(158, 59, 42, 0.8)" />
         </linearGradient>
       </defs>
 
-      {/* cast shadow of the relief */}
-      <ellipse cx={168} cy={520} rx={130} ry={16} fill="rgba(40, 30, 20, 0.22)" />
+      {/* cast shadow of the plaster relief */}
+      <ellipse cx={186} cy={430} rx={112} ry={14} fill="rgba(52, 38, 22, 0.2)" />
 
-      {/* sculpted face */}
-      <path d={outline} fill={`url(#${uid}-plaster)`} stroke="rgba(70, 56, 38, 0.55)" strokeWidth={2} />
+      {/* the relief itself */}
+      <path d={outline} fill={`url(#${uid}-plaster)`} stroke="rgba(74, 58, 38, 0.5)" strokeWidth={1.8} />
+
       <g clipPath={`url(#${uid}-face)`}>
-        {/* modelling: light from upper-left */}
-        <path d="M 306,0 L 306,506 L 190,506 C 150,470 160,420 200,380 C 232,346 236,300 214,252 C 244,210 268,140 268,60 Z" fill="rgba(96, 74, 46, 0.14)" />
-        <ellipse cx={150} cy={300} rx={70} ry={120} fill="rgba(255, 250, 236, 0.4)" />
-        <ellipse cx={118} cy={330} rx={26} ry={40} fill="rgba(255, 252, 240, 0.5)" />
+        {/* modelling shadow to the right of the profile */}
+        <path d="M 300,0 L 300,418 L 196,410 C 214,352 224,300 226,244 C 228,186 246,110 300,0 Z" fill="rgba(96, 74, 46, 0.16)" />
+        <path d="M 208,120 C 236,150 244,210 232,268 C 224,320 232,364 262,392" fill="none" stroke="rgba(120, 96, 62, 0.22)" strokeWidth={2.4} />
+        <ellipse cx={166} cy={208} rx={30} ry={64} fill="rgba(255, 252, 240, 0.5)" />
+        <ellipse cx={158} cy={252} rx={22} ry={30} fill="rgba(255, 252, 240, 0.38)" />
 
-        {/* engraver's hatching in the shadow side */}
-        {Array.from({ length: 46 }).map((_, i) => {
-          const yy = 30 + i * 10.6;
+        {/* engraved hatching, denser where the light falls away */}
+        {Array.from({ length: 52 }).map((_, i) => {
+          const yy = 6 + i * 8;
           return (
-            <line
-              key={i}
-              x1={198 + (i % 5) * 3}
-              y1={yy}
-              x2={300}
-              y2={yy - 26}
-              stroke="rgba(78, 60, 38, 0.14)"
-              strokeWidth={1 + (i % 3) * 0.4}
-            />
+            <line key={i} x1={214 + (i % 6) * 4} y1={yy} x2={300} y2={yy - 22} stroke="rgba(84, 64, 38, 0.11)" strokeWidth={1 + (i % 3) * 0.3} />
           );
         })}
-        {Array.from({ length: 22 }).map((_, i) => (
-          <line
-            key={`b${i}`}
-            x1={120 + i * 7}
-            y1={250 + i * 10}
-            x2={196}
-            y2={252 + i * 10}
-            stroke="rgba(96, 74, 46, 0.12)"
-            strokeWidth={0.9}
-          />
+        {Array.from({ length: 26 }).map((_, i) => (
+          <line key={`c${i}`} x1={128 + (i % 5) * 3} y1={300 + i * 4} x2={214} y2={296 + i * 4} stroke="rgba(96, 74, 46, 0.1)" strokeWidth={0.9} />
         ))}
 
-        {/* cheek & jaw contour lines */}
-        <path d="M 210,196 C 232,240 228,300 196,340" fill="none" stroke="rgba(110, 88, 58, 0.22)" strokeWidth={1.4} />
-        <path d="M 206,368 C 226,392 220,430 190,452" fill="none" stroke="rgba(110, 88, 58, 0.2)" strokeWidth={1.2} />
-
-        {/* nostril */}
-        <ellipse cx={112} cy={300} rx={13} ry={7} fill="rgba(52, 38, 24, 0.72)" transform="rotate(-18 112 300)" />
-        <path d="M 100,296 C 112,290 124,292 130,300" fill="none" stroke="rgba(52, 38, 24, 0.6)" strokeWidth={2.4} strokeLinecap="round" />
-
-        {/* lips & chin crease */}
-        <path d="M 96,376 C 116,372 136,376 148,382" fill="none" stroke="rgba(120, 78, 58, 0.4)" strokeWidth={2} />
-        <path d="M 92,404 C 116,400 140,404 154,410" fill="none" stroke="rgba(120, 78, 58, 0.34)" strokeWidth={2} />
-        <path d="M 112,352 C 130,352 146,356 156,360" fill="none" stroke="rgba(120, 78, 58, 0.28)" strokeWidth={1.4} />
+        {/* brow, eye socket, cheek, mouth, chin */}
+        <path d="M 196,112 C 214,100 236,104 246,118" fill="none" stroke="rgba(96, 72, 44, 0.34)" strokeWidth={3} strokeLinecap="round" />
+        <path d="M 206,132 C 220,124 236,126 244,136 C 236,146 218,148 208,140 Z" fill="rgba(92, 70, 42, 0.16)" />
+        <path d="M 158,236 C 168,240 180,240 188,236" fill="none" stroke="rgba(60, 42, 24, 0.55)" strokeWidth={2} strokeLinecap="round" />
+        <ellipse cx={166} cy={236} rx={9} ry={4.4} fill="rgba(52, 36, 20, 0.62)" transform="rotate(-14 166 236)" />
+        <path d="M 150,288 C 172,290 196,294 214,300" fill="none" stroke="rgba(120, 78, 58, 0.44)" strokeWidth={2.4} strokeLinecap="round" />
+        <path d="M 146,314 C 166,314 188,316 204,320" fill="none" stroke="rgba(120, 78, 58, 0.3)" strokeWidth={1.8} strokeLinecap="round" />
+        <path d="M 152,352 C 168,352 184,354 198,358" fill="none" stroke="rgba(120, 78, 58, 0.24)" strokeWidth={1.6} strokeLinecap="round" />
       </g>
 
-      {/* scent ribbons drawn into the nostril */}
+      {/* scent ribbons reaching into the nostril */}
       {[0, 1, 2].map((i) => {
-        const p2 = clamp01((p - i * 0.08) * 1.2);
+        const p2 = clamp01((p - i * 0.07) * 1.25);
         return (
           <path
             key={i}
-            d={`M ${-140 - i * 26},${238 + i * 30} C ${-40},${222 + i * 34} ${40},${276 + i * 18} ${108},${296 + i * 5}`}
+            d={`M ${-170 - i * 22},${200 + i * 26} C ${-80},${186 + i * 28} ${20},${224 + i * 14} ${160},${232 + i * 3}`}
             fill="none"
             stroke={`url(#${uid}-scent)`}
-            strokeWidth={2.6 - i * 0.5}
+            strokeWidth={2.4 - i * 0.4}
             strokeLinecap="round"
             pathLength={1}
             strokeDasharray="1 1"
             strokeDashoffset={1 - p2}
-            opacity={0.9}
+            opacity={0.85}
           />
         );
       })}
 
-      {/* receptor cluster + label */}
+      {/* receptor cluster & its caption */}
       <g opacity={clamp01(p * 1.4)}>
         {Array.from({ length: 9 }).map((_, i) => (
-          <circle key={i} cx={132 + (i % 3) * 9} cy={292 + Math.floor(i / 3) * 9} r={2.6} fill="#9E3B2A" />
+          <circle key={i} cx={176 + (i % 3) * 8} cy={228 + Math.floor(i / 3) * 8} r={2.2} fill="#9E3B2A" />
         ))}
-        <line x1={158} y1={296} x2={236} y2={272} stroke="rgba(158, 59, 42, 0.6)" strokeWidth={1.1} />
-        <text x={242} y={270} fill="#9E3B2A" fontFamily={IDENTITY.fontMono} fontSize={17} fontWeight={600} letterSpacing="0.12em">
-          RESEPTOR OR4D2
+        <line x1={212} y1={236} x2={268} y2={206} stroke="rgba(158, 59, 42, 0.55)" strokeWidth={1.1} />
+        <text x={274} y={204} fill="#9E3B2A" fontFamily={IDENTITY.fontMono} fontSize={16} fontWeight={600} letterSpacing="0.1em">
+          OR4D2
         </text>
       </g>
     </g>
@@ -1813,14 +1915,14 @@ const EngravedShark: React.FC<{ x: number; y: number; s: number; p: number; uid:
     'M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z';
   const g = easeOutCubic(clamp01(p));
   return (
-    <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={0.2 + g * 0.8}>
+    <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={0.45 + g * 0.55}>
       <defs>
         <clipPath id={`${uid}-shark`}>
           <path d={body} />
         </clipPath>
         <linearGradient id={`${uid}-sharkfill`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#586A70" />
-          <stop offset="54%" stopColor="#7A8A8C" />
+          <stop offset="0%" stopColor="#42545A" />
+          <stop offset="54%" stopColor="#66797C" />
           <stop offset="56%" stopColor="#C6CDCB" />
           <stop offset="100%" stopColor="#EDE7D6" />
         </linearGradient>
@@ -1836,11 +1938,11 @@ const EngravedShark: React.FC<{ x: number; y: number; s: number; p: number; uid:
         {/* fine engraving hatch following the fish */}
         {Array.from({ length: 64 }).map((_, i) => {
           const yy = 76 + i * 1.9;
-          return <line key={i} x1={20} y1={yy} x2={610} y2={yy - 26} stroke="rgba(32, 28, 22, 0.16)" strokeWidth={0.7} />;
+          return <line key={i} x1={20} y1={yy} x2={610} y2={yy - 26} stroke="rgba(28, 24, 18, 0.3)" strokeWidth={0.9} />;
         })}
         {Array.from({ length: 26 }).map((_, i) => {
           const xx = 60 + i * 21;
-          return <line key={`v${i}`} x1={xx} y1={80} x2={xx - 10} y2={196} stroke="rgba(32, 28, 22, 0.08)" strokeWidth={0.6} />;
+          return <line key={`v${i}`} x1={xx} y1={80} x2={xx - 10} y2={196} stroke="rgba(28, 24, 18, 0.16)" strokeWidth={0.7} />;
         })}
         {/* copperplate sheen */}
         <ellipse cx={300} cy={128} rx={210} ry={34} fill="rgba(255, 250, 236, 0.22)" />
@@ -1895,7 +1997,14 @@ export const Scene04SpreadEditorial: React.FC = () => {
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <g transform={`translate(720, 1200) scale(${drift}) translate(-720, -1200)`}>
           {/* table shadow pool */}
-          <ellipse cx={720} cy={1770} rx={660} ry={110} fill="rgba(0,0,0,0.5)" />
+          <defs>
+            <radialGradient id="s4-pool" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(0,0,0,0.46)" />
+              <stop offset="70%" stopColor="rgba(0,0,0,0.18)" />
+              <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+            </radialGradient>
+          </defs>
+          <ellipse cx={720} cy={1760} rx={720} ry={150} fill="url(#s4-pool)" />
 
           {/* -------------------- LEFT LEAF -------------------- */}
           <g transform={`translate(${leftX}, ${430 + (1 - open) * 40}) rotate(-1.5)`}>
@@ -1913,25 +2022,25 @@ export const Scene04SpreadEditorial: React.FC = () => {
             <Mono x={46} y={310} text="AMBANG BAU GEOSMIN PADA MANUSIA" size={15} color="rgba(60, 50, 36, 0.66)" tracking={0.14} weight={400} />
 
             {/* letterpress numeral */}
-            <text x={pageW - 46} y={186} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={104} letterSpacing="0.01em">
+            <text x={pageW - 46} y={1136} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={104} letterSpacing="0.01em">
               5 PPT
             </text>
 
             {/* plaster relief */}
-            <PlasterNose x={128} y={356} s={0.92} p={noseIn} uid="s4-nose" />
+            <PlasterNose x={112} y={368} s={0.98} p={noseIn} uid="s4-nose" />
 
             {/* footnotes, set as real editorial columns */}
-            <RuleLine x1={46} y1={1032} x2={pageW - 46} y2={1032} color="rgba(60, 50, 36, 0.32)" />
-            <text x={46} y={1078} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+            <RuleLine x1={46} y1={986} x2={pageW - 46} y2={986} color="rgba(60, 50, 36, 0.32)" />
+            <text x={46} y={1028} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
               Satu sendok teh geosmin
             </text>
-            <text x={46} y={1112} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+            <text x={46} y={1062} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
               di 400 kolam renang Olimpiade
             </text>
-            <text x={46} y={1174} fill="rgba(58, 49, 40, 0.62)" fontFamily={IDENTITY.fontMono} fontSize={14} letterSpacing="0.1em">
+            <text x={46} y={1186} fill="rgba(58, 49, 40, 0.62)" fontFamily={IDENTITY.fontMono} fontSize={14} letterSpacing="0.1em">
               BEAR &amp; THOMAS · NATURE 1964
             </text>
-            <Mono x={pageW - 46} y={1174} text="1 MILIAR LITER" size={14} color="rgba(58, 49, 40, 0.5)" anchor="end" tracking={0.12} weight={400} />
+            <Mono x={pageW - 46} y={1186} text="1 MILIAR LITER" size={14} color="rgba(58, 49, 40, 0.5)" anchor="end" tracking={0.12} weight={400} />
 
             {/* page edge highlight */}
             <rect x={0} y={0} width={pageW} height={pageH} fill="none" stroke="rgba(80, 64, 44, 0.3)" strokeWidth={1.4} />
@@ -1955,7 +2064,7 @@ export const Scene04SpreadEditorial: React.FC = () => {
             {paperTex && <image href={paperTex} x={0} y={0} width={pageW} height={pageH} opacity={0.6} preserveAspectRatio="none" />}
             <rect x={0} y={0} width={26} height={pageH} fill="url(#s4-pageShadeL)" opacity={0.5} />
 
-            <g opacity={1 - tint * 0.92}>
+            <g opacity={clamp01(1 - tint * 1.55)}>
               <Mono x={46} y={72} text="LEMBAR DUA — PEMBANDING LAUT" size={16} color="rgba(60, 50, 36, 0.6)" tracking={0.22} weight={400} />
               <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
               <text x={44} y={186} fill="#231D15" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={68} letterSpacing="-0.02em">
@@ -1991,7 +2100,7 @@ export const Scene04SpreadEditorial: React.FC = () => {
             </g>
 
             {/* the reversal: our nose beats the shark by five orders of magnitude */}
-            <g opacity={tint} transform={`translate(0, ${(1 - tint) * 50})`}>
+            <g opacity={tint * tint * (3 - 2 * tint)} transform={`translate(0, ${(1 - tint) * 50})`}>
               <Mono x={46} y={72} text="KESIMPULAN TAKARAN" size={16} color="rgba(60, 50, 36, 0.62)" tracking={0.22} weight={400} />
               <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
               <text x={40} y={282} fill="#231D15" fontFamily={IDENTITY.fontDisplay} fontSize={188} letterSpacing="-0.01em">
@@ -2008,7 +2117,7 @@ export const Scene04SpreadEditorial: React.FC = () => {
               </text>
 
               {/* tiny shark silhouette for scale, drawn as a woodcut */}
-              <g transform="translate(300, 520) scale(0.5)">
+              <g transform="translate(360, 470) scale(0.34)" opacity={0.9}>
                 <path
                   d="M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z"
                   fill="#2A241B"

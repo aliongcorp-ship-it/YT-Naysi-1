@@ -35,155 +35,155 @@ export const Springtail: React.FC<{
   alpha?: number;
   bodyFill?: string;
   rim?: string;
-}> = ({ x, y, s, walk = 0, look = 0, furcula = 0, gut = 0, sporeP = 0, alpha = 1, bodyFill = '#E5D9BC', rim = 'rgba(255, 248, 226, 0.7)' }) => {
-  const segs = [
-    { cx: -146, cy: 4, rx: 26, ry: 22 },
-    { cx: -116, cy: 2, rx: 28, ry: 25 },
-    { cx: -84, cy: 0, rx: 30, ry: 28 },
-    { cx: -50, cy: -2, rx: 31, ry: 31 },
-    { cx: -16, cy: -3, rx: 30, ry: 33 },
-  ];
+}> = ({ x, y, s, walk = 0, look = 0, furcula = 0, gut = 0, sporeP = 0, alpha = 1, bodyFill = '#E3D5B4', rim = 'rgba(255, 248, 226, 0.62)' }) => {
   const legs = [
-    { x0: -60, y0: 24, kx: -78, ky: 62, x1: -96, y1: 92, ph: 0 },
-    { x0: -34, y0: 27, kx: -40, ky: 70, x1: -56, y1: 100, ph: 0.5 },
-    { x0: -8, y0: 29, kx: -2, ky: 72, x1: -14, y1: 104, ph: 1 },
-    { x0: 14, y0: 27, kx: 26, ky: 66, x1: 18, y1: 98, ph: 1.5 },
-    { x0: 34, y0: 23, kx: 48, ky: 60, x1: 44, y1: 90, ph: 2 },
-    { x0: 50, y0: 18, kx: 64, ky: 52, x1: 62, y1: 80, ph: 2.5 },
+    { x0: -34, y0: 20, kx: -52, ky: 54, x1: -66, y1: 84, ph: 0.0 },
+    { x0: -18, y0: 24, kx: -22, ky: 60, x1: -34, y1: 92, ph: 0.5 },
+    { x0: 0, y0: 26, kx: 10, ky: 60, x1: 2, y1: 94, ph: 1.0 },
+    { x0: 16, y0: 24, kx: 30, ky: 56, x1: 28, y1: 88, ph: 1.5 },
+    { x0: 30, y0: 18, kx: 46, ky: 48, x1: 48, y1: 78, ph: 2.0 },
+    { x0: 40, y0: 10, kx: 56, ky: 38, x1: 60, y1: 66, ph: 2.5 },
   ];
+
+  const uid = `sp-${Math.round(x)}-${Math.round(y)}-${Math.round(s * 100)}`;
+  const body =
+    'M -132,-6 C -136,-26 -118,-40 -96,-40 C -70,-52 -38,-50 -14,-40 C 10,-32 28,-22 38,-10 C 46,0 46,12 38,20 C 20,32 -10,36 -44,32 C -80,30 -108,22 -124,12 C -130,6 -132,0 -132,-6 Z';
 
   return (
     <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={alpha}>
-      {/* contact shadow */}
-      <ellipse cx={-60} cy={112} rx={150} ry={16} fill="rgba(0,0,0,0.42)" />
+      {/* soft contact shadow */}
+      <ellipse cx={-40} cy={100} rx={128} ry={15} fill="rgba(0,0,0,0.4)" />
 
-      {/* antennae (two, jointed, with sensory setae at the tips) */}
+      {/* antennae: four jointed segments, tapering */}
       {[
-        { d: 'M 74,-16 Q 128,-52 176,-44 Q 206,-40 224,-58', ph: 0 },
-        { d: 'M 78,-4 Q 132,-18 176,2 Q 208,14 232,4', ph: 1.4 },
-      ].map((a, i) => (
-        <g key={i}>
-          <path d={a.d} fill="none" stroke={bodyFill} strokeWidth={7} strokeLinecap="round" />
-          <path d={a.d} fill="none" stroke={rim} strokeWidth={1.4} strokeLinecap="round" opacity={0.55} />
-          {[0.32, 0.6, 0.9].map((k, j) => {
-            const t = k;
-            const px = 74 + (224 - 74) * t + (i === 0 ? -6 : 2) * Math.sin(t * 3);
-            const py = -16 + (i === 0 ? -42 + look * 6 : 20) * t;
-            return <circle key={j} cx={px} cy={py} r={4.4} fill={bodyFill} stroke={rim} strokeWidth={0.8} opacity={0.9} />;
-          })}
-          {/* geosmin-sensitive sensilla */}
-          <line x1={224} y1={i === 0 ? -58 : 4} x2={238} y2={i === 0 ? -74 : 14} stroke={bodyFill} strokeWidth={2.4} strokeLinecap="round" />
-        </g>
-      ))}
-
-      {/* furcula: folded under, or fully extended in a launch */}
-      {furcula > 0.02 ? (
-        <g>
-          <path
-            d={`M -150,16 Q ${-150 - 120 * furcula},${40 - 90 * furcula} ${-150 - 250 * furcula},${74 - 176 * furcula}`}
-            fill="none"
-            stroke={bodyFill}
-            strokeWidth={9}
-            strokeLinecap="round"
-            opacity={0.95}
-          />
-          <path
-            d={`M -150,16 Q ${-150 - 108 * furcula},${60 - 60 * furcula} ${-150 - 238 * furcula},${96 - 150 * furcula}`}
-            fill="none"
-            stroke={bodyFill}
-            strokeWidth={7}
-            strokeLinecap="round"
-            opacity={0.7}
-          />
-          <circle cx={-150 - 250 * furcula} cy={74 - 176 * furcula} r={6} fill={bodyFill} />
-        </g>
-      ) : (
-        <path d="M -150,14 Q -196,44 -196,66" fill="none" stroke={bodyFill} strokeWidth={7} strokeLinecap="round" opacity={0.85} />
-      )}
-
-      {/* legs with walking cycle */}
-      {legs.map((l, i) => {
-        const swing = Math.sin(walk * Math.PI * 2 + l.ph) * 10;
+        { pts: [[52, -22], [86, -40], [118, -44], [150, -34], [176, -44]], ph: 0 },
+        { pts: [[54, -8], [90, -14], [122, -4], [150, 10], [172, 10]], ph: 1.5 },
+      ].map((a, i) => {
+        const sway = Math.sin(look * 2 + a.ph) * 4;
+        const d = `M ${a.pts[0][0]},${a.pts[0][1]} C ${a.pts[1][0]},${a.pts[1][1] + sway} ${a.pts[2][0]},${a.pts[2][1] - sway} ${a.pts[3][0]},${a.pts[3][1]} L ${a.pts[4][0]},${a.pts[4][1] + sway}`;
         return (
           <g key={i}>
-            <path
-              d={`M ${l.x0},${l.y0} Q ${l.kx + swing},${l.ky} ${l.x1 + swing * 1.6},${l.y1}`}
-              fill="none"
-              stroke={bodyFill}
-              strokeWidth={6.4}
-              strokeLinecap="round"
-              opacity={0.96}
-            />
-            <path
-              d={`M ${l.x0},${l.y0} Q ${l.kx + swing},${l.ky} ${l.x1 + swing * 1.6},${l.y1}`}
-              fill="none"
-              stroke={rim}
-              strokeWidth={1.1}
-              strokeLinecap="round"
-              opacity={0.4}
-            />
-            <line x1={l.x1 + swing * 1.6} y1={l.y1} x2={l.x1 + swing * 1.6 + 5} y2={l.y1 + 6} stroke={bodyFill} strokeWidth={2.6} strokeLinecap="round" />
+            <path d={d} fill="none" stroke={bodyFill} strokeWidth={5.4} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="rgba(96, 74, 42, 0.28)" strokeWidth={1.2} strokeLinecap="round" transform="translate(0.8, 1.4)" />
+            {[0.28, 0.52, 0.76, 0.93].map((k, j) => {
+              const px = a.pts[0][0] + (a.pts[4][0] - a.pts[0][0]) * k;
+              const py = a.pts[0][1] + (a.pts[4][1] - a.pts[0][1]) * k + Math.sin(k * 4) * (i === 0 ? -8 : 6);
+              return <circle key={j} cx={px} cy={py} r={2.2} fill="rgba(255, 250, 232, 0.9)" stroke="rgba(96, 74, 42, 0.4)" strokeWidth={0.6} />;
+            })}
           </g>
         );
       })}
 
-      {/* abdominal segments, from tail to thorax */}
-      {segs.map((sg, i) => (
-        <g key={i}>
-          <ellipse cx={sg.cx} cy={sg.cy} rx={sg.rx} ry={sg.ry} fill={bodyFill} />
-          <ellipse cx={sg.cx - sg.rx * 0.26} cy={sg.cy - sg.ry * 0.32} rx={sg.rx * 0.62} ry={sg.ry * 0.5} fill="rgba(255, 252, 240, 0.45)" />
-          <ellipse cx={sg.cx + sg.rx * 0.2} cy={sg.cy + sg.ry * 0.36} rx={sg.rx * 0.7} ry={sg.ry * 0.44} fill="rgba(120, 96, 58, 0.16)" />
-          <ellipse cx={sg.cx} cy={sg.cy} rx={sg.rx} ry={sg.ry} fill="none" stroke="rgba(96, 76, 44, 0.22)" strokeWidth={1.2} />
+      {/* furcula: folded beneath, or snapped out for the launch */}
+      {furcula > 0.02 ? (
+        <g>
+          <path
+            d={`M -126,10 Q ${-126 - 70 * furcula},${30 - 40 * furcula} ${-126 - 168 * furcula},${64 - 92 * furcula}`}
+            fill="none"
+            stroke={bodyFill}
+            strokeWidth={7}
+            strokeLinecap="round"
+            opacity={0.95}
+          />
+          <path
+            d={`M -126,10 Q ${-126 - 56 * furcula},${44 - 20 * furcula} ${-126 - 150 * furcula},${86 - 60 * furcula}`}
+            fill="none"
+            stroke="rgba(120, 92, 52, 0.7)"
+            strokeWidth={3.4}
+            strokeLinecap="round"
+          />
+          <path d={`M ${-126 - 168 * furcula},${64 - 92 * furcula} l -14,-6 l 16,-8`} fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
         </g>
-      ))}
+      ) : (
+        <path d="M -126,8 Q -164,26 -170,54" fill="none" stroke={bodyFill} strokeWidth={6} strokeLinecap="round" opacity={0.9} />
+      )}
 
-      {/* head, eye patch, mouth cone */}
-      <ellipse cx={54} cy={-24} rx={38} ry={33} fill={bodyFill} />
-      <ellipse cx={44} cy={-38} rx={24} ry={18} fill="rgba(255, 252, 240, 0.5)" />
-      <ellipse cx={64} cy={-20} rx={11} ry={10} fill="#2A2318" opacity={0.82} />
-      <circle cx={61} cy={-23} r={3} fill="rgba(255, 255, 255, 0.65)" />
-      <path d="M 82,2 Q 92,10 84,20" fill="none" stroke={bodyFill} strokeWidth={6} strokeLinecap="round" />
-      <path d="M 86,14 Q 96,16 98,24" fill="none" stroke="rgba(96, 76, 44, 0.6)" strokeWidth={2} strokeLinecap="round" />
-
-      {/* fine body setae */}
-      {Array.from({ length: 16 }).map((_, i) => {
-        const bx = -150 + i * 13;
-        const by = -26 - Math.sin((i / 16) * Math.PI) * 12;
-        return <line key={i} x1={bx} y1={by} x2={bx - 4} y2={by - 12} stroke="rgba(240, 228, 200, 0.5)" strokeWidth={1.2} strokeLinecap="round" />;
+      {/* six jointed walking legs */}
+      {legs.map((l, i) => {
+        const swing = Math.sin(walk * Math.PI * 2 + l.ph) * 8;
+        return (
+          <g key={i}>
+            <path
+              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.5},${l.ky} ${l.x1 + swing},${l.y1}`}
+              fill="none"
+              stroke={bodyFill}
+              strokeWidth={5.2}
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.5},${l.ky} ${l.x1 + swing},${l.y1}`}
+              fill="none"
+              stroke="rgba(110, 84, 48, 0.24)"
+              strokeWidth={1.3}
+              strokeLinecap="round"
+              transform="translate(0.9, 1.2)"
+            />
+            <line x1={l.x1 + swing} y1={l.y1} x2={l.x1 + swing + 6} y2={l.y1 + 5} stroke={bodyFill} strokeWidth={2.4} strokeLinecap="round" />
+          </g>
+        );
       })}
 
-      {/* translucent gut + surviving spores */}
+      {/* body: one continuous silhouette, humpbacked */}
+      <path d={body} fill={bodyFill} />
+      <g>
+        <defs>
+          <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255, 252, 238, 0.55)" />
+            <stop offset="52%" stopColor="rgba(255, 248, 226, 0.06)" />
+            <stop offset="100%" stopColor="rgba(108, 82, 46, 0.3)" />
+          </linearGradient>
+          <clipPath id={`${uid}-clip`}>
+            <path d={body} />
+          </clipPath>
+        </defs>
+        <path d={body} fill={`url(#${uid}-fill)`} />
+        {/* segment ridges */}
+        {[-104, -84, -64, -44, -24, -4, 16].map((sx, i) => (
+          <path
+            key={i}
+            d={`M ${sx},${-38 + Math.abs(sx + 50) * 0.05} C ${sx + 8},${-18} ${sx + 8},${10} ${sx},${30}`}
+            fill="none"
+            stroke="rgba(104, 78, 44, 0.24)"
+            strokeWidth={1.6}
+          />
+        ))}
+        <g clipPath={`url(#${uid}-clip)`}>
+          {/* fine dorsal setae */}
+          {Array.from({ length: 26 }).map((_, i) => {
+            const bx = -132 + i * 6.6;
+            const by = -40 + Math.sin((i / 26) * Math.PI) * 6;
+            return <line key={i} x1={bx} y1={by} x2={bx - 3} y2={by - 8} stroke="rgba(246, 236, 208, 0.42)" strokeWidth={0.9} />;
+          })}
+        </g>
+      </g>
+      <path d={body} fill="none" stroke="rgba(112, 86, 48, 0.4)" strokeWidth={1.2} />
+      <path d="M -128,-12 C -130,-30 -112,-42 -92,-42" fill="none" stroke={rim} strokeWidth={2} strokeLinecap="round" opacity={0.6} />
+
+      {/* head: rounded capsule with a downward snout */}
+      <path
+        d="M 26,-24 C 34,-40 54,-46 70,-40 C 88,-33 96,-16 92,0 C 88,16 72,24 54,22 C 36,20 24,8 26,-8 Z"
+        fill={bodyFill}
+        stroke="rgba(112, 86, 48, 0.4)"
+        strokeWidth={1.2}
+      />
+      <path d="M 34,-32 C 44,-42 62,-42 74,-35" fill="none" stroke="rgba(255, 250, 232, 0.6)" strokeWidth={3} strokeLinecap="round" />
+      {/* eye patch + mouth cone */}
+      <ellipse cx={66} cy={-14} rx={10} ry={9} fill="#241C12" opacity={0.85} />
+      <circle cx={62.6} cy={-17} r={2.6} fill="rgba(255, 255, 255, 0.72)" />
+      <path d="M 88,2 C 96,8 98,16 92,22" fill="none" stroke={bodyFill} strokeWidth={6} strokeLinecap="round" />
+      <path d="M 92,18 C 100,20 104,26 102,32" fill="none" stroke="rgba(96, 74, 42, 0.5)" strokeWidth={1.8} strokeLinecap="round" />
+
+      {/* translucent gut with surviving spores */}
       {gut > 0.01 && (
         <g opacity={clamp01(gut)}>
-          <path
-            d="M 34,10 C 4,26 -40,30 -76,18 C -108,8 -130,16 -148,30"
-            fill="none"
-            stroke="rgba(196, 158, 96, 0.34)"
-            strokeWidth={17}
-            strokeLinecap="round"
-          />
-          <path
-            d="M 34,10 C 4,26 -40,30 -76,18 C -108,8 -130,16 -148,30"
-            fill="none"
-            stroke="rgba(240, 226, 190, 0.22)"
-            strokeWidth={11}
-            strokeLinecap="round"
-          />
+          <path d="M 30,4 C 4,16 -36,20 -68,10 C -96,2 -118,8 -134,20" fill="none" stroke="rgba(196, 158, 96, 0.3)" strokeWidth={14} strokeLinecap="round" />
+          <path d="M 30,4 C 4,16 -36,20 -68,10 C -96,2 -118,8 -134,20" fill="none" stroke="rgba(244, 232, 202, 0.24)" strokeWidth={8} strokeLinecap="round" />
           {Array.from({ length: 12 }).map((_, i) => {
             const t = i / 11;
-            const px = 30 - t * 176;
-            const py = 12 + Math.sin(t * Math.PI) * 16;
+            const px = 26 - t * 158;
+            const py = 6 + Math.sin(t * Math.PI) * 12;
             return (
-              <circle
-                key={i}
-                cx={px}
-                cy={py}
-                r={4.6}
-                fill="#D8A148"
-                opacity={clamp01(sporeP * 1.5 - t * 0.4)}
-                stroke="rgba(60, 40, 16, 0.5)"
-                strokeWidth={0.8}
-              />
+              <circle key={i} cx={px} cy={py} r={4} fill="#D8A148" opacity={clamp01(sporeP * 1.5 - t * 0.4)} stroke="rgba(60, 40, 16, 0.5)" strokeWidth={0.7} />
             );
           })}
         </g>
@@ -406,9 +406,9 @@ export const Scene05Loupe: React.FC = () => {
 
         {/* ---------------- annotations with leader lines ------------------- */}
         <g opacity={credit}>
-          <LeaderLabel from={[cx - 150, cy - 118]} to={[cx - 348, cy - 232]} text="ANTENA PELACAK" sub="SENSILA GEOSMIN" color="rgba(232, 216, 184, 0.72)" size={16} dot="#D8A148" anchor="end" />
-          <LeaderLabel from={[cx - 96, cy + 176]} to={[cx + 210, cy + 268]} text="MULUT PENGGERUS" sub="SISA KOLONI BAKTERI" color="rgba(232, 216, 184, 0.72)" size={16} dot="#D8A148" />
-          <LeaderLabel from={[cx + 96, cy + 118]} to={[cx + 300, cy + 34]} text="RONGGA PERUT" sub="CANGKANG SPORA LOLOS" color="rgba(232, 216, 184, 0.6)" size={15} dot="#D8A148" />
+          <LeaderLabel from={[cx - 96, cy - 148]} to={[238, 640]} text="ANTENA PELACAK" sub="SENSILA GEOSMIN" color="rgba(232, 216, 184, 0.74)" size={17} dot="#D8A148" anchor="end" />
+          <LeaderLabel from={[cx + 96, cy - 26]} to={[1182, 1052]} text="RONGGA PERUT" sub="CANGKANG SPORA LOLOS UTUH" color="rgba(232, 216, 184, 0.66)" size={16} dot="#D8A148" />
+          <LeaderLabel from={[cx - 24, cy + 158]} to={[1182, 1290]} text="MULUT PENGGERUS" sub="SISA KOLONI BAKTERI" color="rgba(232, 216, 184, 0.66)" size={16} dot="#D8A148" />
         </g>
 
         {/* ---------------- name plate, set like a museum label ------------ */}
@@ -508,10 +508,10 @@ export const Scene06AtlasLontaran: React.FC = () => {
   const bandOpen = Math.max(2, bandH * bandIn);
 
   // ballistic arc between the two islands
-  const islands = { leftX: 236, rightX: 1204, groundY: bandTop + 452 };
+  const islands = { leftX: 322, rightX: 1128, groundY: bandTop + 430 };
   const arc = (t: number): [number, number] => {
     const x = islands.leftX + (islands.rightX - islands.leftX) * t;
-    const y = islands.groundY - Math.sin(Math.PI * t) * 300;
+    const y = islands.groundY - Math.sin(Math.PI * t) * 336;
     return [x, y];
   };
   const [jx, jy] = arc(launch);
@@ -572,96 +572,113 @@ export const Scene06AtlasLontaran: React.FC = () => {
               <rect x={0} y={bandTop + (bandH - bandOpen) / 2} width={1440} height={bandOpen} />
             </clipPath>
             <linearGradient id="s6-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#161C18" />
-              <stop offset="58%" stopColor="#20302A" />
-              <stop offset="100%" stopColor="#101512" />
+              <stop offset="0%" stopColor="#0E1418" />
+              <stop offset="46%" stopColor="#1E2724" />
+              <stop offset="78%" stopColor="#3A3626" />
+              <stop offset="100%" stopColor="#4A3F28" />
             </linearGradient>
+            <linearGradient id="s6-soil" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4A3020" />
+              <stop offset="100%" stopColor="#1E1209" />
+            </linearGradient>
+            <clipPath id="s6-left">
+              <path d={`M ${islands.leftX - 250},${bandTop + bandH} L ${islands.leftX - 250},${islands.groundY - 34} C ${islands.leftX - 170},${islands.groundY - 74} ${islands.leftX - 60},${islands.groundY - 6} ${islands.leftX + 30},${islands.groundY - 26} C ${islands.leftX + 110},${islands.groundY - 46} ${islands.leftX + 180},${islands.groundY + 4} ${islands.leftX + 232},${islands.groundY - 14} L ${islands.leftX + 232},${bandTop + bandH} Z`} />
+            </clipPath>
+            <clipPath id="s6-right">
+              <path d={`M ${islands.rightX - 250},${bandTop + bandH} L ${islands.rightX - 250},${islands.groundY - 26} C ${islands.rightX - 160},${islands.groundY - 12} ${islands.rightX - 70},${islands.groundY - 54} ${islands.rightX + 20},${islands.groundY - 30} C ${islands.rightX + 110},${islands.groundY - 6} ${islands.rightX + 180},${islands.groundY - 40} ${islands.rightX + 250},${islands.groundY - 18} L ${islands.rightX + 250},${bandTop + bandH} Z`} />
+            </clipPath>
           </defs>
 
           <g clipPath="url(#s6-band)">
             <rect x={0} y={bandTop} width={1440} height={bandH} fill="url(#s6-sky)" />
-            {humus && <image href={humus} x={0} y={bandTop + bandH - 200} width={1440} height={260} opacity={0.5} preserveAspectRatio="none" />}
 
-            {/* distant haze */}
-            <ellipse cx={720} cy={bandTop + 300} rx={640} ry={190} fill="rgba(150, 176, 150, 0.08)" />
+            {/* far ridges, two depths */}
+            <path d={`M -40,${islands.groundY - 6} C 180,${islands.groundY - 96} 360,${islands.groundY - 26} 560,${islands.groundY - 62} C 760,${islands.groundY - 98} 980,${islands.groundY - 18} 1180,${islands.groundY - 54} L 1480,${islands.groundY - 20} L 1480,${bandTop + bandH} L -40,${bandTop + bandH} Z`} fill="rgba(36, 40, 30, 0.72)" />
+            <path d={`M -40,${islands.groundY + 18} C 200,${islands.groundY - 40} 420,${islands.groundY + 6} 640,${islands.groundY - 22} C 880,${islands.groundY - 54} 1080,${islands.groundY + 8} 1280,${islands.groundY - 18} L 1480,${islands.groundY + 4} L 1480,${bandTop + bandH} L -40,${bandTop + bandH} Z`} fill="rgba(26, 30, 22, 0.8)" />
 
-            {/* left island: dry, cracked */}
+            {/* hot horizon band */}
+            <rect x={0} y={islands.groundY - 120} width={1440} height={130} fill="rgba(214, 164, 96, 0.16)" />
+
+            {/* LEFT: dry, cracked laterite cliff */}
             <g>
-              <path d={`M ${islands.leftX - 250},${islands.groundY} L ${islands.leftX + 236},${islands.groundY} L ${islands.leftX + 210},${islands.groundY + 120} L ${islands.leftX - 214},${islands.groundY + 120} Z`} fill="#2A1A10" />
-              {Array.from({ length: 26 }).map((_, i) => (
-                <ellipse key={i} cx={islands.leftX - 220 + i * 18} cy={islands.groundY + 22 + (i % 5) * 17} rx={12} ry={7} fill={`rgba(${96 + (i % 4) * 22}, ${58 + (i % 3) * 16}, 38, 0.7)`} />
-              ))}
-              {Array.from({ length: 7 }).map((_, i) => (
-                <path
-                  key={`c${i}`}
-                  d={`M ${islands.leftX - 200 + i * 62},${islands.groundY + 4} l ${18 + (i % 3) * 9},${26 + (i % 4) * 12} l ${-14},${26}`}
-                  fill="none"
-                  stroke="rgba(18, 10, 6, 0.7)"
-                  strokeWidth={2}
-                />
-              ))}
-              <text x={islands.leftX - 214} y={islands.groundY + 158} fill="rgba(232, 214, 182, 0.6)" fontFamily={IDENTITY.fontMono} fontSize={16} letterSpacing="0.2em">
+              <path d={`M ${islands.leftX - 250},${islands.groundY} L ${islands.leftX + 232},${islands.groundY} L ${islands.leftX + 232},${bandTop + bandH} L ${islands.leftX - 250},${bandTop + bandH} Z`} fill="url(#s6-soil)" />
+              <g clipPath="url(#s6-left)">
+                {humus && <image href={humus} x={islands.leftX - 260} y={islands.groundY - 90} width={500} height={300} opacity={0.5} preserveAspectRatio="none" />}
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <ellipse key={i} cx={islands.leftX - 226 + i * 30} cy={islands.groundY + 26 + (i % 4) * 22} rx={17} ry={11} fill={`rgba(${88 + (i % 3) * 16}, ${56 + (i % 2) * 12}, 36, 0.55)`} />
+                ))}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <path key={i} d={`M ${islands.leftX - 190 + i * 78},${islands.groundY - 6} l ${16 + (i % 3) * 8},{30 + (i % 2) * 16} l -12,20`} fill="none" stroke="rgba(20, 10, 4, 0.55)" strokeWidth={2.2} />
+                ))}
+              </g>
+              <path d={`M ${islands.leftX - 250},${islands.groundY - 34} C ${islands.leftX - 170},${islands.groundY - 74} ${islands.leftX - 60},${islands.groundY - 6} ${islands.leftX + 30},${islands.groundY - 26} C ${islands.leftX + 110},${islands.groundY - 46} ${islands.leftX + 180},${islands.groundY + 4} ${islands.leftX + 232},${islands.groundY - 14}`} fill="none" stroke="rgba(238, 196, 138, 0.5)" strokeWidth={2.4} />
+              {/* dry grass tufts */}
+              {Array.from({ length: 9 }).map((_, i) => {
+                const gx = islands.leftX - 180 + i * 42;
+                const sway = Math.sin(localSec * 1.2 + i) * 4;
+                return <path key={i} d={`M ${gx},${islands.groundY - 18} C ${gx + sway},${islands.groundY - 44} ${gx + 6 + sway},${islands.groundY - 62} ${gx + 2 + sway},${islands.groundY - 78}`} fill="none" stroke="rgba(150, 132, 88, 0.6)" strokeWidth={2} strokeLinecap="round" />;
+              })}
+              <text x={islands.leftX - 236} y={bandTop + bandH - 24} fill="rgba(232, 214, 182, 0.62)" fontFamily={IDENTITY.fontMono} fontSize={15} letterSpacing="0.2em">
                 TANAH LAMA · KERING
               </text>
             </g>
 
-            {/* right island: damp, with a fresh colony sprouting */}
+            {/* RIGHT: damp soil with a fresh colony */}
             <g>
-              <path d={`M ${islands.rightX - 236},${islands.groundY} L ${islands.rightX + 250},${islands.groundY} L ${islands.rightX + 226},${islands.groundY + 128} L ${islands.rightX - 212},${islands.groundY + 128} Z`} fill="#241A12" />
-              {Array.from({ length: 28 }).map((_, i) => (
-                <ellipse key={i} cx={islands.rightX - 226 + i * 18} cy={islands.groundY + 20 + (i % 6) * 18} rx={13} ry={8} fill={`rgba(${52 + (i % 4) * 18}, ${44 + (i % 5) * 14}, 30, 0.8)`} />
-              ))}
-              <ellipse cx={islands.rightX + 6} cy={islands.groundY + 8} rx={92} ry={14} fill="rgba(140, 176, 164, 0.14)" />
-              {/* new colony filaments rising from the landing point */}
-              {Array.from({ length: 6 }).map((_, i) => {
-                const gp = clamp01(sprout * 1.4 - i * 0.1);
+              <path d={`M ${islands.rightX - 250},${islands.groundY} L ${islands.rightX + 250},${islands.groundY} L ${islands.rightX + 250},${bandTop + bandH} L ${islands.rightX - 250},${bandTop + bandH} Z`} fill="#241A11" />
+              <g clipPath="url(#s6-right)">
+                {humus && <image href={humus} x={islands.rightX - 250} y={islands.groundY - 80} width={500} height={290} opacity={0.6} preserveAspectRatio="none" />}
+                {Array.from({ length: 14 }).map((_, i) => (
+                  <ellipse key={i} cx={islands.rightX - 220 + i * 32} cy={islands.groundY + 30 + (i % 5) * 20} rx={18} ry={11} fill={`rgba(${50 + (i % 3) * 12}, ${42 + (i % 4) * 10}, 28, 0.7)`} />
+                ))}
+              </g>
+              <path d={`M ${islands.rightX - 250},${islands.groundY - 26} C ${islands.rightX - 160},${islands.groundY - 12} ${islands.rightX - 70},${islands.groundY - 54} ${islands.rightX + 20},${islands.groundY - 30} C ${islands.rightX + 110},${islands.groundY - 6} ${islands.rightX + 180},${islands.groundY - 40} ${islands.rightX + 250},${islands.groundY - 18}`} fill="none" stroke="rgba(196, 210, 190, 0.42)" strokeWidth={2.2} />
+              {/* damp sheen + water film */}
+              <ellipse cx={islands.rightX + 24} cy={islands.groundY - 18} rx={130} ry={20} fill="rgba(128, 164, 156, 0.22)" />
+              <ellipse cx={islands.rightX + 24} cy={islands.groundY - 20} rx={92} ry={12} fill="rgba(186, 214, 204, 0.16)" />
+              {/* new colony rising from the landing point */}
+              {Array.from({ length: 7 }).map((_, i) => {
+                const gp = clamp01(sprout * 1.4 - i * 0.09);
+                const bx = islands.rightX - 54 + i * 20;
                 return (
-                  <g key={i}>
-                    <path
-                      d={`M ${islands.rightX - 30 + i * 20},${islands.groundY + 6} Q ${islands.rightX - 24 + i * 20},${islands.groundY - 40 * gp} ${islands.rightX - 40 + i * 22},${islands.groundY - 96 * gp}`}
-                      fill="none"
-                      stroke="rgba(238, 228, 200, 0.8)"
-                      strokeWidth={2.4}
-                      strokeLinecap="round"
-                      opacity={gp}
-                    />
-                    {gp > 0.6 && <circle cx={islands.rightX - 40 + i * 22} cy={islands.groundY - 96 * gp} r={4.6} fill="#D8A148" opacity={gp} />}
+                  <g key={i} opacity={gp}>
+                    <path d={`M ${bx},${islands.groundY - 12} C ${bx - 8},${islands.groundY - 46} ${bx + 10},${islands.groundY - 70} ${bx - 4},${islands.groundY - 108 * gp - 12}`} fill="none" stroke="rgba(240, 230, 202, 0.86)" strokeWidth={2.6} strokeLinecap="round" />
+                    <circle cx={bx - 4} cy={islands.groundY - 108 * gp - 14} r={5} fill="#D8A148" opacity={clamp01(gp * 1.4 - 0.3)} />
                   </g>
                 );
               })}
-              <text x={islands.rightX + 222} y={islands.groundY + 158} textAnchor="end" fill="rgba(232, 214, 182, 0.6)" fontFamily={IDENTITY.fontMono} fontSize={16} letterSpacing="0.2em">
+              <text x={islands.rightX + 236} y={bandTop + bandH - 24} textAnchor="end" fill="rgba(232, 214, 182, 0.62)" fontFamily={IDENTITY.fontMono} fontSize={15} letterSpacing="0.2em">
                 TANAH LEMBAP · BARU
               </text>
             </g>
 
-            {/* ballistic trajectory */}
+            {/* trajectory */}
             <path
-              d={`M ${islands.leftX},${islands.groundY - 40} Q ${720},${islands.groundY - 620} ${islands.rightX},${islands.groundY - 40}`}
+              d={`M ${islands.leftX},${islands.groundY - 34} Q 720,${islands.groundY - 660} ${islands.rightX},${islands.groundY - 30}`}
               fill="none"
-              stroke="rgba(216, 161, 72, 0.46)"
-              strokeWidth={2}
-              strokeDasharray="7 12"
+              stroke="rgba(216, 161, 72, 0.5)"
+              strokeWidth={2.2}
+              strokeDasharray="8 13"
               strokeDashoffset={-(launch * 120)}
-              opacity={clamp01(bandIn)}
             />
             {Array.from({ length: 9 }).map((_, i) => {
               const t = (i + 1) / 11;
               const [tx, ty] = arc(t);
-              return <circle key={i} cx={tx} cy={ty} r={2.6} fill="rgba(232, 200, 140, 0.5)" opacity={clamp01(launch * 1.6 - t * 0.9)} />;
+              return <circle key={i} cx={tx} cy={ty} r={2.6} fill="rgba(232, 200, 140, 0.55)" opacity={clamp01(launch * 1.6 - t * 0.9)} />;
             })}
 
             {/* launch dust */}
             {dust > 0.02 &&
-              Array.from({ length: 18 }).map((_, i) => {
-                const a = Math.PI + (i / 17) * Math.PI;
-                const rad = easeOutCubic(dust) * (40 + (i % 6) * 20);
+              Array.from({ length: 20 }).map((_, i) => {
+                const a = Math.PI + (i / 19) * Math.PI;
+                const rad = easeOutCubic(dust) * (40 + (i % 6) * 24);
                 return (
                   <circle
                     key={i}
                     cx={islands.leftX + Math.cos(a) * rad}
-                    cy={islands.groundY - 10 + Math.sin(a) * rad * 0.5}
-                    r={4 + (i % 4) * 2}
-                    fill="rgba(196, 168, 126, 0.4)"
+                    cy={islands.groundY - 26 + Math.sin(a) * rad * 0.5}
+                    r={5 + (i % 4) * 2.4}
+                    fill="rgba(198, 170, 128, 0.34)"
                     opacity={clamp01(1 - dust)}
                   />
                 );
@@ -670,26 +687,26 @@ export const Scene06AtlasLontaran: React.FC = () => {
             {/* the animal in flight, with speed ghosts */}
             {launch > 0.03 && launch < 0.99 && (
               <g transform={`translate(${jx}, ${jy}) rotate(${jumpAngle})`}>
-                {[0.14, 0.08].map((k, i) => {
+                {[0.16, 0.09].map((k, i) => {
                   const [gx, gy] = arc(clamp01(launch - k));
                   return (
-                    <g key={i} transform={`translate(${gx - jx}, ${gy - jy})`} opacity={0.18 + i * 0.12}>
-                      <Springtail x={0} y={0} s={1.28} furcula={1} alpha={0.8} />
+                    <g key={i} transform={`translate(${gx - jx}, ${gy - jy})`} opacity={0.16 + i * 0.12}>
+                      <Springtail x={0} y={0} s={1.9} furcula={1} alpha={0.85} />
                     </g>
                   );
                 })}
-                <Springtail x={0} y={0} s={1.34} furcula={1} alpha={1} />
+                <Springtail x={0} y={0} s={2.0} furcula={1} alpha={1} />
               </g>
             )}
 
             {/* letterbox inner shading */}
-            <rect x={0} y={bandTop} width={1440} height={70} fill="url(#s6-sky)" opacity={0.8} />
-            <rect x={0} y={bandTop + bandH - 70} width={1440} height={70} fill="url(#s6-sky)" opacity={0.8} />
+            <rect x={0} y={bandTop} width={1440} height={80} fill="url(#s6-sky)" opacity={0.72} />
+            <rect x={0} y={bandTop + bandH - 90} width={1440} height={90} fill="#150D06" opacity={0.5} />
           </g>
 
           {/* thin brass rules marking the letterbox */}
-          <RuleLine x1={0} y1={bandTop} x2={1440} y2={bandTop} color="rgba(206, 190, 160, 0.24)" width={1.4} />
-          <RuleLine x1={0} y1={bandTop + bandH} x2={1440} y2={bandTop + bandH} color="rgba(206, 190, 160, 0.24)" width={1.4} />
+          <RuleLine x1={0} y1={bandTop} x2={1440} y2={bandTop} color="rgba(206, 190, 160, 0.26)" width={1.4} />
+          <RuleLine x1={0} y1={bandTop + bandH} x2={1440} y2={bandTop + bandH} color="rgba(206, 190, 160, 0.26)" width={1.4} />
         </g>
 
         {/* ================= typography outside the band ================== */}
