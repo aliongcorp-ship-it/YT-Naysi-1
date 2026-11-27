@@ -496,7 +496,7 @@ const InsetDivision: React.FC<{ t: number; color: string }> = ({ t, color }) => 
   const x = 950;
   const y = 372;
   const w = 380;
-  const h = 226;
+  const h = 238;
   const p = easeOutCubic(prog(t, 1.0, 3.4));
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="PEMBAGIAN PANJANG" note="SATUAN: DETIK" color={color} p={prog(t, 0.4, 1.3)}>
@@ -511,7 +511,7 @@ const InsetDivision: React.FC<{ t: number; color: string }> = ({ t, color }) => 
       <line x1={x + 20} y1={y + 172} x2={x + 20 + (w - 40) * p} y2={y + 172} stroke={color} strokeWidth={2} />
       <Mono x={x + 20} y={y + 196} text="SISA 199 664 → 499 DETIK" size={13} color={color} tracking={0.16} opacity={p} />
       <line x1={x + 20} y1={y + 206} x2={x + w - 20} y2={y + 206} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
-      <Mono x={x + 20} y={y + 222} text="DIBULATKAN: 8 MNT 19 DTK" size={10} color="rgba(238,228,208,0.28)" tracking={0.16} />
+      <Mono x={x + 20} y={y + 228} text="DIBULATKAN: 8 MNT 19 DTK" size={10} color="rgba(238,228,208,0.28)" tracking={0.16} />
     </InsetFrame>
   );
 };
@@ -691,9 +691,9 @@ const InsetCoolingTable: React.FC<{ t: number; color: string }> = ({ t, color })
 
 const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 862;
-  const y = 612;
+  const y = 624;
   const w = 468;
-  const h = 200;
+  const h = 194;
   const rows: [string, string, number][] = [
     ['1 detik cahaya', '299.792 km', 0.1],
     ['1 menit cahaya', '17,9 juta km', 0.35],
@@ -709,7 +709,7 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
         return (
           <g key={k} opacity={p}>
             <Mono x={x + 20} y={yy} text={label} size={11} color="rgba(238,228,208,0.42)" tracking={0.14} />
-            <line x1={x + 214} y1={yy - 4} x2={x + 296} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
+            <line x1={x + 168} y1={yy - 4} x2={x + 246} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
             <Mono x={x + w - 20} y={yy} text={val} size={12} color={at > 0.8 ? color : 'rgba(238,228,208,0.7)'} tracking={0.1} anchor="end" />
           </g>
         );
@@ -720,9 +720,9 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
 
 const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 862;
-  const y = 612;
+  const y = 624;
   const w = 468;
-  const h = 200;
+  const h = 194;
   const bx = x + 34;
   const by = y + 112;
   const bw = w - 68;
@@ -885,10 +885,10 @@ const InsetPhases: React.FC<{ t: number; color: string }> = ({ t, color }) => {
 };
 
 const InsetDepthLadder: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const x = 930;
-  const y = 1500;
-  const w = 400;
-  const h = 372;
+  const x = 862;
+  const y = 372;
+  const w = 468;
+  const h = 360;
   const top = y + 62;
   const bottom = y + h - 50;
   const stations: [string, string][] = [
@@ -1578,9 +1578,9 @@ export const Scene08: React.FC = () => {
                   stroke="rgba(140,190,210,0.28)" strokeWidth={1.2} strokeDasharray="10 14" />
               </g>
             ))}
-            <Mono x={panelX + panelW - 16} y={iceY + 144} text="4 °C" size={16} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 16} y={iceY + 294} text="2 °C" size={16} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 16} y={iceY + 444} text="1 °C" size={16} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 16} y={iceY + 156} text="4 °C" size={15} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 16} y={iceY + 306} text="2 °C" size={15} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 16} y={iceY + 456} text="1 °C" size={15} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
             {/* drifting particles */}
             {Array.from({ length: 40 }).map((_, i) => (
               <circle key={i} cx={panelX + hash(i, 12) * panelW} cy={iceY + 60 + hash(i, 13) * (floorY - iceY - 100)}
@@ -1622,16 +1622,17 @@ export const Scene08: React.FC = () => {
             {/* depth ruler */}
             {[0, 1, 2, 3, 4].map((k) => (
               <g key={k}>
-                <line x1={panelX - 12} y1={skyY + k * 178} x2={panelX} y2={skyY + k * 178} stroke="rgba(226,240,248,0.35)" strokeWidth={1.4} />
-                <text x={panelX - 22} y={skyY + k * 178 + 6} fill="rgba(226,240,248,0.42)" fontFamily={IDENTITY.fontMono} fontSize={16} textAnchor="end">
+                <line x1={panelX + 2} y1={skyY + k * 178} x2={panelX + 16} y2={skyY + k * 178} stroke="rgba(226,240,248,0.32)" strokeWidth={1.4} />
+                <text x={panelX + 24} y={skyY + k * 178 + 20} fill="rgba(226,240,248,0.4)" fontFamily={IDENTITY.fontMono} fontSize={13} letterSpacing="0.16em">
                   {k} km
                 </text>
               </g>
             ))}
           </g>
 
-          <LeaderLabel from={[420, iceY + 20]} to={[300, 700]} text="ES 1–2 M" sub="terbentuk dari atas" anchor="end" progress={prog(t, 3.0, 4.0)} color="rgba(226,240,248,0.85)" size={21} />
-          <LeaderLabel from={[980, iceY + 300]} to={[1150, 1120]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="start" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={21} />
+          <Mono x={panelX + 22} y={iceY + 46} text="ES LAUT 1–2 M" size={17} color="rgba(12,40,56,0.72)" tracking={0.24} />
+          <Mono x={panelX + 22} y={iceY + 70} text="TERBENTUK DARI ATAS" size={13} color="rgba(12,40,56,0.5)" tracking={0.2} />
+          <LeaderLabel from={[1040, iceY + 300]} to={[1160, 1120]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="start" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={20} />
           <LeaderLabel from={[700, floorY - 30]} to={[1010, 1300]} text="PANAS INTI BUMI" sub="0,087 W/m²" anchor="start" progress={prog(t, 5.2, 6.2)} color="rgba(250,190,150,0.9)" size={21} />
 
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
