@@ -146,6 +146,11 @@ export const SunCore: React.FC<{
           <stop offset="70%" stopColor="rgba(255,142,54,0.11)" />
           <stop offset="100%" stopColor="rgba(255,120,40,0)" />
         </radialGradient>
+        <radialGradient id={`${id}-halo`} cx="50%" cy="50%" r="50%">
+          <stop offset="46%" stopColor="rgba(222,234,246,0.16)" />
+          <stop offset="76%" stopColor="rgba(210,224,240,0.05)" />
+          <stop offset="100%" stopColor="rgba(200,216,236,0)" />
+        </radialGradient>
         <clipPath id={`${id}-clip`}>
           <circle cx={cx} cy={cy} r={r} />
         </clipPath>
@@ -311,6 +316,11 @@ export const EarthGlobe: React.FC<{
           <stop offset="97%" stopColor="rgba(170,220,245,0.55)" />
           <stop offset="100%" stopColor="rgba(190,235,255,0.15)" />
         </radialGradient>
+        <radialGradient id={`${id}-halo`} cx="50%" cy="50%" r="50%">
+          <stop offset="46%" stopColor="rgba(222,234,246,0.16)" />
+          <stop offset="76%" stopColor="rgba(210,224,240,0.05)" />
+          <stop offset="100%" stopColor="rgba(200,216,236,0)" />
+        </radialGradient>
         <clipPath id={`${id}-clip`}>
           <circle cx={cx} cy={cy} r={r} />
         </clipPath>
@@ -360,11 +370,16 @@ export const MoonDisc: React.FC<{
           <stop offset="62%" stopColor={tint} />
           <stop offset="100%" stopColor="#8A939E" />
         </radialGradient>
+        <radialGradient id={`${id}-halo`} cx="50%" cy="50%" r="50%">
+          <stop offset="46%" stopColor="rgba(222,234,246,0.16)" />
+          <stop offset="76%" stopColor="rgba(210,224,240,0.05)" />
+          <stop offset="100%" stopColor="rgba(200,216,236,0)" />
+        </radialGradient>
         <clipPath id={`${id}-clip`}>
           <circle cx={cx} cy={cy} r={r} />
         </clipPath>
       </defs>
-      <circle cx={cx} cy={cy} r={r * 2.2} fill="rgba(220,232,244,0.10)" />
+      <circle cx={cx} cy={cy} r={r * 1.5} fill={`url(#${id}-halo)`} opacity={0.85} />
       <circle cx={cx} cy={cy} r={r} fill={`url(#${id}-body)`} />
       <g clipPath={`url(#${id}-clip)`} opacity={0.5}>
         {maria.map((m, i) => (

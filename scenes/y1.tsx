@@ -125,6 +125,15 @@ export const Scene08: React.FC = () => {
             {/* ice lid */}
             <rect x={panelX} y={iceY} width={panelW} height={iceH} fill="url(#ice8)" />
             <rect x={panelX} y={iceY} width={panelW} height={5} fill="#F2FBFE" opacity={0.95} />
+            <defs>
+              <linearGradient id="iceShadow8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(4,18,26,0.55)" />
+                <stop offset="100%" stopColor="rgba(4,18,26,0)" />
+              </linearGradient>
+            </defs>
+            <rect x={panelX} y={iceY + iceH} width={panelW} height={130} fill="url(#iceShadow8)" />
+            <path d={`M 640 ${floorY + 6} L 668 ${floorY - 96} L 748 ${floorY - 96} L 776 ${floorY + 6} Z`} fill="#101A1E" stroke="rgba(255,150,80,0.24)" strokeWidth={2} />
+            <ellipse cx={708} cy={floorY - 96} rx={40} ry={10} fill="rgba(255,158,84,0.5)" />
             {Array.from({ length: 46 }).map((_, k) => {
               const x = panelX + hash(k, 3, 2) * panelW;
               const w = 40 + hash(k, 5) * 90;
@@ -138,7 +147,7 @@ export const Scene08: React.FC = () => {
             {/* seafloor + crust */}
             <path d={`M ${panelX} ${floorY} Q 360 ${floorY - 44} 640 ${floorY - 12} T 980 ${floorY - 26} T ${panelX + panelW} ${floorY - 6} L ${panelX + panelW} 1500 L ${panelX} 1500 Z`} fill="#0A161C" />
             <path d={`M ${panelX} ${floorY + 26} Q 420 ${floorY - 6} 760 ${floorY + 20} T ${panelX + panelW} ${floorY + 10} L ${panelX + panelW} 1500 L ${panelX} 1500 Z`} fill="#0C1A20" />
-            <ellipse cx={700} cy={floorY - 6} rx={240} ry={46} fill="rgba(255,140,60,0.18)" />
+            <ellipse cx={708} cy={floorY - 4} rx={250} ry={54} fill="rgba(255,140,60,0.14)" />
             <ellipse cx={700} cy={floorY - 6} rx={110} ry={20} fill="rgba(255,178,110,0.26)" />
             {Array.from({ length: 18 }).map((_, i) => {
               const k = (t * 0.4 + i / 18) % 1;

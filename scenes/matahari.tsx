@@ -351,10 +351,9 @@ export const Scene05: React.FC = () => {
           <Head i={4} t={t} y={640} size={96} />
 
           {/* the sun we leave behind */}
-          <g opacity={0.55}>
-            <circle cx={-30} cy={1240} r={250} fill="rgba(255,170,90,0.12)" />
-            <SunCore cx={-30} cy={1240} r={118} t={t} cores={70} spots={2} />
-            <Mono x={140} y={1268} text="MATAHARI" size={19} color="rgba(246,231,213,0.5)" tracking={0.24} />
+          <g opacity={0.6}>
+            <SunCore cx={-96} cy={1240} r={150} t={t} cores={90} spots={2} glow={0.7} />
+            <Mono x={96} y={1330} text="MATAHARI" size={19} color="rgba(246,231,213,0.5)" tracking={0.24} />
           </g>
 
           <path d={`M -220 760 A 740 740 0 0 0 ${sx} ${sy}`} fill="none" stroke={art.soft} strokeWidth={2.4} strokeDasharray="10 14" opacity={0.55} />
