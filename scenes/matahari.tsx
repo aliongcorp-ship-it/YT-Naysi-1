@@ -1578,9 +1578,9 @@ export const Scene08: React.FC = () => {
                   stroke="rgba(140,190,210,0.28)" strokeWidth={1.2} strokeDasharray="10 14" />
               </g>
             ))}
-            <Mono x={panelX + panelW - 16} y={iceY + 156} text="4 °C" size={15} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 16} y={iceY + 306} text="2 °C" size={15} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 16} y={iceY + 456} text="1 °C" size={15} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 34} y={iceY + 156} text="4 °C" size={15} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 34} y={iceY + 306} text="2 °C" size={15} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 34} y={iceY + 456} text="1 °C" size={15} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
             {/* drifting particles */}
             {Array.from({ length: 40 }).map((_, i) => (
               <circle key={i} cx={panelX + hash(i, 12) * panelW} cy={iceY + 60 + hash(i, 13) * (floorY - iceY - 100)}
@@ -1632,7 +1632,7 @@ export const Scene08: React.FC = () => {
 
           <Mono x={panelX + 22} y={iceY + 46} text="ES LAUT 1–2 M" size={17} color="rgba(12,40,56,0.72)" tracking={0.24} />
           <Mono x={panelX + 22} y={iceY + 70} text="TERBENTUK DARI ATAS" size={13} color="rgba(12,40,56,0.5)" tracking={0.2} />
-          <LeaderLabel from={[1040, iceY + 300]} to={[1160, 1120]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="start" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={20} />
+          <LeaderLabel from={[1060, iceY + 300]} to={[1300, 1120]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="end" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={20} />
           <LeaderLabel from={[700, floorY - 30]} to={[1010, 1300]} text="PANAS INTI BUMI" sub="0,087 W/m²" anchor="start" progress={prog(t, 5.2, 6.2)} color="rgba(250,190,150,0.9)" size={21} />
 
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
@@ -1738,7 +1738,7 @@ export const Scene09: React.FC = () => {
           )}
 
           <LeaderLabel from={[726, 1132]} to={[420, 1020]} text="FLUIDA 400 °C" sub="kaya hidrogen sulfida" anchor="end" progress={prog(t, 2.2, 3.4)} color="rgba(250,200,160,0.9)" size={21} />
-          <LeaderLabel from={[940, 1330]} to={[760, 1250]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="end" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={21} />
+          <LeaderLabel from={[1010, 1330]} to={[1120, 1230]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={20} />
 
           <g opacity={easeOutCubic(prog(t, 5.4, 6.6))}>
             <Brackets x={116} y={1650} w={620} h={190} color="rgba(95,168,160,0.5)" size={24} />
