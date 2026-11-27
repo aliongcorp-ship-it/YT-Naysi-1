@@ -219,11 +219,11 @@ const PlateHeader: React.FC<{ i: number; t: number; color: string }> = ({ i, t, 
   const x1 = 1330;
   return (
     <g>
-      <Mono x={x0} y={198} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12`} size={15} color="rgba(238,228,208,0.4)" tracking={0.26} />
-      <Mono x={x0} y={222} text={CHAPTER_KICKERS[i].toUpperCase()} size={12} color="rgba(238,228,208,0.2)" tracking={0.24} />
-      <Mono x={x1} y={198} text="1440 × 2560 · 90 FPS" size={15} color="rgba(238,228,208,0.32)" tracking={0.22} anchor="end" />
-      <Mono x={x1} y={222} text="H.264 · AAC 48 kHz" size={12} color="rgba(238,228,208,0.18)" tracking={0.2} anchor="end" />
-      <line x1={x0} y1={244} x2={x0 + (x1 - x0) * draw} y2={244} stroke="rgba(238,228,208,0.18)" strokeWidth={1} />
+      <Mono x={x0} y={168} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12`} size={15} color="rgba(238,228,208,0.4)" tracking={0.26} />
+      <Mono x={x0} y={190} text={CHAPTER_KICKERS[i].toUpperCase()} size={12} color="rgba(238,228,208,0.2)" tracking={0.24} />
+      <Mono x={x1} y={168} text="1440 × 2560 · 90 FPS" size={15} color="rgba(238,228,208,0.32)" tracking={0.22} anchor="end" />
+      <Mono x={x1} y={190} text="H.264 · AAC 48 kHz" size={12} color="rgba(238,228,208,0.18)" tracking={0.2} anchor="end" />
+      <line x1={x0} y1={210} x2={x0 + (x1 - x0) * draw} y2={210} stroke="rgba(238,228,208,0.18)" strokeWidth={1} />
       {Array.from({ length: ticks }).map((_, k) => {
         const x = x0 + ((x1 - x0) * k) / (ticks - 1);
         const major = k % 7 === 0;
@@ -231,16 +231,16 @@ const PlateHeader: React.FC<{ i: number; t: number; color: string }> = ({ i, t, 
           <line
             key={k}
             x1={x}
-            y1={244}
+            y1={210}
             x2={x}
-            y2={244 + (major ? 11 : 5)}
+            y2={210 + (major ? 10 : 5)}
             stroke="rgba(238,228,208,0.14)"
             strokeWidth={1}
             opacity={k / (ticks - 1) <= draw ? 1 : 0}
           />
         );
       })}
-      <rect x={x0 - 16} y={244 - 4} width={4} height={15} fill={color} opacity={draw} />
+      <rect x={x0 - 16} y={210 - 4} width={4} height={14} fill={color} opacity={draw} />
     </g>
   );
 };
@@ -249,7 +249,7 @@ const FrameCounter: React.FC<{ i: number; t: number; dur: number }> = ({ i, t, d
   const local = Math.round(clamp01(t / Math.max(dur, 0.001)) * 1347);
   return (
     <g opacity={0.85}>
-      <Mono x={1330} y={276} text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`} size={12} color="rgba(238,228,208,0.2)" tracking={0.18} anchor="end" />
+      <Mono x={1330} y={210} text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`} size={11} color="rgba(238,228,208,0.2)" tracking={0.18} anchor="end" />
     </g>
   );
 };
@@ -264,7 +264,7 @@ const PlateFoot: React.FC<{ i: number }> = ({ i }) => {
     <g opacity={0.9}>
       <line x1={110} y1={1912} x2={1330} y2={1912} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
       <Mono x={110} y={1934} text={`DURASI ${dur.toFixed(1)} DETIK`} size={11} color="rgba(238,228,208,0.26)" tracking={0.2} />
-      <Mono x={720} y={1934} text={`${fmtSec(ch.start)} – ${fmtSec(ch.end)}`} size={11} color="rgba(238,228,208,0.22)" tracking={0.2} anchor="middle" />
+      <Mono x={720} y={1934} text={`${fmtSec(ch.start)} — ${fmtSec(ch.end)}`} size={11} color="rgba(238,228,208,0.22)" tracking={0.2} anchor="middle" />
       <Mono
         x={1050}
         y={1934}
@@ -275,7 +275,7 @@ const PlateFoot: React.FC<{ i: number }> = ({ i }) => {
         anchor="end"
       />
       <Mono x={110} y={1952} text="PLAT CETAK · NAYSI" size={9} color="rgba(238,228,208,0.14)" tracking={0.3} opacity={0} />
-      <Mono x={1330} y={1934} text={`${String(i + 1).padStart(2, '0')} / 12`} size={11} color="rgba(238,228,208,0.26)" tracking={0.18} anchor="end" />
+      <Mono x={1330} y={1952} text={`${String(i + 1).padStart(2, '0')} / 12`} size={10} color="rgba(238,228,208,0.2)" tracking={0.18} anchor="end" opacity={0} />
     </g>
   );
 };
@@ -308,9 +308,9 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           <line
             key={`t${k}`}
             x1={x}
-            y1={150}
+            y1={132}
             x2={x}
-            y2={150 - (major ? 9 : 4)}
+            y2={132 - (major ? 9 : 4)}
             stroke="rgba(238,228,208,0.16)"
             strokeWidth={1}
             opacity={k / 45 <= draw ? 1 : 0}
@@ -333,7 +333,7 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           />
         );
       })}
-      <line x1={110 + 1220 * draw} y1={140} x2={110 + 1220 * draw} y2={158} stroke={color} strokeWidth={1.4} opacity={0.5} />
+      <line x1={110 + 1220 * draw} y1={124} x2={110 + 1220 * draw} y2={142} stroke={color} strokeWidth={1.4} opacity={0.5} />
     </g>
   );
 };
@@ -415,13 +415,13 @@ export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: stri
           position: 'absolute',
           inset: 0,
           pointerEvents: 'none',
-          opacity: 0.05,
+          opacity: 0.028,
           backgroundImage:
-            'repeating-linear-gradient(180deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 3px)',
+            'repeating-linear-gradient(180deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 5px)',
         }}
       />
-      <DustMotes count={20} seed={i + 5} y0={280} y1={1860} color="rgba(244,232,208,0.18)" />
-      <FilmGrain opacity={0.11} scale={196} />
+      <DustMotes count={13} seed={i + 5} y0={280} y1={1860} color="rgba(244,232,208,0.16)" />
+      <FilmGrain opacity={0.055} scale={208} />
     </AbsoluteFill>
   );
 };
@@ -1344,8 +1344,8 @@ export const Scene04: React.FC = () => {
             fill="none" stroke={art.ink} strokeWidth={4} opacity={0.6} strokeLinecap="round" />
           <EarthGlobe cx={ex} cy={ey} r={46} t={t} terminator={0.45} atmosphere={0.45} />
 
-          <LeaderLabel from={[cx + 250, cy - 250]} to={[cx + 356, cy - 420]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/detik" anchor="start"
-            progress={prog(t, 2.2, 3.4)} color="rgba(226,238,244,0.85)" size={22} />
+          <LeaderLabel from={[cx + 250, cy - 250]} to={[cx + 232, cy - 470]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/dtk" anchor="start"
+            progress={prog(t, 2.2, 3.4)} color="rgba(226,238,244,0.85)" size={21} />
           <LeaderLabel from={[ex, ey]} to={[ex + 40, ey - 230]} text="ORBIT MASIH BERJALAN" sub="mengelilingi ketiadaan" anchor="start"
             progress={prog(t, 4.6, 5.8)} color="rgba(226,238,244,0.85)" size={22} />
 
@@ -1806,7 +1806,7 @@ export const Scene10: React.FC = () => {
           <Mono x={286} y={1132} text="HARI INI" size={18} color="rgba(246,231,213,0.5)" tracking={0.24} anchor="middle" />
 
           <Corona4K cx={790} cy={1020} r={lerp(70, 236, grow)} t={t} strength={0.75 * grow} rays={92} color="#FF8A4A" />
-          <SunCore cx={790} cy={1020} r={lerp(70, 236, grow)} t={t} hot="#FFE2B4" mid="#E8703A" edge="#7E2312" cores={210} spots={8} flare={grow} />
+          <SunCore cx={790} cy={1020} r={lerp(70, 236, grow)} t={t} hot="#FFE2B4" mid="#E8703A" edge="#7E2312" cores={900} spots={4} />
           <Mono x={790} y={1320} text="RAKSASA MERAH" size={19} color="rgba(246,231,213,0.62)" tracking={0.24} anchor="middle" />
 
           {[0, 1, 2].map((k) => {
@@ -1836,7 +1836,7 @@ export const Scene10: React.FC = () => {
                   </text>
                   <rect x={380} y={y} width={w * p} height={26} fill={b.color} opacity={0.85} />
                   <text x={380 + w * p + 14} y={y + 20} fill="rgba(246,231,213,0.45)" fontFamily={IDENTITY.fontMono} fontSize={16}>
-                    {b.rel >= 1 ? `${b.rel.toFixed(1)} ×` : b.rel.toFixed(3)}
+                    {b.rel >= 1 ? `${b.rel.toFixed(1).replace('.', ',')} ×` : b.rel.toFixed(3).replace('.', ',')}
                   </text>
                 </g>
               );

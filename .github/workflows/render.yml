@@ -61,7 +61,7 @@ jobs:
             --frames="$START-$END" \
             --muted \
             --codec=h264 \
-            --crf=18 \
+            --crf=21 \
             --pixel-format=yuv420p \
             --jpeg-quality=94 \
             --concurrency=4
