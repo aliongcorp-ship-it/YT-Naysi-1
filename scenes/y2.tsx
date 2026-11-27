@@ -34,111 +34,175 @@ const makeRng = (seed: number): (() => number) => {
 // 1. SCENE 07 — "KOMPAS GURUN": A PANORAMA READ AS A LANDSCAPE, NOT A CARD
 // ============================================================================
 
-const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: string; flip?: boolean }> = ({
+const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: string; flip?: boolean; rider?: boolean }> = ({
   x,
   y,
   s,
   walk,
   color,
   flip = false,
+  rider = false,
 }) => {
   const legs = [
-    { x0: -58, ph: 0 },
-    { x0: -40, ph: 0.5 },
-    { x0: 52, ph: 0.5 },
-    { x0: 70, ph: 0 },
+    { x0: -60, ph: 0, front: false },
+    { x0: -46, ph: 0.5, front: false },
+    { x0: 42, ph: 0.5, front: true },
+    { x0: 58, ph: 0, front: true },
   ];
   return (
     <g transform={`translate(${x}, ${y}) scale(${flip ? -s : s}, ${s})`}>
-      {/* legs with a slow, heavy gait */}
-      {legs.map((l, i) => {
-        const sw = Math.sin(walk * Math.PI * 2 + l.ph * Math.PI * 2) * 9;
-        return (
-          <g key={i}>
-            <path
-              d={`M ${l.x0},${-92} Q ${l.x0 + sw * 0.4},${-52} ${l.x0 + sw},${-4}`}
-              fill="none"
-              stroke={color}
-              strokeWidth={9}
-              strokeLinecap="round"
-            />
-            <line x1={l.x0 + sw - 5} y1={-4} x2={l.x0 + sw + 6} y2={-2} stroke={color} strokeWidth={7} strokeLinecap="round" />
-          </g>
-        );
-      })}
+      {/* far-side legs, dimmed a touch for depth */}
+      {legs
+        .filter((l) => l.ph > 0.4)
+        .map((l, i) => {
+          const sw = Math.sin(walk * Math.PI * 2 + l.ph * Math.PI * 2) * 11;
+          return (
+            <g key={i} opacity={0.72}>
+              <path
+                d={`M ${l.x0},${-96} C ${l.x0 + sw * 0.2},${-70} ${l.x0 + sw * 0.6},${-46} ${l.x0 + sw},${-24}`}
+                fill="none"
+                stroke={color}
+                strokeWidth={13}
+                strokeLinecap="round"
+              />
+              <path
+                d={`M ${l.x0 + sw},${-28} C ${l.x0 + sw * 1.1},${-20} ${l.x0 + sw * 1.1},${-8} ${l.x0 + sw * 1.05},${-2}`}
+                fill="none"
+                stroke={color}
+                strokeWidth={8}
+                strokeLinecap="round"
+              />
+              <ellipse cx={l.x0 + sw * 1.05} cy={-2} rx={11} ry={5} fill={color} />
+            </g>
+          );
+        })}
 
-      {/* body + hump */}
+      {/* tail with a dark tuft */}
+      <path d="M -72,-120 C -92,-116 -100,-96 -96,-74" fill="none" stroke={color} strokeWidth={6} strokeLinecap="round" />
+      <path d="M -96,-76 C -100,-66 -100,-58 -96,-54" fill="none" stroke={color} strokeWidth={9} strokeLinecap="round" />
+
+      {/* body: deep chest, single hump, sloping rump */}
       <path
-        d="M -76,-96 C -84,-124 -52,-138 -18,-136 C 8,-152 46,-150 66,-128 C 84,-110 82,-96 78,-92 L -76,-92 Z"
+        d="M -70,-132 C -48,-148 -30,-146 -18,-140 C -6,-172 26,-174 36,-142 C 52,-140 64,-138 70,-124 C 76,-102 62,-88 44,-88 L -54,-88 C -72,-92 -78,-110 -70,-132 Z"
         fill={color}
       />
-      <path d="M -70,-96 C -78,-84 -60,-76 -22,-76 L 66,-76 C 78,-80 80,-90 78,-92 L -76,-92 Z" fill={color} />
+      {/* belly line break for volume */}
+      <path d="M -50,-92 C -16,-84 20,-84 50,-92" fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth={3} />
 
-      {/* neck + head */}
-      <path d={`M 66,-120 C 96,-128 104,-160 116,-186 C 122,-200 138,-204 148,-196 L 156,-186 C 144,-178 138,-166 132,-148 C 124,-122 110,-98 82,-92 Z`} fill={color} />
-      <path d="M 140,-198 C 152,-204 166,-200 170,-190 C 172,-182 162,-176 152,-178 Z" fill={color} />
-      <path d="M 144,-202 L 142,-212 L 150,-206 Z" fill={color} />
-      <path d="M 158,-204 L 160,-214 L 166,-206 Z" fill={color} />
-      {/* tail */}
-      <path d="M -76,-98 C -94,-96 -104,-80 -102,-64" fill="none" stroke={color} strokeWidth={5} strokeLinecap="round" />
+      {/* neck: a long S from the shoulder into the skull */}
+      <path
+        d="M 56,-140 C 80,-152 92,-176 98,-196 C 103,-214 116,-222 126,-214 L 134,-206 C 120,-198 112,-184 106,-166 C 98,-142 84,-120 66,-110 Z"
+        fill={color}
+      />
+      {/* skull, muzzle, jaw */}
+      <path d="M 120,-218 C 134,-222 148,-214 152,-202 C 156,-190 148,-182 136,-180 C 126,-179 118,-186 118,-196 C 118,-204 118,-212 120,-218 Z" fill={color} />
+      <path d="M 146,-206 C 158,-208 166,-204 166,-198 C 166,-193 158,-190 150,-192 Z" fill={color} />
+      <path d="M 118,-186 C 128,-184 138,-186 144,-190" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={2.4} />
+      {/* ear */}
+      <path d="M 120,-218 L 114,-230 L 124,-226 Z" fill={color} />
+
+      {/* near-side legs, fully weighted */}
+      {legs
+        .filter((l) => l.ph <= 0.4)
+        .map((l, i) => {
+          const sw = Math.sin(walk * Math.PI * 2 + l.ph * Math.PI * 2) * 11;
+          return (
+            <g key={i}>
+              <path
+                d={`M ${l.x0},${-96} C ${l.x0 + sw * 0.15},${-72} ${l.x0 + sw * 0.55},${-48} ${l.x0 + sw},${-26}`}
+                fill="none"
+                stroke={color}
+                strokeWidth={15}
+                strokeLinecap="round"
+              />
+              <path
+                d={`M ${l.x0 + sw},${-30} C ${l.x0 + sw * 1.12},${-22} ${l.x0 + sw * 1.12},${-9} ${l.x0 + sw * 1.06},${-3}`}
+                fill="none"
+                stroke={color}
+                strokeWidth={8.5}
+                strokeLinecap="round"
+              />
+              <ellipse cx={l.x0 + sw * 1.06} cy={-3} rx={12} ry={5.5} fill={color} />
+            </g>
+          );
+        })}
+
+      {/* cargo roll, or a seated rider */}
+      {rider ? (
+        <g fill={color}>
+          <path d="M -6,-172 C -14,-186 -6,-198 6,-198 C 16,-198 22,-188 20,-176 L 16,-152 L 2,-152 Z" />
+          <circle cx={8} cy={-206} r={9} />
+          <path d="M 18,-196 C 28,-184 30,-168 24,-158 L 14,-160 C 18,-170 16,-182 10,-190 Z" />
+        </g>
+      ) : (
+        <g>
+          <ellipse cx={-4} cy={-172} rx={26} ry={13} fill={color} transform="rotate(-6 -4 -172)" />
+          <ellipse cx={-4} cy={-172} rx={26} ry={13} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={2} transform="rotate(-6 -4 -172)" />
+          <path d="M -30,-176 C -20,-166 -4,-164 12,-168" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={2} />
+        </g>
+      )}
     </g>
   );
 };
 
 const CompassRose: React.FC<{ x: number; y: number; r: number; p: number; color: string }> = ({ x, y, r, p, color }) => {
   const g = easeOutCubic(clamp01(p));
+  if (g < 0.02) return null;
+  const star = (long: number, short: number, w: number) => {
+    const pts: string[] = [];
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
+      const rad = i % 2 === 0 ? (i % 4 === 0 ? long : short) : w;
+      pts.push(`${(Math.cos(a) * rad).toFixed(1)},${(Math.sin(a) * rad).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
   return (
-    <g transform={`translate(${x}, ${y})`} opacity={g}>
-      <circle cx={0} cy={0} r={r} fill="rgba(10, 10, 8, 0.42)" stroke={color} strokeWidth={1.6} />
-      <circle cx={0} cy={0} r={r - 10} fill="none" stroke={color} strokeWidth={0.8} opacity={0.5} />
+    <g transform={`translate(${x}, ${y}) scale(${0.86 + 0.14 * g})`} opacity={g}>
+      <circle r={r} fill="rgba(10, 8, 6, 0.34)" stroke="rgba(224, 192, 138, 0.34)" strokeWidth={1.6} />
+      <circle r={r * 0.86} fill="none" stroke="rgba(224, 192, 138, 0.16)" strokeWidth={1} />
       {Array.from({ length: 32 }).map((_, i) => {
         const a = (i / 32) * Math.PI * 2;
         const long = i % 4 === 0;
         return (
           <line
             key={i}
-            x1={Math.cos(a) * (r - 16)}
-            y1={Math.sin(a) * (r - 16)}
-            x2={Math.cos(a) * (r - (long ? 30 : 22))}
-            y2={Math.sin(a) * (r - (long ? 30 : 22))}
-            stroke={color}
-            strokeWidth={long ? 1.6 : 0.9}
-            opacity={0.7}
+            x1={Math.cos(a) * r * (long ? 0.8 : 0.86)}
+            y1={Math.sin(a) * r * (long ? 0.8 : 0.86)}
+            x2={Math.cos(a) * r * 0.94}
+            y2={Math.sin(a) * r * 0.94}
+            stroke="rgba(228, 198, 142, 0.5)"
+            strokeWidth={long ? 1.8 : 0.9}
           />
         );
       })}
-      {Array.from({ length: 4 }).map((_, i) => {
-        const a = (i / 4) * Math.PI * 2 - Math.PI / 2;
-        const ex = Math.cos(a) * (r - 34);
-        const ey = Math.sin(a) * (r - 34);
-        return (
-          <g key={i}>
-            <path d={`M 0,0 L ${ex * 0.24 - Math.sin(a) * 12},${ey * 0.24 + Math.cos(a) * 12} L ${ex},${ey} L ${ex * 0.24 + Math.sin(a) * 12},${ey * 0.24 - Math.cos(a) * 12} Z`} fill={i === 0 ? color : 'rgba(232, 216, 186, 0.34)'} />
-          </g>
-        );
-      })}
+      <polygon points={star(r * 0.72, r * 0.46, r * 0.1)} fill="rgba(238, 210, 156, 0.16)" stroke="rgba(232, 200, 144, 0.7)" strokeWidth={1.2} />
+      {/* the north needle, lit */}
+      <polygon points={`0,${-r * 0.72} ${-r * 0.11},0 0,${r * 0.12}`} fill="rgba(248, 222, 166, 0.94)" />
+      <polygon points={`0,${-r * 0.72} ${r * 0.11},0 0,${r * 0.12}`} fill="rgba(196, 160, 96, 0.9)" />
+      <polygon points={`0,${r * 0.72} ${-r * 0.11},0 0,${-r * 0.12}`} fill="rgba(148, 126, 88, 0.7)" />
+      <polygon points={`0,${r * 0.72} ${r * 0.11},0 0,${-r * 0.12}`} fill="rgba(112, 94, 66, 0.7)" />
       {[
-        { t: 'U', dx: 0, dy: -r - 14 },
-        { t: 'T', dx: r + 16, dy: 6 },
-        { t: 'S', dx: 0, dy: r + 26 },
-        { t: 'B', dx: -r - 16, dy: 6 },
-      ].map((c, i) => (
+        ['U', 0, -1],
+        ['T', 1, 0],
+        ['S', 0, 1],
+        ['B', -1, 0],
+      ].map(([lab, dx, dy], i) => (
         <text
           key={i}
-          x={c.dx}
-          y={c.dy}
+          x={Number(dx) * r * 1.0}
+          y={Number(dy) * r * 1.0 + 8}
           textAnchor="middle"
-          fill={color}
+          fill="rgba(238, 214, 170, 0.86)"
           fontFamily={IDENTITY.fontMono}
-          fontSize={15}
+          fontSize={19}
           fontWeight={600}
           letterSpacing="0.1em"
-          opacity={0.8}
         >
-          {c.t}
+          {lab}
         </text>
       ))}
-      <circle cx={0} cy={0} r={3.4} fill={color} />
+      <circle r={r * 0.05} fill="rgba(248, 226, 180, 0.9)" />
     </g>
   );
 };
@@ -252,10 +316,10 @@ export const Scene07KompasGurun: React.FC = () => {
         <path d={duneWalk} fill="url(#s7-walk)" transform={`translate(${-localSec * 6}, 0)`} />
 
         <g transform={`translate(${-90 + camelWalk * 160}, 0)`} opacity={camelsIn}>
-          <ellipse cx={600} cy={1424} rx={260} ry={16} fill="rgba(0,0,0,0.26)" />
-          <Camel x={500} y={1396} s={1.05} walk={camelWalk * 3.2} color="#1B1108" />
-          <Camel x={648} y={1412} s={0.9} walk={camelWalk * 3.2 + 0.34} color="#170D06" />
-          <Camel x={762} y={1426} s={0.76} walk={camelWalk * 3.2 + 0.6} color="#130A04" />
+          <ellipse cx={540} cy={1444} rx={330} ry={18} fill="rgba(0,0,0,0.26)" />
+          <Camel x={420} y={1408} s={1.02} walk={camelWalk * 3.2} color="#180E06" rider />
+          <Camel x={664} y={1424} s={0.86} walk={camelWalk * 3.2 + 0.34} color="#140B05" />
+          <Camel x={820} y={1438} s={0.7} walk={camelWalk * 3.2 + 0.62} color="#110803" />
           <g transform="translate(846, 1432)">
             <ellipse cx={0} cy={0} rx={14} ry={4} fill="rgba(0,0,0,0.32)" />
             <path d="M -6,-2 L -4,-38 L 6,-38 L 8,-2 Z" fill="#150B04" />
@@ -343,11 +407,19 @@ export const Scene07KompasGurun: React.FC = () => {
         </g>
 
         <g opacity={easeOutCubic(prog(globalSec, 97.4, 99.4))}>
-          <Mono x={92} y={1844} text="NALURI YANG DIWARISKAN" size={16} color={art.accent} tracking={0.3} />
-          <text x={90} y={1920} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={44} fontWeight={500} letterSpacing="-0.02em">
+          <defs>
+            <linearGradient id="s7-foot" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(10, 6, 3, 0)" />
+              <stop offset="45%" stopColor="rgba(10, 6, 3, 0.72)" />
+              <stop offset="100%" stopColor="rgba(10, 6, 3, 0.86)" />
+            </linearGradient>
+          </defs>
+          <rect x={0} y={1760} width={1440} height={250} fill="url(#s7-foot)" />
+          <Mono x={92} y={1832} text="NALURI YANG DIWARISKAN" size={16} color={art.accent} tracking={0.3} />
+          <text x={90} y={1906} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={44} fontWeight={500} letterSpacing="-0.02em">
             gurun menyimpan arah
           </text>
-          <text x={90} y={1970} fill="rgba(238, 228, 208, 0.6)" fontFamily={IDENTITY.fontGrotesk} fontSize={28} fontWeight={400}>
+          <text x={90} y={1954} fill="rgba(238, 228, 208, 0.62)" fontFamily={IDENTITY.fontGrotesk} fontSize={27} fontWeight={400}>
             dalam bentuk yang bisa dihirup
           </text>
         </g>
@@ -462,62 +534,130 @@ const RainWindow: React.FC<{ x: number; y: number; w: number; h: number; p: numb
   localSec,
 }) => {
   const g = easeOutCubic(clamp01(p));
+  const gx = x + 22;
+  const gy = y + 22;
+  const gw = w - 44;
+  const gh = h - 44;
+
+  const bokeh = Array.from({ length: 16 }).map((_, i) => ({
+    bx: gx + hash2(i, 4, 9) * gw,
+    by: gy + hash2(i, 8, 3) * gh * 0.72,
+    br: 7 + hash2(i, 2, 7) * 26,
+    warm: i % 3 !== 0,
+    op: 0.1 + hash2(i, 6, 5) * 0.22,
+  }));
+
+  const beads = Array.from({ length: 44 }).map((_, i) => {
+    const slow = (hash2(i, 11, 5) - 0.5) * 6;
+    const dy = gy + ((hash2(i, 9, 7) * gh + localSec * slow) % gh + gh) % gh;
+    return {
+      bx: gx + 8 + hash2(i, 5, 3) * (gw - 16),
+      by: dy,
+      br: 1.4 + hash2(i, 3, 11) * 5.4,
+      trail: hash2(i, 7, 13) > 0.72,
+    };
+  });
+
+  const rivulets = [0.24, 0.52, 0.78].map((k, i) => {
+    const rx = gx + gw * k;
+    const drift = Math.sin(localSec * 0.6 + i * 2) * 3;
+    let d = `M ${rx},${gy}`;
+    for (let j = 1; j <= 6; j++) {
+      const yy = gy + (gh / 6) * j;
+      const xx = rx + Math.sin(j * 1.4 + i) * 5 + drift;
+      d += ` Q ${rx + Math.sin(j * 1.4 + i) * 9},${yy - gh / 12} ${xx},${yy}`;
+    }
+    return d;
+  });
+
   return (
-    <g>
+    <g opacity={g}>
       <defs>
         <linearGradient id={`${uid}-outside`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1C2422" />
-          <stop offset="46%" stopColor="#2C3A34" />
-          <stop offset="78%" stopColor="#3C4A3C" />
-          <stop offset="100%" stopColor="#222C24" />
+          <stop offset="0%" stopColor="#0B1214" />
+          <stop offset="40%" stopColor="#152226" />
+          <stop offset="72%" stopColor="#20302C" />
+          <stop offset="100%" stopColor="#0E1512" />
         </linearGradient>
         <linearGradient id={`${uid}-frame`} x1="0" y1="0" x2="1" y2="0.4">
-          <stop offset="0%" stopColor="#8B6338" />
-          <stop offset="38%" stopColor="#6A4626" />
-          <stop offset="100%" stopColor="#4A2F19" />
+          <stop offset="0%" stopColor="#96693A" />
+          <stop offset="34%" stopColor="#6E4A27" />
+          <stop offset="100%" stopColor="#462C17" />
+        </linearGradient>
+        <linearGradient id={`${uid}-haze`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(196, 226, 222, 0.14)" />
+          <stop offset="100%" stopColor="rgba(196, 226, 222, 0.03)" />
         </linearGradient>
         <clipPath id={`${uid}-glass`}>
-          <rect x={x + 22} y={y + 22} width={w - 44} height={h - 44} />
+          <rect x={gx} y={gy} width={gw} height={gh} />
         </clipPath>
       </defs>
 
-      {/* wall shadow around the frame */}
-      <rect x={x - 14} y={y - 14} width={w + 28} height={h + 28} fill="rgba(0,0,0,0.35)" />
+      <rect x={x - 12} y={y - 12} width={w + 24} height={h + 24} fill="rgba(0,0,0,0.34)" />
 
-      {/* outdoor view through the glass */}
-      <g clipPath={`url(#${uid}-glass)`} opacity={g}>
-        <rect x={x + 22} y={y + 22} width={w - 44} height={h - 44} fill={`url(#${uid}-outside)`} />
-        {/* distant hills, layered */}
-        <path d={`M ${x},${y + h * 0.62} Q ${x + w * 0.28},${y + h * 0.44} ${x + w * 0.52},${y + h * 0.6} T ${x + w},${y + h * 0.56} L ${x + w},${y + h} L ${x},${y + h} Z`} fill="#243127" opacity={0.9} />
-        <path d={`M ${x},${y + h * 0.74} Q ${x + w * 0.36},${y + h * 0.6} ${x + w * 0.7},${y + h * 0.76} T ${x + w},${y + h * 0.72} L ${x + w},${y + h} L ${x},${y + h} Z`} fill="#1A241B" />
-        {/* rain streaks outside */}
-        {Array.from({ length: 46 }).map((_, i) => {
-          const rx = x + 20 + ((i * 61) % (w - 40));
-          const ry = y + 20 + (((i * 137 + localSec * 520) % (h - 30)) as number);
-          return <line key={i} x1={rx} y1={ry} x2={rx - 6} y2={ry + 34} stroke="rgba(206, 226, 216, 0.38)" strokeWidth={1.4} strokeLinecap="round" />;
+      <g clipPath={`url(#${uid}-glass)`}>
+        <rect x={gx} y={gy} width={gw} height={gh} fill={`url(#${uid}-outside)`} />
+
+        {/* rooftops and a wet street beyond the glass */}
+        <path d={`M ${gx},${gy + gh * 0.66} L ${gx + gw * 0.2},${gy + gh * 0.6} L ${gx + gw * 0.34},${gy + gh * 0.63} L ${gx + gw * 0.55},${gy + gh * 0.55} L ${gx + gw * 0.7},${gy + gh * 0.6} L ${gx + gw},${gy + gh * 0.54} L ${gx + gw},${gy + gh} L ${gx},${gy + gh} Z`} fill="#0C1315" opacity={0.92} />
+        <path d={`M ${gx},${gy + gh * 0.86} L ${gx + gw},${gy + gh * 0.82} L ${gx + gw},${gy + gh} L ${gx},${gy + gh} Z`} fill="#0A1012" />
+        {/* street lamp glow + bokeh */}
+        <circle cx={gx + gw * 0.72} cy={gy + gh * 0.52} r={gw * 0.3} fill="rgba(232, 176, 108, 0.16)" />
+        {bokeh.map((b, i) => (
+          <circle key={i} cx={b.bx} cy={b.by} r={b.br} fill={b.warm ? `rgba(244, 190, 122, ${b.op})` : `rgba(168, 206, 208, ${b.op * 0.6})`} />
+        ))}
+        {/* rain outside, long and fast */}
+        {Array.from({ length: 54 }).map((_, i) => {
+          const rx = gx + ((i * 37) % gw);
+          const ry = gy + (((i * 113 + localSec * 900) % (gh + 80)) as number) - 40;
+          return <line key={i} x1={rx} y1={ry} x2={rx - 9} y2={ry + 52} stroke="rgba(202, 226, 220, 0.3)" strokeWidth={1.3} strokeLinecap="round" />;
         })}
-        {/* warm kitchen light caught in the glass */}
-        <ellipse cx={x + w * 0.3} cy={y + h * 0.24} rx={w * 0.3} ry={h * 0.16} fill="rgba(240, 200, 140, 0.12)" />
-        {/* droplets on the inside of the glass */}
-        {Array.from({ length: 26 }).map((_, i) => {
-          const dx = x + 36 + hash2(i, 5, 3) * (w - 72);
-          const dy = y + 30 + hash2(i, 9, 7) * (h - 60);
-          const dr = 3 + hash2(i, 3, 11) * 8;
-          return (
-            <g key={i}>
-              <circle cx={dx} cy={dy} r={dr} fill="rgba(226, 240, 234, 0.16)" stroke="rgba(248, 254, 248, 0.42)" strokeWidth={0.8} />
-              <ellipse cx={dx - dr * 0.3} cy={dy - dr * 0.34} rx={dr * 0.34} ry={dr * 0.24} fill="rgba(255, 255, 255, 0.55)" />
-            </g>
-          );
-        })}
+
+        {/* condensation haze on the inside */}
+        <rect x={gx} y={gy} width={gw} height={gh} fill={`url(#${uid}-haze)`} />
+
+        {/* beaded drops, each with a dark refracted rim and a specular dot */}
+        {beads.map((b, i) => (
+          <g key={i}>
+            {b.trail && (
+              <path
+                d={`M ${b.bx + 1},${b.by - b.br * 6} q ${b.br * 0.8},${b.br * 2} 0,${b.br * 5}`}
+                fill="none"
+                stroke="rgba(206, 230, 226, 0.14)"
+                strokeWidth={b.br * 0.7}
+                strokeLinecap="round"
+              />
+            )}
+            <circle cx={b.bx} cy={b.by} r={b.br} fill="rgba(120, 152, 148, 0.2)" />
+            <circle cx={b.bx} cy={b.by} r={b.br} fill="none" stroke="rgba(232, 246, 240, 0.5)" strokeWidth={0.9} />
+            <circle cx={b.bx + b.br * 0.22} cy={b.by + b.br * 0.24} r={b.br * 0.62} fill="rgba(210, 236, 230, 0.16)" />
+            <circle cx={b.bx - b.br * 0.3} cy={b.by - b.br * 0.36} r={b.br * 0.22} fill="rgba(255, 255, 255, 0.8)" />
+          </g>
+        ))}
+
+        {/* rivulets running down the pane */}
+        {rivulets.map((d, i) => (
+          <g key={i}>
+            <path d={d} fill="none" stroke="rgba(210, 234, 228, 0.14)" strokeWidth={7} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="rgba(244, 252, 248, 0.3)" strokeWidth={1.6} strokeLinecap="round" />
+          </g>
+        ))}
+
+        {/* the room's warm lamp mirrored in the glass */}
+        <ellipse cx={gx + gw * 0.18} cy={gy + gh * 0.2} rx={gw * 0.22} ry={gh * 0.1} fill="rgba(248, 206, 148, 0.14)" />
+        <ellipse cx={gx + gw * 0.18} cy={gy + gh * 0.2} rx={gw * 0.1} ry={gh * 0.045} fill="rgba(252, 224, 172, 0.14)" />
+        {/* specular sweep across the pane */}
+        <path d={`M ${gx},${gy + gh * 0.3} L ${gx + gw * 0.42},${gy} L ${gx + gw * 0.58},${gy} L ${gx},${gy + gh * 0.48} Z`} fill="rgba(255, 250, 236, 0.05)" />
       </g>
 
-      {/* wooden frame + mullions */}
+      {/* wooden frame, mullions and sill */}
       <rect x={x} y={y} width={w} height={h} fill="none" stroke={`url(#${uid}-frame)`} strokeWidth={22} />
-      <rect x={x + 11} y={y + 11} width={w - 22} height={h - 22} fill="none" stroke="rgba(246, 220, 174, 0.3)" strokeWidth={2} />
+      <rect x={x + 11} y={y + 11} width={w - 22} height={h - 22} fill="none" stroke="rgba(246, 220, 174, 0.26)" strokeWidth={2} />
       <line x1={x + w / 2} y1={y + 16} x2={x + w / 2} y2={y + h - 16} stroke={`url(#${uid}-frame)`} strokeWidth={16} />
       <line x1={x + 16} y1={y + h * 0.46} x2={x + w - 16} y2={y + h * 0.46} stroke={`url(#${uid}-frame)`} strokeWidth={14} />
-      <line x1={x + w / 2} y1={y + 16} x2={x + w / 2} y2={y + h - 16} stroke="rgba(246, 220, 174, 0.22)" strokeWidth={2} />
+      <line x1={x + w / 2 + 4} y1={y + 16} x2={x + w / 2 + 4} y2={y + h - 16} stroke="rgba(30, 20, 10, 0.5)" strokeWidth={2} />
+      <rect x={x - 18} y={y + h - 6} width={w + 36} height={16} fill="#5A3A20" />
+      <rect x={x - 18} y={y + h - 6} width={w + 36} height={4} fill="rgba(248, 220, 172, 0.28)" />
     </g>
   );
 };

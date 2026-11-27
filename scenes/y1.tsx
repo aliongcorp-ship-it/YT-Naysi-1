@@ -259,8 +259,9 @@ export const Scene05Loupe: React.FC = () => {
           opacity={lensIn}
           transform={`translate(${cx + drift}, ${cy}) scale(${0.9 + 0.1 * lensIn}) translate(${-cx - drift}, ${-cy})`}
         >
-          {/* lens shadow on the ground */}
-          <ellipse cx={cx + 30} cy={cy + R + 120} rx={R * 0.86} ry={60} fill="rgba(0,0,0,0.45)" />
+          {/* lens shadow on the ground, soft-edged */}
+          <ellipse cx={cx + 26} cy={cy + R + 96} rx={R * 0.78} ry={44} fill="rgba(0,0,0,0.34)" opacity={0.7} />
+          <ellipse cx={cx + 26} cy={cy + R + 96} rx={R * 0.46} ry={26} fill="rgba(0,0,0,0.22)" />
 
           {/* lens interior */}
           <defs>
@@ -323,7 +324,8 @@ export const Scene05Loupe: React.FC = () => {
 
             {/* the animal itself */}
             <g transform={`translate(${cx + 30 - walkP * 26}, ${cy + 74})`}>
-              <Springtail x={0} y={0} s={1.42} walk={walkP * 4} look={Math.sin(localSec * 1.1)} gut={0.2} sporeP={0.2} />
+              <ellipse cx={6} cy={148} rx={190} ry={20} fill="rgba(20, 14, 8, 0.42)" />
+              <Springtail x={0} y={0} s={1.62} walk={walkP * 4} look={Math.sin(localSec * 1.1)} gut={0.2} sporeP={0.2} />
             </g>
 
             {/* scent trail: geosmin drifting into the antennae */}
@@ -364,6 +366,17 @@ export const Scene05Loupe: React.FC = () => {
               <Mono x={-10} y={44} text="1,5 MM" size={15} color="rgba(244, 234, 210, 0.9)" tracking={0.18} />
             </g>
 
+            {/* refraction: the glass brightens and bends what sits near its rim */}
+            <rect x={cx - R} y={cy - R} width={R * 2} height={R * 2} fill="url(#s5-lamp)" opacity={0.5} />
+            <circle cx={cx} cy={cy} r={R - 20} fill="none" stroke="rgba(255, 244, 216, 0.16)" strokeWidth={48} />
+            <circle cx={cx} cy={cy} r={R - 46} fill="none" stroke="rgba(120, 150, 150, 0.12)" strokeWidth={3} />
+
+            {/* chromatic fringe at the bean edge and a broad specular sweep */}
+            <circle cx={cx} cy={cy} r={R - 20} fill="none" stroke="rgba(240, 176, 120, 0.16)" strokeWidth={5} />
+            <circle cx={cx} cy={cy} r={R - 26} fill="none" stroke="rgba(150, 196, 206, 0.14)" strokeWidth={3} />
+            <ellipse cx={cx - R * 0.32} cy={cy - R * 0.42} rx={R * 0.52} ry={R * 0.24} fill="rgba(255, 250, 232, 0.1)" transform={`rotate(-32 ${cx} ${cy})`} />
+            <path d={`M ${cx - R * 0.72},${cy - R * 0.1} A ${R * 0.74} ${R * 0.74} 0 0 1 ${cx - R * 0.1},${cy - R * 0.72}`} fill="none" stroke="rgba(255, 250, 232, 0.3)" strokeWidth={7} strokeLinecap="round" />
+
             {/* glass coating */}
             <rect x={cx - R} y={cy - R} width={R * 2} height={R * 2} fill="url(#s5-glass)" />
           </g>
@@ -394,6 +407,13 @@ export const Scene05Loupe: React.FC = () => {
             strokeWidth={6}
             strokeLinecap="round"
           />
+          {/* engraved magnification tag on the ring */}
+          <g transform={`translate(${cx - 6}, ${cy + R + 4})`}>
+            <rect x={-52} y={-20} width={104} height={40} rx={4} fill="#3A2C16" stroke="rgba(246, 220, 168, 0.55)" strokeWidth={1.6} />
+            <text x={0} y={8} textAnchor="middle" fill="rgba(248, 226, 178, 0.94)" fontFamily={IDENTITY.fontMono} fontSize={20} fontWeight={600} letterSpacing="0.1em">
+              10×
+            </text>
+          </g>
           {/* handle */}
           <g transform={`translate(${cx + R * 0.72}, ${cy + R * 0.72}) rotate(38)`}>
             <rect x={0} y={-26} width={340} height={52} rx={10} fill="#6E5934" stroke="rgba(244, 216, 158, 0.5)" strokeWidth={2} />
@@ -423,6 +443,14 @@ export const Scene05Loupe: React.FC = () => {
           <text x={92} y={1652} fill="rgba(230, 220, 198, 0.62)" fontFamily={IDENTITY.fontGrotesk} fontSize={30} fontWeight={400} letterSpacing="-0.01em">
             arthropoda tanah seukuran ujung jarum
           </text>
+        </g>
+
+        <g opacity={easeOutCubic(prog(globalSec, 64.4, 66.0))}>
+          <RuleLine x1={92} y1={1740} x2={1348} y2={1740} color="rgba(214, 198, 168, 0.22)" />
+          <Mono x={92} y={1782} text="TAKSONOMI" size={14} color="rgba(214, 200, 172, 0.42)" tracking={0.26} weight={400} />
+          <Mono x={92} y={1818} text="HEXAPODA · COLLEMBOLA · FOLSOMIA" size={17} color="rgba(232, 220, 196, 0.7)" tracking={0.14} />
+          <Mono x={1348} y={1782} text="PANJANG TUBUH" size={14} color="rgba(214, 200, 172, 0.42)" anchor="end" tracking={0.26} weight={400} />
+          <Mono x={1348} y={1818} text="1 – 3 MM" size={17} color="rgba(232, 220, 196, 0.7)" anchor="end" tracking={0.14} />
         </g>
 
         <g opacity={credit}>
@@ -539,29 +567,48 @@ export const Scene06AtlasLontaran: React.FC = () => {
           </text>
 
           {/* the animal, translucent enough to read its gut */}
-          <g transform={`translate(700, 1010) scale(2.35)`}>
+          <g transform={`translate(716, 1044) scale(2.5)`}>
             <Springtail x={0} y={0} s={1} walk={localSec * 1.2} gut={clamp01(gutIn * 1.4)} sporeP={clamp01(gutIn * 1.3)} />
           </g>
 
-          {/* gut magnification disc */}
-          <GutInset cx={300} cy={1120} r={182} p={gutIn} uid="s6-gut" />
+          {/* gut magnification disc, hung under the specimen */}
+          <GutInset cx={1082} cy={1486} r={156} p={gutIn} uid="s6-gut" />
+          <path
+            d="M 900,1120 C 990,1180 1060,1290 1074,1330"
+            fill="none"
+            stroke="rgba(214, 190, 148, 0.34)"
+            strokeWidth={1.4}
+            strokeDasharray="6 8"
+            opacity={clamp01(gutIn * 1.2)}
+          />
 
           {/* annotations */}
           <g opacity={easeOutCubic(prog(globalSec, 79.4, 80.6))}>
-            <LeaderLabel from={[712, 1078]} to={[1004, 1210]} text="SALURAN CERNA" sub="SPORA BERTAHAN DARI ENZIM" color="rgba(232, 218, 190, 0.74)" size={16} dot="#D8A148" />
-            <LeaderLabel from={[560, 902]} to={[396, 812]} text="KUTIKULA BERBULU" sub="TEMPAT SPORA MENEMPEL" color="rgba(232, 218, 190, 0.7)" size={16} dot="#D8A148" anchor="end" />
-            <LeaderLabel from={[878, 1140]} to={[1082, 1290]} text="EKOR PEGAS (FURCULA)" sub="PELONTAR PULUHAN KALI TINGGI TUBUH" color="rgba(232, 218, 190, 0.7)" size={15} dot="#D8A148" />
+            <LeaderLabel from={[820, 1082]} to={[1006, 1188]} text="SALURAN CERNA" sub="SPORA BERTAHAN DARI ENZIM" color="rgba(232, 218, 190, 0.74)" size={16} dot="#D8A148" />
+            <LeaderLabel from={[604, 986]} to={[404, 868]} text="KUTIKULA BERBULU" sub="TEMPAT SPORA MENEMPEL" color="rgba(232, 218, 190, 0.7)" size={16} dot="#D8A148" anchor="end" />
+            <LeaderLabel from={[436, 1112]} to={[300, 1272]} text="EKOR PEGAS (FURCULA)" sub="PELONTAR PULUHAN KALI TINGGI TUBUH" color="rgba(232, 218, 190, 0.7)" size={15} dot="#D8A148" anchor="end" />
+          </g>
+
+          {/* measured scale bar */}
+          <g opacity={easeOutCubic(prog(globalSec, 80.0, 81.4))} transform="translate(468, 1276)">
+            <RuleLine x1={0} y1={0} x2={300} y2={0} color="rgba(232, 220, 196, 0.8)" width={2} />
+            {[0, 1, 2, 3].map((i) => (
+              <line key={i} x1={i * 100} y1={-9} x2={i * 100} y2={9} stroke="rgba(232, 220, 196, 0.8)" strokeWidth={2} />
+            ))}
+            <Mono x={0} y={38} text="0" size={13} color="rgba(232, 220, 196, 0.62)" tracking={0.1} weight={400} />
+            <Mono x={300} y={38} text="1,5 MM" size={13} color="rgba(232, 220, 196, 0.62)" anchor="end" tracking={0.1} weight={400} />
           </g>
 
           {/* the strategy, stated as typography not as a chart */}
           <g opacity={easeOutCubic(prog(globalSec, 80.4, 81.8))}>
-            <RuleLine x1={92} y1={1456} x2={1348} y2={1456} color="rgba(206, 192, 162, 0.24)" />
-            <text x={90} y={1524} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={36} fontWeight={500} letterSpacing="-0.01em">
+            <RuleLine x1={92} y1={1720} x2={1348} y2={1720} color="rgba(206, 192, 162, 0.24)" />
+            <text x={90} y={1788} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={36} fontWeight={500} letterSpacing="-0.01em">
               korban satu koloni,
             </text>
-            <text x={90} y={1572} fill={art.accent} fontFamily={IDENTITY.fontFraunces} fontStyle="italic" fontSize={44}>
+            <text x={90} y={1840} fill={art.accent} fontFamily={IDENTITY.fontFraunces} fontStyle="italic" fontSize={44}>
               ribuan spora pindah rumah
             </text>
+            <Mono x={1348} y={1720 - 26} text="PLAT VI · FOLSOMIA CANDIDA" size={14} color="rgba(206, 194, 168, 0.44)" anchor="end" tracking={0.16} weight={400} />
           </g>
         </g>
 

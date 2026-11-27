@@ -581,7 +581,26 @@ export const SoilSlab: React.FC<{
     });
   }, [seed, w, d]);
 
-  const topPath = `M ${x + 44},${y} L ${x + w - 44},${y} L ${x + w},${y + d} L ${x},${y + d} Z`;
+  const grains = useMemo(() => {
+    const rnd = makeRng(seed * 619 + 29);
+    return Array.from({ length: Math.round(w / 4) }).map(() => ({
+      gx: x + 20 + rnd() * (w - 40),
+      gy: y + 12 + rnd() * (d - 24),
+      gr: 0.9 + rnd() * 2.6,
+      ga: 0.14 + rnd() * 0.4,
+      warm: rnd() > 0.4,
+    }));
+  }, [seed, w, d, x, y]);
+
+  const topPath = (() => {
+    const wob = (u: number, amp: number, ph: number) => Math.sin(u * 0.021 + ph) * amp + Math.sin(u * 0.058 + ph * 2) * amp * 0.5;
+    let dpath = `M ${x + 44},${y}`;
+    for (let u = 0; u <= w - 88; u += 26) dpath += ` L ${(x + 44 + u).toFixed(1)},${(y + wob(u, 3.6, 1.2)).toFixed(1)}`;
+    dpath += ` L ${x + w - 44},${y}`;
+    dpath += ` L ${x + w},${y + d - 2}`;
+    for (let u = w; u >= 0; u -= 26) dpath += ` L ${(x + u).toFixed(1)},${(y + d + wob(u, 4.2, 2.7)).toFixed(1)}`;
+    return `${dpath} Z`;
+  })();
   const frontPath = `M ${x},${y + d} L ${x + w},${y + d} L ${x + w - 10},${y + d + h} L ${x + 10},${y + d + h} Z`;
 
   return (
@@ -606,7 +625,7 @@ export const SoilSlab: React.FC<{
       </defs>
 
       {/* contact shadow */}
-      <ellipse cx={x + w / 2 + 6} cy={y + d + h + 16} rx={w * 0.53} ry={26} fill="rgba(0,0,0,0.55)" />
+      <ellipse cx={x + w / 2 + 6} cy={y + d + h + 10} rx={w * 0.5} ry={20} fill="rgba(0,0,0,0.4)" />
 
       {/* slab front soil wall */}
       <path d={frontPath} fill={`url(#${uid}-frontshade)`} />
@@ -619,9 +638,15 @@ export const SoilSlab: React.FC<{
       <path d={`M ${x},${y + d} L ${x + w},${y + d}`} stroke="rgba(255, 226, 184, 0.22)" strokeWidth={2} />
 
       {/* slab top surface */}
-      <path d={topPath} fill="#8A4A2F" />
+      <path d={topPath} fill="#4B2C1A" />
       <g clipPath={`url(#${uid}-top)`}>
-        {texUrl && <image href={texUrl} x={x} y={y} width={w} height={d} preserveAspectRatio="none" opacity={0.72} />}
+                {texUrl && <image href={texUrl} x={x} y={y} width={w} height={d} preserveAspectRatio="none" opacity={0.34} />}
+        {grains.map((g, i) => (
+          <circle key={`g${i}`} cx={g.gx} cy={g.gy} r={g.gr} fill={g.warm ? `rgba(238, 200, 152, ${g.ga})` : `rgba(26, 14, 8, ${g.ga * 0.9})`} />
+        ))}
+        {/* damp-darkened hollows */}
+        <ellipse cx={x + w * 0.36} cy={y + d * 0.52} rx={w * 0.13} ry={d * 0.16} fill="rgba(16, 10, 6, 0.22)" />
+        <ellipse cx={x + w * 0.72} cy={y + d * 0.44} rx={w * 0.1} ry={d * 0.14} fill="rgba(16, 10, 6, 0.16)" />
         <path d={topPath} fill={`url(#${uid}-toplight)`} />
         {/* desiccation cracks */}
         {cracks.map((c, i) => (
@@ -901,34 +926,34 @@ export const Scene01RuangTakar: React.FC = () => {
 
           {/* ---------------- macro laterite slab bleeding off right -------- */}
           <g>
-            <SoilSlab x={330} y={1146} w={1250} d={300} h={158} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(246, 214, 160, 0.34)" />
+            <SoilSlab x={452} y={1152} w={1130} d={228} h={150} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(240, 206, 152, 0.3)" />
             {/* standing water film in the slab depressions */}
-            <ellipse cx={706} cy={1300} rx={116} ry={24} fill="rgba(150, 190, 192, 0.18)" />
-            <ellipse cx={706} cy={1297} rx={74} ry={13} fill="rgba(206, 230, 226, 0.2)" />
-            <ellipse cx={1146} cy={1322} rx={90} ry={17} fill="rgba(150, 190, 192, 0.14)" />
+            <ellipse cx={742} cy={1266} rx={104} ry={21} fill="rgba(150, 190, 192, 0.18)" />
+            <ellipse cx={742} cy={1263} rx={66} ry={12} fill="rgba(206, 230, 226, 0.2)" />
+            <ellipse cx={1160} cy={1290} rx={82} ry={15} fill="rgba(150, 190, 192, 0.14)" />
 
             {/* first drop + crown */}
-            <DropStreak x={706} y={946 + firstDrop * 330} len={118} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
+            <DropStreak x={742} y={920 + firstDrop * 320} len={112} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
             {localSec > 1.62 && localSec < 2.85 && (
-              <ImpactCrown x={706} y={1300} p={clamp01((localSec - 1.62) / 0.85)} scale={1.35} />
+              <ImpactCrown x={742} y={1266} p={clamp01((localSec - 1.62) / 0.85)} scale={1.3} />
             )}
-            <DropStreak x={1146} y={886 + secondDrop * 380} len={92} opacity={secondDrop > 0 && secondDrop < 1 ? 0.75 : 0} />
+            <DropStreak x={1160} y={880 + secondDrop * 390} len={92} opacity={secondDrop > 0 && secondDrop < 1 ? 0.75 : 0} />
             {localSec > 3.42 && localSec < 4.5 && (
-              <ImpactCrown x={1146} y={1322} p={clamp01((localSec - 3.42) / 0.8)} scale={0.92} />
+              <ImpactCrown x={1160} y={1290} p={clamp01((localSec - 3.42) / 0.8)} scale={0.9} />
             )}
 
             {/* the chemical trap blooming out of the soil */}
             <g opacity={trapIn} transform={`translate(0, ${(1 - trapIn) * 40})`}>
-              <g transform="translate(952, 1300)">
+              <g transform="translate(1004, 1292)">
                 <IsoCrystal x={0} y={0} s={30} h={46 * latticeIn} opacity={latticeIn} />
                 <IsoCrystal x={58} y={16} s={22} h={64 * latticeIn} hue={['#F6E3B4', '#D3A963', '#8F6A34']} opacity={latticeIn} />
                 <IsoCrystal x={-48} y={20} s={18} h={38 * latticeIn} hue={['#EBD6A6', '#C39A54', '#7C5C2C']} opacity={latticeIn * 0.9} />
                 <IsoCrystal x={26} y={-16} s={14} h={30 * latticeIn} opacity={latticeIn * 0.8} />
               </g>
-              <VapourWisps x={978} y={1268} p={vapour} count={4} height={330} />
+              <VapourWisps x={1030} y={1260} p={vapour} count={4} height={330} />
               <LeaderLabel
-                from={[952, 1298]}
-                to={[1250, 1086]}
+                from={[1004, 1290]}
+                to={[1276, 1082]}
                 text="GEOSMIN · C₁₂H₂₂O"
                 sub="ALKOHOL BISIKLIK TANAH"
                 color="rgba(226, 206, 166, 0.8)"
@@ -973,24 +998,58 @@ const SoilGrainBand: React.FC<{ x: number; y: number; w: number; h: number; seed
 }) => {
   const grains = useMemo(() => {
     const rnd = makeRng(seed * 733 + 19);
-    const out: { cx: number; cy: number; rx: number; ry: number; rot: number; tone: number }[] = [];
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 17; col++) {
-        const cx = x - 20 + col * ((w + 40) / 16) + (row % 2) * 21 + (rnd() - 0.5) * 18;
-        const cy = y + row * (h / 9) + (rnd() - 0.5) * 12;
-        out.push({ cx, cy, rx: 16 + rnd() * 26, ry: 10 + rnd() * 16, rot: rnd() * 180, tone: rnd() });
+    const out: { cx: number; cy: number; rx: number; ry: number; rot: number; tone: number; dark: boolean }[] = [];
+    const cols = 44;
+    const rows = 22;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const cx = x - 16 + col * ((w + 32) / (cols - 1)) + (row % 2) * 8 + (rnd() - 0.5) * 14;
+        const cy = y + row * (h / rows) + (rnd() - 0.5) * 11;
+        // deeper grains read darker and flatter, the top 30% catches a wet sheen
+        const depth = (cy - y) / h;
+        out.push({
+          cx,
+          cy,
+          rx: 4 + rnd() * 8.5,
+          ry: 3.4 + rnd() * 6.2,
+          rot: rnd() * 180,
+          tone: rnd() * (1 - depth * 0.55),
+          dark: rnd() > 0.62,
+        });
       }
     }
     return out;
   }, [x, y, w, h, seed]);
 
+  const clods = useMemo(() => {
+    const rnd = makeRng(seed * 311 + 7);
+    return Array.from({ length: 6 }).map(() => ({
+      cx: x + rnd() * w,
+      cy: y + 20 + rnd() * (h - 40),
+      rx: 26 + rnd() * 40,
+      ry: 16 + rnd() * 24,
+    }));
+  }, [x, y, w, h, seed]);
+
   return (
     <g opacity={opaque}>
+      {clods.map((c, i) => (
+        <ellipse key={`k${i}`} cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry} fill="rgba(24, 14, 8, 0.5)" />
+      ))}
       {grains.map((g, i) => (
         <g key={i} transform={`rotate(${g.rot} ${g.cx} ${g.cy})`}>
-          <ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill={`rgb(${74 + g.tone * 44}, ${44 + g.tone * 30}, ${30 + g.tone * 20})`} />
-          <ellipse cx={g.cx - g.rx * 0.24} cy={g.cy - g.ry * 0.28} rx={g.rx * 0.58} ry={g.ry * 0.52} fill="rgba(255, 226, 190, 0.1)" />
-          <ellipse cx={g.cx + g.rx * 0.3} cy={g.cy + g.ry * 0.34} rx={g.rx * 0.5} ry={g.ry * 0.42} fill="rgba(20, 10, 6, 0.22)" />
+          <ellipse
+            cx={g.cx}
+            cy={g.cy}
+            rx={g.rx}
+            ry={g.ry}
+            fill={
+              g.dark
+                ? `rgba(${26 + g.tone * 26}, ${18 + g.tone * 16}, ${12 + g.tone * 10}, 0.92)`
+                : `rgba(${66 + g.tone * 52}, ${42 + g.tone * 34}, ${28 + g.tone * 22}, 0.95)`
+            }
+          />
+          <ellipse cx={g.cx - g.rx * 0.22} cy={g.cy - g.ry * 0.3} rx={g.rx * 0.5} ry={g.ry * 0.42} fill="rgba(248, 222, 184, 0.07)" />
         </g>
       ))}
     </g>
@@ -1213,6 +1272,10 @@ export const Scene02StripCepat: React.FC = () => {
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         {/* ---------------- the film strip ---------------- */}
         <g>
+          <clipPath id="s2-stripcut">
+            <rect x={stripX - 10} y={-260} width={stripW + 20} height={1810} />
+          </clipPath>
+          <g clipPath="url(#s2-stripcut)">
           <rect x={stripX - 6} y={-260} width={stripW + 12} height={3100} fill="#0E1213" />
           <rect x={stripX - 6} y={-260} width={stripW + 12} height={3100} fill="none" stroke="rgba(210, 224, 220, 0.12)" strokeWidth={2} />
 
@@ -1260,15 +1323,31 @@ export const Scene02StripCepat: React.FC = () => {
               </g>
             );
           })}
+          </g>
+          {/* the strip was cut by hand: a ragged scissor line ends it */}
+          <path
+            d={`M ${stripX - 6},1566 ${Array.from({ length: 24 })
+              .map((_, i) => `L ${stripX - 6 + ((i + 1) * (stripW + 12)) / 24},${1566 + (i % 3) * 7 - 4}`)
+              .join(' ')} L ${stripX + stripW + 6},1566 Z`}
+            fill="#0B0F10"
+          />
+          <path
+            d={`M ${stripX - 6},1552 ${Array.from({ length: 24 })
+              .map((_, i) => `L ${stripX - 6 + ((i + 1) * (stripW + 12)) / 24},${1552 + (i % 3) * 7 - 4}`)
+              .join(' ')}`}
+            fill="none"
+            stroke="rgba(226, 216, 194, 0.34)"
+            strokeWidth={1.6}
+          />
         </g>
 
         {/* ---------------- typography, set like a lab slate ---------------- */}
         <g>
-          <Mono x={64} y={126} text="REKAMAN KAMERA KECEPATAN TINGGI" size={17} color="rgba(212, 206, 188, 0.62)" tracking={0.22} weight={400} />
-          <RuleLine x1={64} y1={150} x2={64 + 320 * easeOutCubic(prog(localSec, 0.2, 1.4))} y2={150} color="rgba(208, 196, 170, 0.4)" />
+          <Mono x={64} y={252} text="REKAMAN KAMERA KECEPATAN TINGGI" size={17} color="rgba(212, 206, 188, 0.62)" tracking={0.22} weight={400} />
+          <RuleLine x1={64} y1={276} x2={64 + 320 * easeOutCubic(prog(localSec, 0.2, 1.4))} y2={276} color="rgba(208, 196, 170, 0.4)" />
 
           {/* giant tempo figure, set sideways along the left margin */}
-          <g transform="translate(148, 1520) rotate(-90)">
+          <g transform="translate(140, 1420) rotate(-90)">
             <text x={0} y={0} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={150} letterSpacing="0.02em">
               200.000
             </text>
@@ -1278,7 +1357,7 @@ export const Scene02StripCepat: React.FC = () => {
           </g>
 
           {/* lab credit running up the right margin */}
-          <g transform="translate(1306, 1300) rotate(90)">
+          <g transform="translate(1312, 1180) rotate(90)">
             <Mono x={0} y={0} text="JOUNG & BUIE" size={19} color="rgba(226, 216, 194, 0.74)" tracking={0.24} />
             <Mono x={0} y={30} text="MIT — NATURE COMMUNICATIONS 2015" size={15} color="rgba(200, 192, 172, 0.5)" tracking={0.14} weight={400} />
             <RuleLine x1={0} y1={48} x2={430} y2={48} color="rgba(200, 192, 172, 0.28)" />
@@ -1293,12 +1372,23 @@ export const Scene02StripCepat: React.FC = () => {
                 <stop offset="100%" stopColor="rgba(6, 8, 8, 0.94)" />
               </linearGradient>
             </defs>
-            <rect x={250} y={1600} width={940} height={260} fill="url(#s2-scrim)" />
-            <RuleLine x1={286} y1={1660} x2={1154} y2={1660} color="rgba(206, 196, 172, 0.26)" />
-            <Mono x={286} y={1700} text="GERIMIS PELAN" size={16} color={art.accent} tracking={0.26} />
-            <Mono x={286} y={1734} text="gelembung sempat meletup" size={26} color="rgba(240, 234, 220, 0.94)" tracking={0.02} weight={600} />
-            <Mono x={1154} y={1700} text="HUJAN DERAS" size={16} color="rgba(198, 202, 194, 0.44)" tracking={0.26} anchor="end" />
-            <Mono x={1154} y={1734} text="gelembung gagal terbentuk" size={26} color="rgba(226, 222, 210, 0.34)" tracking={0.02} anchor="end" weight={600} />
+            <defs>
+              <linearGradient id="s2-lower" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(8, 11, 12, 0)" />
+                <stop offset="30%" stopColor="rgba(8, 11, 12, 0.8)" />
+                <stop offset="100%" stopColor="rgba(8, 11, 12, 0.2)" />
+              </linearGradient>
+            </defs>
+            <rect x={0} y={1560} width={1440} height={460} fill="url(#s2-lower)" />
+            <RuleLine x1={96} y1={1648} x2={1344} y2={1648} color="rgba(206, 196, 172, 0.26)" />
+            <Mono x={96} y={1690} text="GERIMIS PELAN" size={16} color={art.accent} tracking={0.26} />
+            <text x={96} y={1734} fill="rgba(242, 236, 222, 0.96)" fontFamily={IDENTITY.fontGrotesk} fontSize={30} fontWeight={500}>
+              gelembung sempat meletup
+            </text>
+            <Mono x={1344} y={1690} text="HUJAN DERAS" size={16} color="rgba(198, 202, 194, 0.42)" tracking={0.26} anchor="end" />
+            <text x={1344} y={1734} textAnchor="end" fill="rgba(226, 222, 210, 0.4)" fontFamily={IDENTITY.fontGrotesk} fontSize={30} fontWeight={400}>
+              gelembung gagal terbentuk
+            </text>
           </g>
         </g>
       </svg>
@@ -1325,106 +1415,154 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
   const rr = r * easeOutCubic(grow);
   if (rr < 0.4) return null;
   const palette = [
-    ['#B08A4E', '#D8BC85', '#7C5C2C'],
-    ['#C7B58A', '#E6DAC0', '#8E7C55'],
-    ['#8E6C3C', '#B99B62', '#5E4522'],
-    ['#D6C9A6', '#EFE6CE', '#9C8A66'],
-    ['#A2763F', '#CBAE76', '#6B4C22'],
+    ['#D9CBA6', '#F1E8CE', '#9A8658'],
+    ['#CBC7AF', '#EDE9D8', '#8B8768'],
+    ['#D7C3A0', '#F4EBD4', '#96805A'],
+    ['#C9C2A6', '#EFE8D2', '#8A8163'],
+    ['#DFD2B4', '#F6EEDA', '#A08A62'],
   ][Math.floor(tone * 5) % 5];
+  const warm = ['#E9D2A4', '#E4D8B8', '#EBD8AE', '#E2D6BA', '#EFDCB6'][Math.floor(tone * 5) % 5];
 
-  const blob = useMemo(() => {
-    const n = 44;
+  // a smooth, lobed colony edge — catmull-rom through noise radii, never a polygon
+  const edge = useMemo(() => {
+    const n = 14;
     const pts: [number, number][] = [];
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2;
       const k =
         1 +
-        0.1 * Math.sin(3 * a + seed * 1.7) +
-        0.07 * Math.sin(5 * a + seed * 2.9) +
-        0.045 * Math.sin(9 * a + seed * 4.3) +
-        0.03 * Math.sin(15 * a + seed);
+        0.085 * Math.sin(3 * a + seed * 1.7) +
+        0.055 * Math.sin(5 * a + seed * 2.9) +
+        0.03 * Math.sin(8 * a + seed * 4.3);
       pts.push([Math.cos(a) * rr * k, Math.sin(a) * rr * k]);
     }
-    return pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ') + ' Z';
+    const at = (i: number) => pts[(i + n) % n];
+    let d = `M ${at(0)[0].toFixed(1)},${at(0)[1].toFixed(1)}`;
+    for (let i = 0; i < n; i++) {
+      const p0 = at(i - 1);
+      const p1 = at(i);
+      const p2 = at(i + 1);
+      const p3 = at(i + 2);
+      const c1: [number, number] = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2: [number, number] = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += ` C ${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return `${d} Z`;
+  }, [rr, seed]);
+
+  const specks = useMemo(() => {
+    const out: { x: number; y: number; r: number; light: boolean }[] = [];
+    for (let i = 0; i < 54; i++) {
+      const a = hash2(i, Math.round(seed), 17) * Math.PI * 2;
+      const rad = Math.sqrt(hash2(i, Math.round(seed), 29)) * rr * 0.9;
+      out.push({ x: Math.cos(a) * rad, y: Math.sin(a) * rad, r: 0.7 + hash2(i, 5, 3) * 1.9, light: i % 3 !== 0 });
+    }
+    return out;
   }, [rr, seed]);
 
   return (
     <g transform={`translate(${cx}, ${cy})`} opacity={clamp01(grow * 1.7)}>
-      {raised && <path d={blob} transform="translate(4, 6)" fill="rgba(16, 10, 4, 0.5)" />}
-      <path d={blob} fill={palette[0]} />
       <defs>
-        <radialGradient id={`col-${seed}`} cx="34%" cy="30%" r="76%">
-          <stop offset="0%" stopColor={palette[1]} stopOpacity={0.9} />
-          <stop offset="58%" stopColor={palette[0]} stopOpacity={0.5} />
-          <stop offset="100%" stopColor={palette[2]} stopOpacity={0.72} />
+        <radialGradient id={`col-${seed}`} cx="32%" cy="26%" r="82%">
+          <stop offset="0%" stopColor={palette[1]} />
+          <stop offset="46%" stopColor={palette[0]} />
+          <stop offset="88%" stopColor={palette[2]} />
+          <stop offset="100%" stopColor="#5C4A2C" />
+        </radialGradient>
+        <radialGradient id={`colw-${seed}`} cx="50%" cy="52%" r="52%">
+          <stop offset="0%" stopColor={warm} stopOpacity={0.62} />
+          <stop offset="72%" stopColor={warm} stopOpacity={0.16} />
+          <stop offset="100%" stopColor={warm} stopOpacity={0} />
         </radialGradient>
         <clipPath id={`colclip-${seed}`}>
-          <path d={blob} />
+          <path d={edge} />
         </clipPath>
       </defs>
-      <path d={blob} fill={`url(#col-${seed})`} />
+
+      {/* agar digestion halo + contact shadow */}
+      <ellipse cx={2} cy={5} rx={rr * 1.14} ry={rr * 1.08} fill="rgba(74, 56, 28, 0.22)" />
+      <ellipse cx={-rr * 0.06} cy={-rr * 0.06} rx={rr * 1.05} ry={rr * 1.03} fill="rgba(198, 176, 126, 0.16)" />
+
+      {/* body */}
+      <path d={edge} fill={`url(#col-${seed})`} />
       <g clipPath={`url(#colclip-${seed})`}>
-        {/* concentric growth wave, offset from centre for a hand-made look */}
-        {[0.82, 0.62, 0.42, 0.24].map((k, i) => (
+        <path d={edge} fill={`url(#colw-${seed})`} />
+
+        {/* concentric growth rings, hand-waved */}
+        {[0.86, 0.7, 0.54, 0.38, 0.22].map((k, i) => (
           <ellipse
             key={i}
-            cx={rr * 0.12 * Math.sin(seed + i)}
-            cy={rr * 0.1 * Math.cos(seed * 1.3 + i)}
+            cx={rr * 0.1 * Math.sin(seed + i) - rr * 0.03}
+            cy={rr * 0.08 * Math.cos(seed * 1.3 + i)}
             rx={rr * k}
-            ry={rr * k * 0.94}
+            ry={rr * k * 0.95}
             fill="none"
-            stroke={`rgba(60, 42, 20, ${0.2 - i * 0.03})`}
-            strokeWidth={1.5}
-            strokeDasharray={i % 2 === 0 ? undefined : '7 9'}
+            stroke={`rgba(96, 74, 40, ${0.15 - i * 0.02})`}
+            strokeWidth={1.3}
+            strokeDasharray={i % 2 === 0 ? undefined : '9 12'}
           />
         ))}
-        {/* mottled speckle */}
+
+        {/* chalky powder: the surface of a Streptomyces colony is matte and dusty */}
+        {specks.map((sp, i) => (
+          <circle key={i} cx={sp.x} cy={sp.y} r={sp.r} fill={sp.light ? `rgba(255, 252, 236, ${0.2 + (i % 4) * 0.06})` : 'rgba(74, 58, 30, 0.16)'} />
+        ))}
+
+        {/* radial striae toward the edge */}
         {Array.from({ length: 26 }).map((_, i) => {
-          const a = hash2(i, Math.round(seed), 17) * Math.PI * 2;
-          const rad = hash2(i, Math.round(seed), 29) * rr * 0.88;
+          const a = (i / 26) * Math.PI * 2 + seed;
           return (
-            <circle
-              key={i}
-              cx={Math.cos(a) * rad}
-              cy={Math.sin(a) * rad}
-              r={1.4 + hash2(i, 5, 3) * 4}
-              fill={i % 3 === 0 ? 'rgba(255, 246, 220, 0.34)' : 'rgba(52, 36, 16, 0.22)'}
+            <line
+              key={`st${i}`}
+              x1={Math.cos(a) * rr * 0.66}
+              y1={Math.sin(a) * rr * 0.66}
+              x2={Math.cos(a) * rr * 1.02}
+              y2={Math.sin(a) * rr * 1.02}
+              stroke="rgba(90, 70, 38, 0.09)"
+              strokeWidth={1.6}
             />
           );
         })}
-        {/* dry, cracked rim as the colony starves */}
+
+        {/* inner dome shading for thickness */}
+        <ellipse cx={-rr * 0.2} cy={-rr * 0.24} rx={rr * 0.44} ry={rr * 0.34} fill="rgba(255, 250, 232, 0.16)" />
+        <ellipse cx={rr * 0.3} cy={rr * 0.34} rx={rr * 0.5} ry={rr * 0.4} fill="rgba(52, 38, 16, 0.1)" />
+
+        {/* starving centre cracks */}
         {dry > 0.02 &&
-          Array.from({ length: 7 }).map((_, i) => {
-            const a = (i / 7) * Math.PI * 2 + seed;
-            return (
-              <path
-                key={i}
-                d={`M 0,0 L ${Math.cos(a) * rr * 0.96},${Math.sin(a) * rr * 0.96}`}
-                stroke={`rgba(30, 18, 8, ${0.24 * dry})`}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-              />
-            );
+          Array.from({ length: 6 }).map((_, i) => {
+            const a = (i / 6) * Math.PI * 2 + seed;
+            let pp = `M ${Math.cos(a) * rr * 0.1},${Math.sin(a) * rr * 0.1}`;
+            for (let k = 1; k <= 3; k++) {
+              const rad = rr * (0.1 + k * 0.26);
+              const aa = a + Math.sin(k * 1.6 + i) * 0.22;
+              pp += ` L ${Math.cos(aa) * rad},${Math.sin(aa) * rad}`;
+            }
+            return <path key={i} d={pp} fill="none" stroke={`rgba(38, 24, 8, ${0.3 * dry})`} strokeWidth={1.9} strokeLinecap="round" />;
           })}
       </g>
 
-      {/* fuzzy aerial mycelium around the rim */}
-      {Array.from({ length: 30 }).map((_, i) => {
-        const a = (i / 30) * Math.PI * 2;
-        const len = rr * (0.05 + hash2(i, Math.round(seed * 7), 5) * 0.16);
+      {/* rim: a thin lit edge, thicker on the shadow side, as a real colony does */}
+      <path d={edge} fill="none" stroke="rgba(254, 248, 228, 0.5)" strokeWidth={1.7} />
+      <path d={edge} fill="none" stroke="rgba(64, 46, 20, 0.42)" strokeWidth={3.4} strokeDasharray={`${rr * 4} ${rr * 24}`} transform="rotate(28)" />
+
+      {/* chalky aerial tufts */}
+      {Array.from({ length: 40 }).map((_, i) => {
+        const a = (i / 40) * Math.PI * 2 + seed * 0.4;
+        const wob = 1 + 0.05 * Math.sin(i * 2.3 + seed);
+        const len = rr * (0.04 + hash2(i, Math.round(seed * 7), 5) * 0.09);
         return (
           <line
             key={`f${i}`}
-            x1={Math.cos(a) * rr * 0.97}
-            y1={Math.sin(a) * rr * 0.97}
+            x1={Math.cos(a) * rr * 0.98 * wob}
+            y1={Math.sin(a) * rr * 0.98 * wob}
             x2={Math.cos(a) * (rr + len)}
             y2={Math.sin(a) * (rr + len)}
-            stroke="rgba(240, 228, 198, 0.34)"
-            strokeWidth={1.1}
+            stroke={i % 4 === 0 ? 'rgba(255, 250, 230, 0.34)' : 'rgba(244, 236, 212, 0.22)'}
+            strokeWidth={1}
           />
         );
       })}
-      <path d={blob} fill="none" stroke={palette[1]} strokeWidth={1.6} opacity={0.6} />
     </g>
   );
 };
@@ -1444,7 +1582,7 @@ const StreptoFilament: React.FC<{
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={4.2}
+        strokeWidth={2.4}
         strokeLinecap="round"
         pathLength={1}
         strokeDasharray="1 1"
@@ -1594,25 +1732,44 @@ export const Scene03CawanAgar: React.FC = () => {
 
   const filaments = useMemo(() => {
     const rnd = makeRng(551);
-    return Array.from({ length: 13 }).map((_, i) => {
-      const a = -Math.PI * 0.92 + i * 0.21 + rnd() * 0.08;
-      const r0 = 40 + rnd() * 120;
+    return Array.from({ length: 18 }).map((_, i) => {
+      const a = rnd() * Math.PI * 2;
+      const r0 = 150 + rnd() * 230;
       const x0 = Math.cos(a) * r0;
-      const y0 = Math.sin(a) * r0;
-      const len = 170 + rnd() * 190;
-      const bend = (rnd() - 0.5) * 130;
-      const x1 = x0 + Math.cos(a) * len + bend;
-      const y1 = y0 + Math.sin(a) * len * 0.7;
-      const cxp = x0 + Math.cos(a) * len * 0.42 + bend * 0.9;
-      const cyp = y0 + Math.sin(a) * len * 0.28;
-      const bx = x0 + (x1 - x0) * 0.55 + 44;
-      const by = y0 + (y1 - y0) * 0.55 - 26;
+      const y0 = Math.sin(a) * r0 * 0.94;
+      const dir = a + (rnd() - 0.5) * 0.9;
+      const seg = 3;
+      let px = x0;
+      let py = y0;
+      let d = `M ${px.toFixed(1)},${py.toFixed(1)}`;
+      let ang = dir;
+      for (let k = 0; k < seg; k++) {
+        const step = 56 + rnd() * 62;
+        ang += (rnd() - 0.5) * 0.85;
+        const nx = px + Math.cos(ang) * step;
+        const ny = py + Math.sin(ang) * step * 0.92;
+        const mx = (px + nx) / 2 + (rnd() - 0.5) * 34;
+        const my = (py + ny) / 2 + (rnd() - 0.5) * 34;
+        d += ` Q ${mx.toFixed(1)},${my.toFixed(1)} ${nx.toFixed(1)},${ny.toFixed(1)}`;
+        px = nx;
+        py = ny;
+      }
+      // one side branch off the middle joint
+      const ba = ang + (rnd() > 0.5 ? 0.8 : -0.8);
+      const bl = 60 + rnd() * 70;
+      const bx = px - Math.cos(ang) * bl * 0.5;
+      const by = py - Math.sin(ang) * bl * 0.5;
+      const cxp = bx + Math.cos(ba) * bl * 0.6;
+      const cyp = by + Math.sin(ba) * bl * 0.6;
+      const ex = bx + Math.cos(ba) * bl;
+      const ey = by + Math.sin(ba) * bl;
       return {
-        d: `M ${x0},${y0} Q ${cxp},${cyp} ${x1},${y1}`,
-        branch: `M ${bx},${by} q 30,-26 62,-30`,
-        branchTip: [bx + 62, by - 30] as [number, number],
-        tip: [x1, y1] as [number, number],
-        delay: rnd() * 0.3,
+        d,
+        branch: `M ${bx.toFixed(1)},${by.toFixed(1)} Q ${cxp.toFixed(1)},${cyp.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`,
+        tip: [px, py] as [number, number],
+        branchTip: [ex, ey] as [number, number],
+        delay: rnd() * 0.34,
+        w: 1.7 + rnd() * 1.3,
       };
     });
   }, []);
@@ -1711,8 +1868,8 @@ export const Scene03CawanAgar: React.FC = () => {
                   const gp = clamp01((filamentGrow - f.delay * 2) / 0.8);
                   return (
                     <g key={i}>
-                      <StreptoFilament d={f.d} p={gp} color="rgba(238, 228, 204, 0.88)" />
-                      <StreptoFilament d={f.branch} p={clamp01(gp * 1.5 - 0.5)} color="rgba(232, 220, 194, 0.7)" />
+                      <StreptoFilament d={f.d} p={gp} color="rgba(244, 234, 210, 0.8)" />
+                      <StreptoFilament d={f.branch} p={clamp01(gp * 1.5 - 0.5)} color="rgba(238, 226, 198, 0.62)" />
                       <SpiralSporeChain x={f.tip[0]} y={f.tip[1]} len={66} p={gp} rot={(i - 6) * 6} />
                       <SpiralSporeChain x={f.branchTip[0]} y={f.branchTip[1]} len={44} p={clamp01(gp * 1.6 - 0.5)} rot={(i - 3) * 9} r={4.2} color="#E4C895" />
                     </g>
@@ -2022,12 +2179,17 @@ export const Scene04SpreadEditorial: React.FC = () => {
             <Mono x={46} y={310} text="AMBANG BAU GEOSMIN PADA MANUSIA" size={15} color="rgba(60, 50, 36, 0.66)" tracking={0.14} weight={400} />
 
             {/* letterpress numeral */}
-            <text x={pageW - 46} y={1136} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={104} letterSpacing="0.01em">
+            <RuleLine x1={300} y1={1062} x2={pageW - 46} y2={1062} color="rgba(158, 59, 42, 0.42)" width={1.6} />
+            <text x={pageW - 46} y={1152} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={96} letterSpacing="0.01em">
               5 PPT
             </text>
 
             {/* plaster relief */}
             <PlasterNose x={112} y={368} s={0.98} p={noseIn} uid="s4-nose" />
+
+            <RuleLine x1={46} y1={826} x2={pageW - 46} y2={826} color="rgba(60, 50, 36, 0.2)" />
+            <Mono x={46} y={858} text="PLAT IRL · PROFIL HIDUNG" size={13} color="rgba(58, 49, 40, 0.5)" tracking={0.14} weight={400} />
+            <Mono x={pageW - 46} y={858} text="SKALA 1:1" size={13} color="rgba(58, 49, 40, 0.5)" anchor="end" tracking={0.14} weight={400} />
 
             {/* footnotes, set as real editorial columns */}
             <RuleLine x1={46} y1={986} x2={pageW - 46} y2={986} color="rgba(60, 50, 36, 0.32)" />
@@ -2103,35 +2265,44 @@ export const Scene04SpreadEditorial: React.FC = () => {
             <g opacity={tint * tint * (3 - 2 * tint)} transform={`translate(0, ${(1 - tint) * 50})`}>
               <Mono x={46} y={72} text="KESIMPULAN TAKARAN" size={16} color="rgba(60, 50, 36, 0.62)" tracking={0.22} weight={400} />
               <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
-              <text x={40} y={282} fill="#231D15" fontFamily={IDENTITY.fontDisplay} fontSize={188} letterSpacing="-0.01em">
+              <text x={40} y={286} fill="#231D15" fontFamily={IDENTITY.fontDisplay} fontSize={172} letterSpacing="-0.01em">
                 200.000
               </text>
-              <text x={46} y={330} fill="#9E3B2A" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={72}>
+              <text x={46} y={366} fill="#9E3B2A" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={72}>
                 kali lebih tajam
               </text>
-              <text x={46} y={404} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={26} fontWeight={600}>
+              <text x={46} y={430} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={25} fontWeight={600}>
                 Hidung kita menangkap geosmin
               </text>
-              <text x={46} y={440} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={26} fontWeight={500}>
+              <text x={46} y={464} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={25} fontWeight={500}>
                 pada 5 bagian per triliun.
               </text>
 
-              {/* tiny shark silhouette for scale, drawn as a woodcut */}
-              <g transform="translate(360, 470) scale(0.34)" opacity={0.9}>
-                <path
-                  d="M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z"
-                  fill="#2A241B"
-                />
-                <path d="M 62,150 L -34,74 C -6,116 2,136 12,150 C 2,164 -6,186 -26,222 Z" fill="#2A241B" />
-                <path d="M 286,96 L 330,18 C 344,50 356,74 372,94 Z" fill="#2A241B" />
+              {/* comparison plate: a woodcut shark above its waterline, with measurements */}
+              <g transform="translate(46, 508)">
+                <RuleLine x1={0} y1={0} x2={pageW - 92} y2={0} color="rgba(60, 50, 36, 0.26)" />
+                <g opacity={0.92}>
+                  <path
+                    d="M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z"
+                    fill="#2A241B"
+                    transform="translate(8, 10) scale(0.6)"
+                  />
+                  <path d="M 62,150 L -34,74 C -6,116 2,136 12,150 C 2,164 -6,186 -26,222 Z" fill="#2A241B" transform="translate(8, 10) scale(0.6)" />
+                  <path d="M 286,96 L 330,18 C 344,50 356,74 372,94 Z" fill="#2A241B" transform="translate(8, 10) scale(0.6)" />
+                </g>
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <path key={i} d={`M ${40 + i * 52},${132 + (i % 2) * 8} q 26,-7 52,0`} fill="none" stroke="rgba(60, 50, 36, 0.24)" strokeWidth={1.4} />
+                ))}
+                <RuleLine x1={0} y1={178} x2={pageW - 92} y2={178} color="rgba(60, 50, 36, 0.34)" />
+                <Mono x={0} y={208} text="CARCHARODON CARCHARIAS" size={13} color="rgba(58, 49, 40, 0.56)" tracking={0.14} weight={400} />
+                <Mono x={pageW - 92} y={208} text="± 6 M · 1 PPM" size={13} color="rgba(58, 49, 40, 0.56)" anchor="end" tracking={0.14} weight={400} />
               </g>
-              <Mono x={46} y={700} text="SKALA PEMBANDING · HIU PUTIH BESAR" size={14} color="rgba(58, 49, 40, 0.5)" tracking={0.12} weight={400} />
 
-              <RuleLine x1={46} y1={830} x2={pageW - 46} y2={830} color="rgba(60, 50, 36, 0.3)" />
-              <text x={44} y={886} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
+              <RuleLine x1={46} y1={800} x2={pageW - 46} y2={800} color="rgba(60, 50, 36, 0.3)" />
+              <text x={44} y={856} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
                 Bagi hidung manusia,
               </text>
-              <text x={44} y={922} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
+              <text x={44} y={892} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
                 gerimis adalah peta.
               </text>
               <Mono x={46} y={1216} text="GEOSMIN · C₁₂H₂₂O · AMBANG 5 PPT" size={13} color="rgba(58, 49, 40, 0.42)" tracking={0.12} weight={400} />
