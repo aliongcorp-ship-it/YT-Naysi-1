@@ -18,10 +18,10 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 from vo_master import SR, decode, encode  # noqa: E402
 
-TARGET_WPM = 176.0
+TARGET_WPM = 180.0
 HEAD = 0.35
-GAP = 0.42
-TAIL = 1.60
+GAP = 0.36
+TAIL = 1.45
 
 
 def read_vo() -> list[str]:
@@ -37,13 +37,13 @@ def wpm(text: str, dur: float) -> float:
 
 def main() -> None:
     texts = read_vo()
-    assert len(texts) == 8, len(texts)
+    assert len(texts) == 12, len(texts)
     starts, durs, rows = [], [], []
     pos = HEAD
     for i, text in enumerate(texts, start=1):
         raw = os.path.join(ROOT, f"public/audio/raw_{i:02d}.mp3")
         dur_raw = len(decode(raw)) / SR
-        tempo = min(1.24, max(1.0, TARGET_WPM / wpm(text, dur_raw)))
+        tempo = min(1.28, max(1.0, TARGET_WPM / wpm(text, dur_raw)))
         tempo = round(tempo, 3)
         out = os.path.join(ROOT, f"public/audio/vo_{i:02d}.mp3")
         subprocess.run(

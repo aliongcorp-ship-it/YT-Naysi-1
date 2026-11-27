@@ -1,12 +1,16 @@
-// Narration text — single source of truth for both TTS and captions.
-// Topic: what happens 8 minutes after the Sun dies. Voice: locked (voice-07).
+// Narration text — single source of truth for TTS, captions and timing.
+// Topic: 8 minutes after the Sun dies. Voice: locked (voice-07), 12 chapters.
 export const VO: readonly string[] = [
-  'Kalau matahari mati sekarang, kamu tidak akan tahu apa-apa selama delapan menit. Langit tetap terang, bumi tetap hangat, dan tidak ada satu pun dari kita yang curiga. Karena cahaya yang menyentuh wajahmu malam ini berangkat dari matahari delapan menit yang lalu.',
-  'Jaraknya seratus lima puluh juta kilometer. Cahaya melaju tiga ratus ribu kilometer per detik. Bagi, dan hasilnya empat ratus sembilan puluh sembilan detik. Delapan menit sembilan belas detik. Artinya setiap kali kamu melihat matahari, kamu sedang menatap masa lalu.',
-  'Tapi cahaya bukan satu-satunya yang bepergian secepat itu. Gravitasi juga. Jadi setelah matahari hilang, bumi masih mengorbit sesuatu yang sudah tidak ada, selama delapan menit penuh. Kita mengelilingi bayangan.',
-  'Menit kesembilan, tiba-tiba. Orbit kita lepas. Bumi melesat lurus ke luar tata surya dengan kecepatan seratus tujuh ribu kilometer per jam. Tanpa matahari, tidak ada yang menarik kita kembali.',
-  'Lalu dingin. Bukan pelan-pelan. Dalam seminggu, suhu rata-rata bumi jatuh di bawah nol derajat. Fotosintesis berhenti total dalam hitungan menit. Semua tanaman mati, lalu semua yang memakan tanaman.',
-  'Setahun kemudian, minus tujuh puluh tiga derajat. Laut membeku dari permukaan, tapi esnya jadi selimut: bagian terdalam tetap cair selama ratusan ribu tahun. Dan panas dari inti bumi masih menyala di bawah kaki kita.',
-  'Tapi matahari tidak akan padam seperti lampu. Lima miliar tahun lagi, bahan bakarnya habis, dia membengkak jadi raksasa merah, menelan Merkurius dan Venus, lalu meninggalkan bara putih seukuran bumi. Itu cara bintang mati.',
-  'Jadi cahaya pagi ini sudah berumur delapan menit. Kamu tidak pernah melihat matahari yang sekarang. Kamu melihat matahari yang dulu. Kalau kamu bisa mematikan matahari, apa hal pertama yang kamu lakukan di kegelapan? Tulis di komentar.',
+  'Bayangkan matahari padam detik ini. Langit tetap terang, bumi tetap hangat, dan tidak ada satu pun dari kita yang tahu. Selama delapan menit dua puluh detik, dunia berjalan seperti biasa. Karena cahaya terakhir baru saja berangkat.',
+  'Jaraknya seratus empat puluh sembilan juta kilometer. Cahaya melaju tiga ratus ribu kilometer per detik. Hasilnya empat ratus sembilan puluh sembilan detik. Delapan menit sembilan belas detik. Itu bukan waktu matahari mati, itu waktu kabar kematiannya sampai ke kita.',
+  'Dan matahari bukan contoh terburuk. Cahaya Proxima Centauri berjalan empat tahun sebelum sampai. Bintang di Orion yang kamu lihat malam ini mungkin sudah mati ribuan tahun lalu. Bahkan Andromeda, kabut tipis itu, adalah potret dua setengah juta tahun silam.',
+  'Cahaya bukan satu-satunya yang dibatasi kecepatan itu. Gravitasi juga. Jadi setelah matahari hilang, bumi masih mengorbit sesuatu yang sudah tidak ada, selama delapan menit penuh. Kita mengelilingi bayangan, dan tidak ada yang bisa memberi tahu kita lebih cepat.',
+  'Menit kesembilan, orbit lepas. Bumi melesat lurus ke luar tata surya dengan kecepatan seratus tujuh ribu kilometer per jam. Tanpa matahari, tidak ada yang menarik kita kembali. Planet kita berubah jadi pengembara antarbintang.',
+  'Lalu dingin, dan cepat. Dalam sepekan, suhu rata-rata bumi jatuh di bawah nol derajat. Fotosintesis berhenti dalam hitungan menit. Rumput mati, lalu tanaman, lalu semua yang bergantung padanya. Panas yang tersimpan di darat dan laut hanya menunda, tidak menyelamatkan.',
+  'Langit juga ikut berubah. Bulan bersinar karena memantulkan cahaya matahari, jadi setelah cahaya terakhir habis, bulan ikut hilang dari langit. Yang tersisa hanya bintang, tanpa satu pun cahaya yang cukup untuk membaca.',
+  'Setahun kemudian, suhu permukaan sekitar minus tujuh puluh tiga derajat. Laut membeku dari atas, tapi es itu jadi selimut: air di kedalaman tetap cair selama ratusan ribu tahun. Sementara itu panas dari inti bumi terus merembes ke luar, dan di beberapa titik masih cukup untuk menjaga air tetap hangat.',
+  'Dan di situlah kehidupan terakhir bertahan. Di dasar laut, di sekitar ventilasi hidrotermal, bakteri hidup tanpa matahari sama sekali, memakan hidrogen sulfida dari perut bumi. Ekosistem itu tidak butuh cahaya sejak awal. Ketika permukaan sudah mati, mereka masih menyala.',
+  'Tapi matahari tidak akan padam seperti lampu. Lima miliar tahun lagi, hidrogen di intinya habis, dan dia membengkak menjadi raksasa merah. Merkurius ditelan, Venus ditelan, dan bumi berubah jadi bara yang mengorbit bintang sekarat.',
+  'Setelah itu, lapisan luar matahari terlepas menjadi nebula, dan yang tersisa hanyalah bara putih seukuran bumi. Sangat padat, sangat panas, dan perlahan mendingin. Bintang kita tidak akan meledak. Ia hanya akan berhenti.',
+  'Jadi cahaya yang menyentuh wajahmu pagi ini sudah berumur delapan menit. Kamu tidak pernah melihat matahari yang sekarang. Kamu selalu melihat matahari yang dulu. Kalau kamu bisa mengirim satu pesan ke matahari, apa yang mau kamu bilang? Tulis di komentar.',
 ];

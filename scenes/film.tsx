@@ -25,8 +25,8 @@ import {
   easeInOutCubic,
   easeOutCubic,
 } from './script';
-import { Scene01, Scene02, Scene03, Scene04 } from './act1';
-import { Scene05, Scene06, Scene07, Scene08 } from './act2';
+import { Scene01, Scene02, Scene03, Scene04, Scene05, Scene06, Scene07, Scene08 } from './matahari';
+import { Scene09, Scene10, Scene11, Scene12 } from './y1';
 
 // ============================================================================
 // 1. LOCAL FONTS — no network at render time
@@ -106,9 +106,13 @@ const SCENE_COMPONENTS: readonly React.FC[] = [
   Scene06,
   Scene07,
   Scene08,
+  Scene09,
+  Scene10,
+  Scene11,
+  Scene12,
 ];
 
-const PUSH = [0.03, 0.02, 0.045, 0.038, 0.028, 0.042, 0.034, 0.05];
+const PUSH = [0.05, 0.03, 0.04, 0.05, 0.045, 0.04, 0.045, 0.05, 0.055, 0.045, 0.05, 0.05];
 
 const ChapterStage: React.FC<{ index: number; durationFrames: number; Component: React.FC }> = ({
   index,
@@ -141,7 +145,7 @@ const ChapterStage: React.FC<{ index: number; durationFrames: number; Component:
 // ============================================================================
 
 const ALL_CARDS: readonly CaptionCard[] = CHAPTERS.flatMap((c) => c.cards);
-const captionAlign: readonly ('center' | 'left')[] = ['left', 'left', 'center', 'left', 'left', 'left', 'left', 'left'];
+const captionAlign: readonly ('center' | 'left')[] = ['left', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'left'];
 
 const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
   let activeCard: CaptionCard | null = null;
@@ -288,7 +292,7 @@ const Masthead: React.FC<{ currentSec: number }> = ({ currentSec }) => {
               color: art.accent,
             }}
           >
-            {String(chIndex + 1).padStart(2, '0')}/08
+            {String(chIndex + 1).padStart(2, '0')}/12
           </span>
         </div>
       </div>
