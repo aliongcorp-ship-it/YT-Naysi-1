@@ -43,8 +43,7 @@ export const Furniture: React.FC<{ i: number; t: number; color: string; note?: s
     <RailLabel x={1398} y={1620} text="SKALA RELATIF" flip />
     <MicroRuler t={t} color={color} />
     <ExposureDial i={i} t={t} color={color} />
-    <PlateHeader i={i} t={t} color={color} />
-    <FrameCounter i={i} t={t} dur={CHAPTERS[i].end - CHAPTERS[i].start} />
+    <PlateHeader i={i} t={t} dur={CHAPTERS[i].end - CHAPTERS[i].start} color={color} />
     <DotField x={118} y={150} w={210} h={54} cols={22} rows={5} color="rgba(238,228,208,0.5)" opacity={0.16} />
     <DotField x={1104} y={1852} w={226} h={58} cols={24} rows={5} color="rgba(238,228,208,0.5)" opacity={0.12} />
     <PlateFoot i={i} />
@@ -212,44 +211,21 @@ const DotField: React.FC<{
   </g>
 );
 
-const PlateHeader: React.FC<{ i: number; t: number; color: string }> = ({ i, t, color }) => {
-  const draw = easeOutCubic(prog(t, 0.1, 1.3));
-  const ticks = 56;
-  const x0 = 200;
-  const x1 = 1330;
-  return (
-    <g>
-      <Mono x={x0} y={168} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12`} size={15} color="rgba(238,228,208,0.4)" tracking={0.26} />
-      <Mono x={x0} y={190} text={CHAPTER_KICKERS[i].toUpperCase()} size={12} color="rgba(238,228,208,0.2)" tracking={0.24} />
-      <Mono x={x1} y={168} text="1440 × 2560 · 90 FPS" size={15} color="rgba(238,228,208,0.32)" tracking={0.22} anchor="end" />
-      <Mono x={x1} y={190} text="H.264 · AAC 48 kHz" size={12} color="rgba(238,228,208,0.18)" tracking={0.2} anchor="end" />
-      <line x1={x0} y1={210} x2={x0 + (x1 - x0) * draw} y2={210} stroke="rgba(238,228,208,0.18)" strokeWidth={1} />
-      {Array.from({ length: ticks }).map((_, k) => {
-        const x = x0 + ((x1 - x0) * k) / (ticks - 1);
-        const major = k % 7 === 0;
-        return (
-          <line
-            key={k}
-            x1={x}
-            y1={210}
-            x2={x}
-            y2={210 + (major ? 10 : 5)}
-            stroke="rgba(238,228,208,0.14)"
-            strokeWidth={1}
-            opacity={k / (ticks - 1) <= draw ? 1 : 0}
-          />
-        );
-      })}
-      <rect x={x0 - 16} y={210 - 4} width={4} height={14} fill={color} opacity={draw} />
-    </g>
-  );
-};
-
-const FrameCounter: React.FC<{ i: number; t: number; dur: number }> = ({ i, t, dur }) => {
+const PlateHeader: React.FC<{ i: number; t: number; dur: number; color: string }> = ({ i, t, dur, color }) => {
   const local = Math.round(clamp01(t / Math.max(dur, 0.001)) * 1347);
   return (
-    <g opacity={0.85}>
-      <Mono x={1330} y={210} text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`} size={11} color="rgba(238,228,208,0.2)" tracking={0.18} anchor="end" />
+    <g>
+      <rect x={1108} y={244} width={4} height={12} fill={color} opacity={0.85} />
+      <Mono x={1330} y={252} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12 · 90 FPS`} size={12} color="rgba(238,228,208,0.34)" tracking={0.22} anchor="end" />
+      <Mono
+        x={1330}
+        y={272}
+        text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`}
+        size={11}
+        color="rgba(238,228,208,0.2)"
+        tracking={0.18}
+        anchor="end"
+      />
     </g>
   );
 };
@@ -308,9 +284,9 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           <line
             key={`t${k}`}
             x1={x}
-            y1={132}
+            y1={250}
             x2={x}
-            y2={132 - (major ? 9 : 4)}
+            y2={250 - (major ? 9 : 4)}
             stroke="rgba(238,228,208,0.16)"
             strokeWidth={1}
             opacity={k / 45 <= draw ? 1 : 0}
@@ -333,7 +309,7 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           />
         );
       })}
-      <line x1={110 + 1220 * draw} y1={124} x2={110 + 1220 * draw} y2={142} stroke={color} strokeWidth={1.4} opacity={0.5} />
+      <line x1={110 + 1220 * draw} y1={238} x2={110 + 1220 * draw} y2={256} stroke={color} strokeWidth={1.4} opacity={0.45} />
     </g>
   );
 };
@@ -519,6 +495,7 @@ const InsetLimbDarkening: React.FC<{ t: number; color: string }> = ({ t, color }
         </g>
       ))}
       <Mono x={gx + gw * 0.5} y={y + h - 16} text="JARAK DARI PUSAT PIRINGAN" size={11} color="rgba(238,228,208,0.26)" tracking={0.18} anchor="middle" />
+      <Mono x={x + 16} y={gy + 60} text="TEPI PIRINGAN LEBIH DINGIN ± 2.000 K" size={10} color="rgba(238,228,208,0.22)" tracking={0.14} />
       <Mono x={x + w - 16} y={gy - gh + 4} text="1,0" size={11} color="rgba(238,228,208,0.3)" tracking={0.14} anchor="end" />
     </InsetFrame>
   );
@@ -699,6 +676,7 @@ const InsetCoolingTable: React.FC<{ t: number; color: string }> = ({ t, color })
     ['1 minggu', '−18 °C', 0.4],
     ['1 tahun', '−73 °C', 0.6],
     ['100 tahun', '−180 °C', 0.8],
+    ['10 ribu tahun', '−210 °C', 0.9],
     ['juta tahun', '−240 °C', 1],
   ];
   return (
@@ -731,6 +709,7 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
     ['1 SA (Bumi–Matahari)', '149,6 juta km', 0.62],
     ['8 mnt 19 dtk cahaya', '1 SA', 0.86],
     ['1 tahun cahaya', '9,46 triliun km', 1],
+    ['1 parsek', '3,26 tahun cahaya', 1],
   ];
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="RANTAI SATUAN" note="JARAK = WAKTU × c" color={color} p={prog(t, 1.6, 2.6)}>
@@ -762,6 +741,7 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
     [0.34, '1 SA'],
     [0.62, '1 th cahaya'],
     [0.88, '100 th cahaya'],
+    [0.98, '1.000 th'],
   ];
   const sweep = easeOutCubic(prog(t, 2.0, 4.0));
   return (
@@ -816,6 +796,7 @@ const InsetThermo: React.FC<{ t: number; color: string }> = ({ t, color }) => {
     [0, '0'],
     [-18, '−18'],
     [-73, '−73'],
+    [-210, '−210'],
     [-240, '−240'],
   ];
   const at = (v: number) => bx + ((v - lo) / (hi - lo)) * bw;
@@ -878,6 +859,7 @@ const InsetGravityDelay: React.FC<{ t: number; color: string }> = ({ t, color })
       <Mono x={bx} y={by - 30} text="ORBIT MASIH BERJALAN" size={10} color="rgba(238,228,208,0.42)" tracking={0.16} />
       <Mono x={bx + bw} y={by - 30} text="ORBIT LEPAS" size={10} color={color} tracking={0.16} anchor="end" />
       <Mono x={bx} y={y + h - 18} text="GRAVITASI MERAMBAT DENGAN c — BUKAN SEGERA" size={10} color="rgba(238,228,208,0.28)" tracking={0.12} />
+      <Mono x={bx + bw} y={y + h - 18} text="8 MNT 19 DTK" size={10} color="rgba(238,228,208,0.3)" tracking={0.14} anchor="end" />
     </InsetFrame>
   );
 };
@@ -1010,6 +992,7 @@ const InsetEvolution: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   const w = 284;
   const h = 342;
   const stages: [string, string, number][] = [
+    ['AWAN MOLEKUL', '4,5 M th', 0.22],
     ['DERET UTAMA', '4,6 M th', 0.34],
     ['SUBRAKSASA', '5,0 M th', 0.5],
     ['RAKSASA MERAH', '5,4 M th', 0.68],
@@ -1050,6 +1033,7 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
     ['MASSA', '0,6 massa matahari'],
     ['DENSITAS', '1 ton / cm³'],
     ['SUHU', '100.000 K → 4.000 K'],
+    ['UMUR PANAS', 'miliaran tahun'],
   ];
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="SISA INTI" note="BARA PUTIH" color={color} p={prog(t, 1.0, 1.9)}>
@@ -1093,6 +1077,7 @@ const InsetLightTime: React.FC<{ t: number; color: string }> = ({ t, color }) =>
       <Mono x={ax} y={ay - 46} text="MATAHARI" size={10} color="rgba(244,194,94,0.7)" tracking={0.2} />
       <Mono x={bx} y={ay - 34} text="BUMI" size={10} color="rgba(140,180,205,0.7)" tracking={0.2} anchor="end" />
       <Mono x={ax + 6} y={ay + 32} text="t = 0" size={10} color="rgba(238,228,208,0.3)" tracking={0.16} />
+      <Mono x={ax + 6} y={ay - 66} text="c = 299.792 km/dtk" size={10} color="rgba(238,228,208,0.26)" tracking={0.14} />
       <Mono x={bx} y={ay + 32} text="t = 499 s" size={10} color="rgba(238,228,208,0.42)" tracking={0.16} anchor="end" />
       <Mono x={x + 20} y={y + h - 46} text="YANG KAMU LIHAT: SELALU MASA LALU" size={10} color={color} tracking={0.16} />
       <Mono x={x + 20} y={y + h - 24} text="SELISIH = 8 MENIT 19 DETIK" size={10} color="rgba(238,228,208,0.34)" tracking={0.14} />
