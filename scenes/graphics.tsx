@@ -231,20 +231,28 @@ export const Prominence: React.FC<{ cx: number; cy: number; r: number; angle: nu
   color = '#FF8A4A',
   phase = 0,
 }) => {
-  const pulse = 0.78 + 0.22 * Math.sin(t * 1.1 + phase);
+  const fid = `prom-${Math.round(cx)}-${Math.round(cy)}-${Math.round(angle * 100)}`;
+  const pulse = 0.74 + 0.26 * Math.sin(t * 1.1 + phase);
   const sway = Math.sin(t * 0.7 + phase) * 0.05;
-  const p0 = [cx + Math.cos(angle - 0.2) * r * 0.985, cy + Math.sin(angle - 0.2) * r * 0.985];
-  const p1 = [cx + Math.cos(angle + 0.2) * r * 0.985, cy + Math.sin(angle + 0.2) * r * 0.985];
-  const tipR = r + height * pulse;
-  const tip = [cx + Math.cos(angle + sway) * tipR, cy + Math.sin(angle + sway) * tipR];
-  const c0 = [cx + Math.cos(angle - 0.13) * (r + height * 0.62), cy + Math.sin(angle - 0.13) * (r + height * 0.62)];
-  const c1 = [cx + Math.cos(angle + 0.13) * (r + height * 0.62), cy + Math.sin(angle + 0.13) * (r + height * 0.62)];
-  const mid = [cx + Math.cos(angle + sway) * (r + height * 0.55), cy + Math.sin(angle + sway) * (r + height * 0.55)];
+  const p0 = [cx + Math.cos(angle - 0.16) * r * 0.99, cy + Math.sin(angle - 0.16) * r * 0.99];
+  const p1 = [cx + Math.cos(angle + 0.16) * r * 0.99, cy + Math.sin(angle + 0.16) * r * 0.99];
+  const tip = [cx + Math.cos(angle + sway) * (r + height * pulse), cy + Math.sin(angle + sway) * (r + height * pulse)];
+  const c0 = [cx + Math.cos(angle - 0.1) * (r + height * 0.66), cy + Math.sin(angle - 0.1) * (r + height * 0.66)];
+  const c1 = [cx + Math.cos(angle + 0.1) * (r + height * 0.66), cy + Math.sin(angle + 0.1) * (r + height * 0.66)];
+  const path = `M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]} Q ${c1[0]} ${c1[1]} ${p1[0]} ${p1[1]} Z`;
   return (
-    <g opacity={0.9}>
-      <path d={`M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]} Q ${c1[0]} ${c1[1]} ${p1[0]} ${p1[1]} Z`} fill={color} opacity={0.26} />
-      <path d={`M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]} Q ${c1[0]} ${c1[1]} ${p1[0]} ${p1[1]} Z`} fill={color} opacity={0.12} stroke={color} strokeWidth={1.6} />
-      <path d={`M ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2} Q ${mid[0]} ${mid[1]} ${(tip[0] + mid[0]) / 2} ${(tip[1] + mid[1]) / 2}`} fill="none" stroke="#FFE9BE" strokeWidth={2} opacity={0.45} strokeLinecap="round" />
+    <g opacity={pulse}>
+      <defs>
+        <filter id={fid} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation={height * 0.16} />
+        </filter>
+      </defs>
+      <g filter={`url(#${fid})`}>
+        <path d={path} fill={color} opacity={0.55} />
+        <path d={path} fill="#FFE1AE" opacity={0.22} />
+      </g>
+      <path d={`M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]}`} fill="none" stroke="#FFD79A"
+        strokeWidth={1.6} opacity={0.4} strokeLinecap="round" />
     </g>
   );
 };

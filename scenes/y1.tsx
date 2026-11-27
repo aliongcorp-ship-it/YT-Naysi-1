@@ -220,6 +220,10 @@ export const Scene09: React.FC = () => {
           {/* seafloor */}
           <path d="M 0 1500 Q 260 1446 460 1492 T 900 1466 T 1320 1500 T 1440 1470 L 1440 2100 L 0 2100 Z" fill="#0B1418" />
           <path d="M 0 1500 Q 260 1446 460 1492 T 900 1466 T 1320 1500 T 1440 1470" fill="none" stroke="rgba(140,190,200,0.26)" strokeWidth={2} />
+          {Array.from({ length: 22 }).map((_, i) => (
+            <path key={i} d={`M ${60 + i * 62} ${1516 + (i % 3) * 26} q 26 -12 52 0`} fill="none"
+              stroke="rgba(120,175,190,0.16)" strokeWidth={2} />
+          ))}
 
           {/* black smoker with crust */}
           <g>
@@ -231,11 +235,12 @@ export const Scene09: React.FC = () => {
             <ellipse cx={726} cy={1132} rx={62} ry={18} fill="#0B1114" stroke="rgba(255,160,90,0.4)" strokeWidth={2} />
             <ellipse cx={726} cy={1132} rx={44} ry={12} fill={`rgba(255,150,70,${0.75 * plume})`} />
             <ellipse cx={726} cy={1132} rx={86} ry={30} fill={`rgba(255,140,60,${0.14 * plume})`} />
-            {Array.from({ length: 30 }).map((_, i) => {
-              const k = (t * 0.32 + i / 30) % 1;
-              const x = 726 + Math.sin(k * 8 + i) * (16 + k * 110);
-              const y = 1124 - k * 640;
-              return <circle key={i} cx={x} cy={y} r={4 + k * 18} fill="rgba(255,178,116,1)" opacity={0.24 * (1 - k)} />;
+            <ellipse cx={726} cy={1108} rx={120} ry={70} fill="rgba(255,150,80,0.10)" />
+            {Array.from({ length: 46 }).map((_, i) => {
+              const k = (t * 0.30 + i / 46) % 1;
+              const x = 726 + Math.sin(k * 7 + i) * (12 + k * 150);
+              const y = 1120 - k * 700;
+              return <circle key={i} cx={x} cy={y} r={2.5 + k * 9} fill={i % 3 === 0 ? '#FFC48A' : 'rgba(255,168,104,0.9)'} opacity={0.5 * (1 - k)} />;
             })}
           </g>
 
@@ -267,7 +272,7 @@ export const Scene09: React.FC = () => {
           )}
 
           <LeaderLabel from={[726, 1132]} to={[420, 1020]} text="FLUIDA 400 °C" sub="kaya hidrogen sulfida" anchor="end" progress={prog(t, 2.2, 3.4)} color="rgba(250,200,160,0.9)" size={21} />
-          <LeaderLabel from={[1000, 1380]} to={[1190, 1270]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={21} />
+          <LeaderLabel from={[940, 1330]} to={[760, 1250]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="end" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={21} />
 
           <g opacity={easeOutCubic(prog(t, 5.4, 6.6))}>
             <Brackets x={116} y={1650} w={620} h={190} color="rgba(95,168,160,0.5)" size={24} />
