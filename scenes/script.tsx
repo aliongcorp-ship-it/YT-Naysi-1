@@ -66,7 +66,30 @@ export const IDENTITY = {
   fontSerif: "'Cormorant Garamond', 'Instrument Serif', Georgia, serif",
   fontBody: "'Plus Jakarta Sans', -apple-system, sans-serif",
   fontMono: "'IBM Plex Mono', 'JetBrains Mono', monospace",
+  fontGrotesk: "'Space Grotesk', 'Plus Jakarta Sans', sans-serif",
+  fontInstrument: "'Instrument Serif', 'Cormorant Garamond', Georgia, serif",
+  fontFraunces: "'Fraunces', 'Cormorant Garamond', Georgia, serif",
 } as const;
+
+// ---------------------------------------------------------------------------
+// PER-CHAPTER ART DIRECTION — every chapter owns a distinct palette & type voice
+// ---------------------------------------------------------------------------
+export interface ChapterArt {
+  readonly paper: string;
+  readonly ink: string;
+  readonly accent: string;
+  readonly soft: string;
+}
+export const CHAPTER_ART: readonly ChapterArt[] = [
+  { paper: '#0B100E', ink: '#EDE7D7', accent: '#C9A45C', soft: '#6E8170' },
+  { paper: '#080C0D', ink: '#DDE5E2', accent: '#DDB066', soft: '#57707A' },
+  { paper: '#120E0A', ink: '#F0E8D6', accent: '#C98B4B', soft: '#7E6136' },
+  { paper: '#EFE6D2', ink: '#231D15', accent: '#9E3B2A', soft: '#5D6B57' },
+  { paper: '#0C110C', ink: '#ECE6D4', accent: '#B7A46A', soft: '#5F7A55' },
+  { paper: '#0A0907', ink: '#EAE3D3', accent: '#AA8A50', soft: '#6A5E45' },
+  { paper: '#151009', ink: '#F3EAD8', accent: '#C9974E', soft: '#7C5D3A' },
+  { paper: '#0F0C0A', ink: '#F4ECDC', accent: '#C0703F', soft: '#6B6A52' },
+];
 
 export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 

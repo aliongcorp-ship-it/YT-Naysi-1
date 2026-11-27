@@ -1,825 +1,342 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import {
-  AbsoluteFill,
-  cancelRender,
-  continueRender,
-  delayRender,
-  interpolate,
-  spring,
-  useCurrentFrame,
-  useVideoConfig,
-} from 'remotion';
-import { evolvePath } from '@remotion/paths';
-import { createNoise2D } from 'simplex-noise';
-import { Delaunay } from 'd3-delaunay';
-import { contours } from 'd3-contour';
-import { geoNaturalEarth1, geoOrthographic, geoPath, geoGraticule10 } from 'd3-geo';
-import { feature } from 'topojson-client';
-import type { Topology, GeometryCollection } from 'topojson-specification';
-import land50mRaw from 'world-atlas/land-50m.json';
-import land110mRaw from 'world-atlas/land-110m.json';
-import {
+  CHAPTER_ART,
   CHAPTERS,
   IDENTITY,
   clamp01,
   easeInOutCubic,
   easeOutCubic,
   easeOutExpo,
+  easeOutQuart,
   prog,
   smoothstep,
 } from './script';
 
 // ============================================================================
-// 1. DETERMINISTIC PRNG & MULTI-OCTAVE SIMPLEX NOISE ENGINE
+// 1. DETERMINISTIC VALUE NOISE / RNG (NO RANDOMNESS BETWEEN TAKES)
 // ============================================================================
 
-export function hashSeed(seed: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
+const hash2 = (x: number, y: number, seed: number): number => {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 362437);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+};
 
-export function createSeededRng(seed: string): () => number {
-  let a = hashSeed(seed) || 1;
+const noise2 = (x: number, y: number, seed: number): number => {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf);
+  const v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi, seed);
+  const b = hash2(xi + 1, yi, seed);
+  const c = hash2(xi, yi + 1, seed);
+  const d = hash2(xi + 1, yi + 1, seed);
+  return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+};
+
+const fbm = (x: number, y: number, seed: number, octaves = 4): number => {
+  let amp = 0.5;
+  let freq = 1;
+  let sum = 0;
+  let norm = 0;
+  for (let i = 0; i < octaves; i++) {
+    sum += noise2(x * freq, y * freq, seed + i * 31) * amp;
+    norm += amp;
+    amp *= 0.5;
+    freq *= 2.03;
+  }
+  return sum / norm;
+};
+
+const makeRng = (seed: number): (() => number) => {
+  let a = seed >>> 0;
   return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-const NOISE_BANKS = new Map<string, ReturnType<typeof createNoise2D>>();
-
-export function getNoise2D(seed: string): ReturnType<typeof createNoise2D> {
-  let fn = NOISE_BANKS.get(seed);
-  if (!fn) {
-    fn = createNoise2D(createSeededRng(seed));
-    NOISE_BANKS.set(seed, fn);
-  }
-  return fn;
-}
-
-export function fbm2D(
-  seed: string,
-  x: number,
-  y: number,
-  octaves = 4,
-  lacunarity = 2.04,
-  gain = 0.5,
-): number {
-  const n2d = getNoise2D(seed);
-  let amp = 0.5;
-  let freq = 1;
-  let sum = 0;
-  let norm = 0;
-  for (let i = 0; i < octaves; i++) {
-    sum += amp * n2d(x * freq + i * 19.3, y * freq - i * 13.7);
-    norm += amp;
-    amp *= gain;
-    freq *= lacunarity;
-  }
-  return norm > 0 ? sum / norm : 0;
-}
-
-export function ridge2D(seed: string, x: number, y: number, octaves = 4): number {
-  const n2d = getNoise2D(seed);
-  let amp = 0.5;
-  let freq = 1;
-  let sum = 0;
-  let norm = 0;
-  for (let i = 0; i < octaves; i++) {
-    const v = 1 - Math.abs(n2d(x * freq + i * 29.1, y * freq + i * 11.9));
-    sum += amp * v * v;
-    norm += amp;
-    amp *= 0.52;
-    freq *= 2.08;
-  }
-  return norm > 0 ? sum / norm : 0;
-}
+};
 
 // ============================================================================
-// 2. REAL WORLD-ATLAS (TOPOJSON) + D3-GEO CARTOGRAPHIC MODULE
+// 2. PROCEDURAL PRINT / MATERIAL TEXTURES (CANVAS, CACHED ONCE PER TAB)
 // ============================================================================
 
-const land50mTopology = land50mRaw as unknown as Topology<{ land: GeometryCollection }>;
-const land110mTopology = land110mRaw as unknown as Topology<{ land: GeometryCollection }>;
+export type TexKind =
+  | 'slate-moss'
+  | 'laterite'
+  | 'clay-crack'
+  | 'humus-fibre'
+  | 'agar'
+  | 'rice-paper'
+  | 'sand-ripple'
+  | 'rain-glass'
+  | 'press-grain'
+  | 'walnut'
+  | 'brass-plate'
+  | 'soot';
 
-export const WORLD_LAND_50M = feature(land50mTopology, land50mTopology.objects.land);
-export const WORLD_LAND_110M = feature(land110mTopology, land110mTopology.objects.land);
-export const WORLD_GRATICULE = geoGraticule10();
+const texCache = new Map<string, string>();
 
-export function buildOrthographicGlobe(
-  cx: number,
-  cy: number,
-  radius: number,
-  lonDeg: number,
-  latDeg: number,
-  useHighRes = false,
-): { landPath: string; graticulePath: string; spherePath: string } {
-  const projection = geoOrthographic()
-    .translate([cx, cy])
-    .scale(radius)
-    .rotate([-lonDeg, -latDeg, 0])
-    .clipAngle(90);
-  const pathGen = geoPath(projection);
-  const landFeature = useHighRes ? WORLD_LAND_50M : WORLD_LAND_110M;
-  return {
-    landPath: pathGen(landFeature) || '',
-    graticulePath: pathGen(WORLD_GRATICULE) || '',
-    spherePath: pathGen({ type: 'Sphere' }) || '',
-  };
-}
-
-export function buildNaturalEarthMap(
-  width: number,
-  height: number,
-): {
-  landPath: string;
-  graticulePath: string;
-  outlinePath: string;
-  project: (lon: number, lat: number) => [number, number] | null;
-} {
-  const projection = geoNaturalEarth1().fitExtent(
-    [
-      [18, 18],
-      [width - 18, height - 18],
-    ],
-    { type: 'Sphere' },
-  );
-  const pathGen = geoPath(projection);
-  return {
-    landPath: pathGen(WORLD_LAND_110M) || '',
-    graticulePath: pathGen(WORLD_GRATICULE) || '',
-    outlinePath: pathGen({ type: 'Sphere' }) || '',
-    project: (lon: number, lat: number) => projection([lon, lat]),
-  };
-}
-
-// ============================================================================
-// 3. TACTILE 2D PROCEDURAL <CANVAS> SURFACE SYNTHESIZER (NON-NEON)
-// ============================================================================
-
-export type SurfaceTextureKind =
-  | 'monsoon-slate'
-  | 'cracked-laterite'
-  | 'herbarium-paper'
-  | 'humus-micro'
-  | 'spore-amber'
-  | 'pool-ceramic'
-  | 'desert-sand'
-  | 'teak-wood';
-
-const SURFACE_CACHE = new Map<SurfaceTextureKind, string>();
-
-function renderSurfaceToDataUrl(kind: SurfaceTextureKind): string {
-  const cached = SURFACE_CACHE.get(kind);
-  if (cached) return cached;
-
-  const isWide = kind === 'herbarium-paper' || kind === 'desert-sand' || kind === 'teak-wood';
-  const w = isWide ? 560 : 440;
-  const h = isWide ? 360 : 440;
-
+const paintTexture = (kind: TexKind): string => {
+  const S = 620;
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = S;
+  canvas.height = S;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
+  const img = ctx.createImageData(S, S);
+  const put = (i: number, r: number, g: number, b: number, a = 255) => {
+    img.data[i] = r;
+    img.data[i + 1] = g;
+    img.data[i + 2] = b;
+    img.data[i + 3] = a;
+  };
 
-  const img = ctx.createImageData(w, h);
-  const data = img.data;
-  const rng = createSeededRng(`petrichor-tex-${kind}`);
-
-  if (kind === 'monsoon-slate') {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const base = fbm2D('slate-a', x * 0.015, y * 0.015, 4);
-        const fine = fbm2D('slate-b', x * 0.14, y * 0.14, 2);
-        const streak = fbm2D('slate-rain', x * 0.09, y * 0.008, 3);
-        const v = clamp01(0.46 + base * 0.22 + fine * 0.14 + streak * 0.12);
-        data[idx] = Math.round(14 + v * 20);
-        data[idx + 1] = Math.round(21 + v * 26);
-        data[idx + 2] = Math.round(20 + v * 25);
-        data[idx + 3] = 255;
+  if (kind === 'slate-moss' || kind === 'soot') {
+    const isSoot = kind === 'soot';
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const base = fbm(x * 0.012, y * 0.012, 7, 4);
+        const fine = fbm(x * 0.09, y * 0.09, 19, 3);
+        const streak = fbm(x * 0.006, y * 0.05, 41, 2);
+        const v = clamp01(base * 0.52 + fine * 0.24 + streak * 0.24);
+        if (isSoot) {
+          put(i, 10 + v * 16, 10 + v * 15, 9 + v * 13);
+        } else {
+          put(i, 9 + v * 20, 15 + v * 30, 14 + v * 24);
+        }
       }
     }
-    ctx.putImageData(img, 0, 0);
-  } else if (kind === 'cracked-laterite') {
-    // Desiccated Voronoi terracotta laterite clay polygons with mud-crack crevices
-    const pts: [number, number][] = [];
-    const tones: number[] = [];
-    for (let i = 0; i < 96; i++) {
-      pts.push([rng() * w, rng() * h]);
-      tones.push(rng());
+  } else if (kind === 'laterite' || kind === 'clay-crack') {
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const loam = fbm(x * 0.014, y * 0.014, 3, 4);
+        const grit = fbm(x * 0.11, y * 0.11, 23, 3);
+        const cell = Math.abs(fbm(x * 0.02, y * 0.02, 61, 2) - 0.5);
+        const crack = clamp01(1 - cell * 26);
+        const v = clamp01(0.3 + loam * 0.36 + grit * 0.2 - crack * 0.34);
+        put(
+          i,
+          Math.round(56 + v * 96 + grit * 12),
+          Math.round(32 + v * 58 + grit * 6),
+          Math.round(23 + v * 40),
+        );
+      }
     }
-    const delaunay = Delaunay.from(pts);
-    const vor = delaunay.voronoi([0, 0, w, h]);
+  } else if (kind === 'humus-fibre' || kind === 'walnut') {
+    const wood = kind === 'walnut';
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        if (wood) {
+          const ring = Math.sin((y * 0.05 + fbm(x * 0.01, y * 0.01, 9, 3) * 6) * 2.2) * 0.5 + 0.5;
+          const grain = fbm(x * 0.5, y * 0.03, 33, 3);
+          const v = clamp01(ring * 0.55 + grain * 0.45);
+          put(i, Math.round(26 + v * 30), Math.round(18 + v * 19), Math.round(13 + v * 12));
+        } else {
+          const fib = fbm(x * 0.4, y * 0.02, 77, 3);
+          const patch = fbm(x * 0.01, y * 0.01, 15, 4);
+          const v = clamp01(fib * 0.5 + patch * 0.5);
+          put(i, Math.round(20 + v * 34), Math.round(15 + v * 24), Math.round(10 + v * 15));
+        }
+      }
+    }
+  } else if (kind === 'agar') {
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const dx = x / S - 0.5;
+        const dy = y / S - 0.5;
+        const rr = Math.hypot(dx, dy);
+        const cloudy = fbm(x * 0.02, y * 0.02, 13, 4);
+        const rings = Math.sin(rr * 78 + cloudy * 4) * 0.5 + 0.5;
+        const v = clamp01(0.38 + cloudy * 0.34 + rings * 0.24 - rr * 0.3);
+        put(i, Math.round(70 + v * 96), Math.round(58 + v * 74), Math.round(40 + v * 46));
+      }
+    }
+  } else if (kind === 'rice-paper' || kind === 'brass-plate') {
+    const paper = kind === 'rice-paper';
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const fiber = fbm(x * 0.5, y * 0.05, 5, 3) * 0.5 + fbm(x * 0.04, y * 0.4, 8, 2) * 0.5;
+        const fox = clamp01((fbm(x * 0.008, y * 0.008, 27, 3) - 0.56) * 5);
+        if (paper) {
+          const v = clamp01(0.9 + fiber * 0.1 - fox * 0.16);
+          put(i, Math.round(228 * v), Math.round(216 * v), Math.round(196 * v));
+        } else {
+          const v = clamp01(0.42 + fiber * 0.3 + Math.sin((x + y) * 0.06) * 0.06 - fox * 0.18);
+          put(i, Math.round(96 + v * 112), Math.round(74 + v * 86), Math.round(38 + v * 42));
+        }
+      }
+    }
+  } else if (kind === 'sand-ripple') {
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const ripple = Math.sin(y * 0.14 + fbm(x * 0.01, y * 0.01, 17, 3) * 9) * 0.5 + 0.5;
+        const grain = fbm(x * 0.3, y * 0.3, 29, 2);
+        const v = clamp01(0.42 + ripple * 0.34 + grain * 0.24);
+        put(i, Math.round(124 + v * 78), Math.round(92 + v * 62), Math.round(54 + v * 40));
+      }
+    }
+  } else if (kind === 'rain-glass' || kind === 'press-grain') {
+    const grainOnly = kind === 'press-grain';
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = (y * S + x) * 4;
+        const n = hash2(x, y, 991);
+        if (grainOnly) {
+          const a = n > 0.62 ? Math.round(20 + n * 54) : 0;
+          put(i, 255, 255, 255, a);
+        } else {
+          const blur = fbm(x * 0.02, y * 0.02, 43, 3);
+          const v = clamp01(0.16 + blur * 0.24);
+          put(i, Math.round(12 + v * 34), Math.round(21 + v * 40), Math.round(24 + v * 38));
+        }
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
 
-    ctx.fillStyle = '#331A10';
-    ctx.fillRect(0, 0, w, h);
+  // --- path-based passes: material detail that pixel noise cannot carry ----
+  const rnd = makeRng(kind.length * 971 + 13);
 
-    for (let i = 0; i < pts.length; i++) {
-      const poly = vor.cellPolygon(i);
-      if (!poly) continue;
-      const t = tones[i];
-      const r = Math.round(126 + t * 54);
-      const g = Math.round(68 + t * 34);
-      const b = Math.round(44 + t * 24);
+  if (kind === 'laterite' || kind === 'clay-crack') {
+    ctx.lineCap = 'round';
+    for (let c = 0; c < 16; c++) {
       ctx.beginPath();
-      ctx.moveTo(poly[0][0], poly[0][1]);
-      for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k][0], poly[k][1]);
-      ctx.closePath();
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fill();
-      ctx.lineWidth = 3.2;
-      ctx.strokeStyle = '#2B150C';
+      let px = rnd() * S;
+      let py = rnd() * S;
+      ctx.moveTo(px, py);
+      const steps = 6 + Math.floor(rnd() * 9);
+      for (let s = 0; s < steps; s++) {
+        px += (rnd() - 0.5) * 150;
+        py += (rnd() - 0.5) * 150;
+        ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = `rgba(26, 13, 8, ${0.28 + rnd() * 0.34})`;
+      ctx.lineWidth = 1.4 + rnd() * 2.4;
       ctx.stroke();
-      ctx.lineWidth = 1.0;
-      ctx.strokeStyle = 'rgba(232, 178, 138, 0.28)';
-      ctx.stroke();
     }
-
-    const over = ctx.getImageData(0, 0, w, h);
-    const od = over.data;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const grit = fbm2D('clay-grit', x * 0.12, y * 0.12, 3) * 18;
-        od[idx] = Math.max(0, Math.min(255, od[idx] + grit));
-        od[idx + 1] = Math.max(0, Math.min(255, od[idx + 1] + grit * 0.72));
-        od[idx + 2] = Math.max(0, Math.min(255, od[idx + 2] + grit * 0.55));
-      }
-    }
-    ctx.putImageData(over, 0, 0);
-  } else if (kind === 'herbarium-paper') {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const cloud = fbm2D('herb-c', x * 0.016, y * 0.016, 4);
-        const fiber = fbm2D('herb-f', x * 0.24, y * 0.05, 2);
-        const speck = rng() > 0.992 ? -22 : 0;
-        data[idx] = Math.min(255, Math.max(0, Math.round(239 + cloud * 11 + fiber * 5 + speck)));
-        data[idx + 1] = Math.min(255, Math.max(0, Math.round(231 + cloud * 10 + fiber * 5 + speck)));
-        data[idx + 2] = Math.min(255, Math.max(0, Math.round(214 + cloud * 11 + fiber * 4 + speck)));
-        data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  } else if (kind === 'humus-micro') {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const loam = fbm2D('humus-a', x * 0.025, y * 0.025, 4);
-        const crumb = ridge2D('humus-b', x * 0.07, y * 0.07, 3);
-        const v = clamp01(0.32 + loam * 0.28 + crumb * 0.34);
-        data[idx] = Math.round(24 + v * 52);
-        data[idx + 1] = Math.round(19 + v * 39);
-        data[idx + 2] = Math.round(14 + v * 28);
-        data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  } else if (kind === 'spore-amber') {
-    const pts: [number, number][] = [];
-    const lum: number[] = [];
-    for (let i = 0; i < 120; i++) {
-      pts.push([rng() * w, rng() * h]);
-      lum.push(rng());
-    }
-    const vor = Delaunay.from(pts).voronoi([0, 0, w, h]);
-    for (let i = 0; i < pts.length; i++) {
-      const poly = vor.cellPolygon(i);
-      if (!poly) continue;
-      const t = lum[i];
-      const r = Math.round(176 + t * 72);
-      const g = Math.round(118 + t * 84);
-      const b = Math.round(36 + t * 58);
+    for (let c = 0; c < 90; c++) {
       ctx.beginPath();
-      ctx.moveTo(poly[0][0], poly[0][1]);
-      for (let k = 1; k < poly.length; k++) ctx.lineTo(poly[k][0], poly[k][1]);
-      ctx.closePath();
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.arc(rnd() * S, rnd() * S, 0.8 + rnd() * 2.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(214, 132, 88, ${0.18 + rnd() * 0.35})`;
       ctx.fill();
-      ctx.lineWidth = 0.9;
-      ctx.strokeStyle = 'rgba(255, 240, 198, 0.32)';
-      ctx.stroke();
     }
-  } else if (kind === 'pool-ceramic') {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const caus = ridge2D('pool-c', x * 0.032, y * 0.032, 3);
-        const v = clamp01(0.28 + caus * 0.52);
-        data[idx] = Math.round(32 + v * 54);
-        data[idx + 1] = Math.round(68 + v * 72);
-        data[idx + 2] = Math.round(78 + v * 78);
-        data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  } else if (kind === 'desert-sand') {
-    const hMap = new Float32Array(w * h);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const dune = Math.sin(x * 0.035 + fbm2D('dune-w', x * 0.01, y * 0.01, 3) * 3.4) * 0.35;
-        const rip = Math.sin(x * 0.22 + y * 0.06) * 0.08;
-        hMap[y * w + x] = 0.5 + dune + rip + fbm2D('dune-g', x * 0.08, y * 0.08, 2) * 0.12;
-      }
-    }
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const xm = Math.max(0, x - 1);
-        const xp = Math.min(w - 1, x + 1);
-        const ym = Math.max(0, y - 1);
-        const yp = Math.min(h - 1, y + 1);
-        const dx = (hMap[y * w + xp] - hMap[y * w + xm]) * 2.6;
-        const dy = (hMap[yp * w + x] - hMap[ym * w + x]) * 2.6;
-        const shade = clamp01((-dx * 0.68 - dy * 0.52 + 0.65) * 0.88);
-        data[idx] = Math.round(48 + shade * 124);
-        data[idx + 1] = Math.round(36 + shade * 92);
-        data[idx + 2] = Math.round(24 + shade * 56);
-        data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  } else if (kind === 'teak-wood') {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const warp = fbm2D('teak-w', x * 0.008, y * 0.024, 4) * 9.5;
-        const ring = Math.sin((y * 0.095 + warp) * Math.PI);
-        const grain = ring * 0.5 + 0.5;
-        const pore = fbm2D('teak-p', x * 0.22, y * 0.04, 2) * 0.14;
-        const v = clamp01(0.24 + grain * 0.44 + pore);
-        data[idx] = Math.round(30 + v * 58);
-        data[idx + 1] = Math.round(20 + v * 38);
-        data[idx + 2] = Math.round(13 + v * 22);
-        data[idx + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
   }
 
-  const url = canvas.toDataURL('image/png');
-  SURFACE_CACHE.set(kind, url);
-  return url;
-}
-
-function thecrumb(v: number): number {
-  return v * 0.34;
-}
-
-export function useProceduralSurface(kind: SurfaceTextureKind): string {
-  const [url, setUrl] = useState<string>(() => SURFACE_CACHE.get(kind) ?? '');
-  const [handle] = useState(() =>
-    SURFACE_CACHE.has(kind) ? null : delayRender(`surface-${kind}`),
-  );
-
-  useEffect(() => {
-    if (handle === null) return;
-    try {
-      const generated = renderSurfaceToDataUrl(kind);
-      setUrl(generated);
-      continueRender(handle);
-    } catch (err) {
-      cancelRender(err);
+  if (kind === 'humus-fibre') {
+    for (let f = 0; f < 1500; f++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const len = 8 + rnd() * 46;
+      const ang = rnd() * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(
+        x + Math.cos(ang) * len * 0.5 + (rnd() - 0.5) * 14,
+        y + Math.sin(ang) * len * 0.5 + (rnd() - 0.5) * 14,
+        x + Math.cos(ang) * len,
+        y + Math.sin(ang) * len,
+      );
+      ctx.strokeStyle = `rgba(${120 + rnd() * 60}, ${88 + rnd() * 40}, ${52 + rnd() * 30}, ${0.1 + rnd() * 0.26})`;
+      ctx.lineWidth = 0.6 + rnd() * 1.3;
+      ctx.stroke();
     }
-  }, [handle, kind]);
+  }
 
-  return url;
-}
+  if (kind === 'rice-paper' || kind === 'brass-plate') {
+    for (let f = 0; f < 380; f++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const len = 10 + rnd() * 60;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + len, y + (rnd() - 0.5) * 6);
+      ctx.strokeStyle =
+        kind === 'rice-paper'
+          ? `rgba(150, 132, 104, ${0.05 + rnd() * 0.1})`
+          : `rgba(238, 206, 148, ${0.04 + rnd() * 0.1})`;
+      ctx.lineWidth = 0.5 + rnd() * 0.8;
+      ctx.stroke();
+    }
+  }
 
-// ============================================================================
-// 4. EDITORIAL MOTION GRAPHICS & PHYSICAL SPECIMEN PRIMITIVES
-// ============================================================================
+  if (kind === 'rain-glass') {
+    for (let d = 0; d < 190; d++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const r = 1.4 + rnd() * 7;
+      const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, 0, x, y, r * 1.5);
+      g.addColorStop(0, 'rgba(226, 240, 238, 0.5)');
+      g.addColorStop(0.45, 'rgba(120, 158, 158, 0.2)');
+      g.addColorStop(1, 'rgba(10, 18, 20, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
-export const TrimPath: React.FC<{
-  d: string;
-  progress: number;
-  stroke: string;
-  strokeWidth: number;
-  strokeDasharray?: string;
-  strokeLinecap?: 'butt' | 'round' | 'square';
-  opacity?: number;
-  fill?: string;
-}> = ({
-  d,
-  progress,
-  stroke,
-  strokeWidth,
-  strokeDasharray,
-  strokeLinecap = 'round',
-  opacity = 1,
-  fill = 'none',
-}) => {
-  const p = clamp01(progress);
-  if (p <= 0.001 || !d) return null;
-  const evolved = p >= 0.999 ? { strokeDasharray: undefined, strokeDashoffset: undefined } : evolvePath(p, d);
-  return (
-    <path
-      d={d}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-      strokeLinecap={strokeLinecap}
-      strokeLinejoin="round"
-      strokeDasharray={strokeDasharray ?? evolved.strokeDasharray}
-      strokeDashoffset={strokeDasharray ? undefined : evolved.strokeDashoffset}
-      opacity={opacity}
-    />
-  );
+  return canvas.toDataURL('image/png');
 };
 
-export const RollingNumber: React.FC<{
-  value: string;
-  progress: number;
-  fontSize: number;
-  color?: string;
-  letterSpacing?: string;
-}> = ({ value, progress, fontSize, color = IDENTITY.ivoryText, letterSpacing = '0.02em' }) => {
-  const chars = value.split('');
-  const lineH = Math.round(fontSize * 0.96);
+export const useTex = (kind: TexKind): string =>
+  useMemo(() => {
+    const cached = texCache.get(kind);
+    if (cached) return cached;
+    const url = paintTexture(kind);
+    texCache.set(kind, url);
+    return url;
+  }, [kind]);
 
+// ============================================================================
+// 3. CINEMATIC BACKDROPS: LIGHT, HAZE, GRAIN, VIGNETTE
+// ============================================================================
+
+export const Backdrop: React.FC<{
+  top: string;
+  bottom: string;
+  tex: TexKind;
+  texOpacity?: number;
+  texScale?: number;
+  light?: { x: number; y: number; rx: number; ry: number; color: string; strength: number };
+  vignette?: number;
+  children?: React.ReactNode;
+}> = ({ top, bottom, tex, texOpacity = 0.25, texScale = 620, light, vignette = 0.62, children }) => {
+  const url = useTex(tex);
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        fontFamily: IDENTITY.fontDisplay,
-        fontSize,
-        lineHeight: `${lineH}px`,
-        color,
-        letterSpacing,
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      {chars.map((ch, idx) => {
-        const digit = ch >= '0' && ch <= '9' ? Number(ch) : -1;
-        if (digit < 0) {
-          return (
-            <span key={idx} style={{ display: 'inline-block', padding: '0 2px' }}>
-              {ch}
-            </span>
-          );
-        }
-        const settle = easeOutExpo(clamp01((progress - idx * 0.055) / Math.max(0.28, 1 - idx * 0.055)));
-        const spins = 10 + digit;
-        const offset = interpolate(settle, [0, 1], [0, spins * lineH]);
-        return (
-          <span
-            key={idx}
-            style={{
-              display: 'inline-block',
-              height: lineH,
-              overflow: 'hidden',
-              verticalAlign: 'bottom',
-            }}
-          >
-            <span
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                transform: `translateY(${-offset}px)`,
-              }}
-            >
-              {Array.from({ length: 20 }).map((_, n) => (
-                <span
-                  key={n}
-                  style={{
-                    height: lineH,
-                    lineHeight: `${lineH}px`,
-                    display: 'block',
-                    textAlign: 'center',
-                  }}
-                >
-                  {n % 10}
-                </span>
-              ))}
-            </span>
-          </span>
-        );
-      })}
-    </span>
-  );
-};
-
-export const DocumentaryHeader: React.FC<{
-  eyebrow: string;
-  figure: string;
-  unit: string;
-  subtitle: string;
-  localSec: number;
-  accentColor?: string;
-}> = ({
-  eyebrow,
-  figure,
-  unit,
-  subtitle,
-  localSec,
-  accentColor = IDENTITY.amberSpore,
-}) => {
-  const enter = easeOutCubic(clamp01(localSec / 0.52));
-  const roll = clamp01(localSec / 0.92);
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 88,
-        right: 88,
-        top: 164,
-        opacity: enter,
-        transform: `translateY(${(1 - enter) * 20}px)`,
-        pointerEvents: 'none',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          marginBottom: 10,
-        }}
-      >
-        <span
+    <AbsoluteFill style={{ background: `linear-gradient(176deg, ${top} 0%, ${bottom} 100%)`, overflow: 'hidden' }}>
+      {url && (
+        <div
           style={{
-            width: 34,
-            height: 2,
-            backgroundColor: accentColor,
-            display: 'inline-block',
+            position: 'absolute',
+            inset: -40,
+            backgroundImage: `url(${url})`,
+            backgroundSize: `${texScale}px ${texScale}px`,
+            backgroundRepeat: 'repeat',
+            opacity: texOpacity,
+            mixBlendMode: 'overlay',
           }}
         />
-        <span
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 19,
-            fontWeight: 600,
-            letterSpacing: '0.2em',
-            color: IDENTITY.stoneText,
-            textTransform: 'uppercase',
-          }}
-        >
-          {eyebrow}
-        </span>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 22, flexWrap: 'nowrap' }}>
-        <RollingNumber value={figure} progress={roll} fontSize={136} color={IDENTITY.ivoryText} />
-        <span
-          style={{
-            fontFamily: IDENTITY.fontEditorial,
-            fontSize: 54,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            color: accentColor,
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {unit}
-        </span>
-      </div>
-
-      <div
-        style={{
-          marginTop: 8,
-          fontFamily: IDENTITY.fontMono,
-          fontSize: 19,
-          fontWeight: 600,
-          letterSpacing: '0.12em',
-          color: accentColor,
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {subtitle}
-      </div>
-    </div>
-  );
-};
-
-export interface HerbariumRow {
-  readonly label: string;
-  readonly value: string;
-  readonly highlight?: boolean;
-}
-
-export const HerbariumSpecimenCard: React.FC<{
-  x: number;
-  y: number;
-  width: number;
-  rotationDeg?: number;
-  headerLeft: string;
-  headerRight: string;
-  rows: readonly HerbariumRow[];
-  stampText?: string;
-  stampColor?: string;
-  stampProgress?: number;
-  footerCode?: string;
-  enterProgress: number;
-}> = ({
-  x,
-  y,
-  width,
-  rotationDeg = -1.2,
-  headerLeft,
-  headerRight,
-  rows,
-  stampText,
-  stampColor = IDENTITY.stampRust,
-  stampProgress = 0,
-  footerCode = 'SPECIMEN HERBARIUM · C12H22O',
-  enterProgress,
-}) => {
-  const paperUrl = useProceduralSurface('herbarium-paper');
-  const p = easeOutExpo(clamp01(enterProgress));
-  const sp = clamp01(stampProgress);
-  const stampScale = interpolate(easeOutExpo(sp), [0, 1], [1.72, 1]);
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: x,
-        top: y,
-        width,
-        padding: stampText ? '28px 34px 116px' : '28px 34px 30px',
-        backgroundColor: IDENTITY.paperHerbarium,
-        backgroundImage: paperUrl ? `url(${paperUrl})` : undefined,
-        backgroundSize: 'cover',
-        border: '1.5px solid rgba(46, 38, 26, 0.36)',
-        boxShadow: '0 26px 48px rgba(0, 0, 0, 0.58), 0 4px 10px rgba(0, 0, 0, 0.36)',
-        transform: `translateY(${(1 - p) * 52}px) rotate(${rotationDeg}deg)`,
-        opacity: clamp01(enterProgress * 1.6),
-        boxSizing: 'border-box',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 9,
-          border: '1px solid rgba(64, 52, 34, 0.22)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '2px solid #262018',
-          paddingBottom: 10,
-          marginBottom: 14,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: IDENTITY.fontEditorial,
-            fontSize: 25,
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            color: IDENTITY.paperInk,
-            textTransform: 'uppercase',
-          }}
-        >
-          {headerLeft}
-        </span>
-        <span
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: '0.14em',
-            color: IDENTITY.paperMuted,
-          }}
-        >
-          {headerRight}
-        </span>
-      </div>
-
-      {rows.map((r, i) => (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            padding: '8px 0',
-            borderBottom: i < rows.length - 1 ? `1px dashed ${IDENTITY.paperRule}` : 'none',
-            fontFamily: IDENTITY.fontMono,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 19,
-              fontWeight: 600,
-              letterSpacing: '0.1em',
-              color: r.highlight ? stampColor : IDENTITY.paperMuted,
-            }}
-          >
-            {r.label}
-          </span>
-          <span
-            style={{
-              fontSize: 21,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              color: r.highlight ? stampColor : IDENTITY.paperInk,
-            }}
-          >
-            {r.value}
-          </span>
-        </div>
-      ))}
-
-      {stampText && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 34,
-            bottom: 28,
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 15,
-            fontWeight: 600,
-            letterSpacing: '0.14em',
-            color: IDENTITY.paperMuted,
-          }}
-        >
-          {footerCode}
-        </div>
       )}
-
-      {stampText && sp > 0.02 && (
-        <div
-          style={{
-            position: 'absolute',
-            right: 34,
-            bottom: 18,
-            padding: '8px 20px',
-            border: `4px solid ${stampColor}`,
-            outline: `1.5px solid ${stampColor}`,
-            outlineOffset: -7,
-            color: stampColor,
-            fontFamily: IDENTITY.fontEditorial,
-            fontSize: 30,
-            fontWeight: 700,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            backgroundColor: 'rgba(239, 231, 214, 0.95)',
-            transform: `rotate(-6deg) scale(${stampScale})`,
-            opacity: clamp01(sp * 2.2) * 0.94,
-          }}
-        >
-          {stampText}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const MatteCanvasGround: React.FC<{
-  topColor: string;
-  bottomColor: string;
-  surfaceKind?: SurfaceTextureKind;
-  surfaceOpacity?: number;
-  warmLampX?: number;
-  warmLampY?: number;
-}> = ({
-  topColor,
-  bottomColor,
-  surfaceKind = 'monsoon-slate',
-  surfaceOpacity = 0.25,
-  warmLampX = 50,
-  warmLampY = 44,
-}) => {
-  const texUrl = useProceduralSurface(surfaceKind);
-
-  return (
-    <AbsoluteFill
-      style={{
-        background: `linear-gradient(180deg, ${topColor} 0%, ${bottomColor} 100%)`,
-        overflow: 'hidden',
-      }}
-    >
-      {texUrl && (
+      {light && (
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `url(${texUrl})`,
-            backgroundSize: '640px 640px',
-            backgroundRepeat: 'repeat',
-            opacity: surfaceOpacity,
-            mixBlendMode: 'overlay',
+            background: `radial-gradient(ellipse ${light.rx}px ${light.ry}px at ${light.x}px ${light.y}px, ${light.color} 0%, rgba(0,0,0,0) 72%)`,
+            opacity: light.strength,
+            mixBlendMode: 'screen',
           }}
         />
       )}
@@ -827,1862 +344,1720 @@ export const MatteCanvasGround: React.FC<{
         style={{
           position: 'absolute',
           inset: 0,
-          background: `radial-gradient(ellipse 68% 48% at ${warmLampX}% ${warmLampY}%, rgba(168, 196, 160, 0.07) 0%, rgba(0, 0, 0, 0) 68%), radial-gradient(ellipse 95% 85% at 50% 50%, rgba(0,0,0,0) 54%, rgba(0,0,0,0.62) 100%)`,
-          pointerEvents: 'none',
+          background: `radial-gradient(ellipse 78% 62% at 50% 46%, rgba(0,0,0,0) 46%, rgba(0,0,0,${vignette}) 100%)`,
         }}
       />
+      {children}
     </AbsoluteFill>
   );
 };
 
+export const FilmGrain: React.FC<{ opacity?: number; scale?: number }> = ({ opacity = 0.16, scale = 260 }) => {
+  const frame = useCurrentFrame();
+  const url = useTex('press-grain');
+  const ox = (frame * 37) % scale;
+  const oy = (frame * 53) % scale;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: -scale,
+        backgroundImage: `url(${url})`,
+        backgroundSize: `${scale}px ${scale}px`,
+        backgroundPosition: `${ox}px ${oy}px`,
+        backgroundRepeat: 'repeat',
+        opacity,
+        mixBlendMode: 'overlay',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+};
+
+export const DustMotes: React.FC<{ count?: number; color?: string; seed?: number; y0?: number; y1?: number }> = ({
+  count = 46,
+  color = 'rgba(240, 228, 200, 0.5)',
+  seed = 5,
+  y0 = 200,
+  y1 = 2100,
+}) => {
+  const frame = useCurrentFrame();
+  const motes = useMemo(() => {
+    const rnd = makeRng(seed * 811);
+    return Array.from({ length: count }).map(() => ({
+      x: rnd() * 1440,
+      y: y0 + rnd() * (y1 - y0),
+      r: 1 + rnd() * 3.4,
+      sp: 0.15 + rnd() * 0.5,
+      ph: rnd() * Math.PI * 2,
+      a: 0.18 + rnd() * 0.5,
+    }));
+  }, [count, seed, y0, y1]);
+  return (
+    <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      {motes.map((m, i) => {
+        const dy = Math.sin(frame * 0.012 * m.sp + m.ph) * 26 - ((frame * m.sp * 0.5) % 90);
+        const dx = Math.cos(frame * 0.009 * m.sp + m.ph) * 20;
+        return (
+          <circle
+            key={i}
+            cx={m.x + dx}
+            cy={m.y + dy}
+            r={m.r}
+            fill={color}
+            opacity={m.a * (0.55 + 0.45 * Math.sin(frame * 0.05 + m.ph))}
+          />
+        );
+      })}
+    </svg>
+  );
+};
+
 // ============================================================================
-// 5. BESPOKE 2D BOTANICAL & CHEMICAL OBJECT ILLUSTRATIONS
+// 4. TYPOGRAPHIC PRIMITIVES (BESPOKE VOICE PER CHAPTER, NO SHARED HEADER)
 // ============================================================================
 
-export const IllustratedWaterDroplet: React.FC<{
-  cx: number;
-  cy: number;
-  radius: number;
-  uid?: string;
-  teardrop?: boolean;
-}> = ({ cx, cy, radius, uid = 'drop', teardrop = true }) => {
-  const r = radius;
-  const pathD = teardrop
-    ? `M ${cx},${cy - r * 1.48} C ${cx + r * 0.42},${cy - r * 0.72} ${cx + r},${cy - r * 0.12} ${cx + r},${cy + r * 0.28} A ${r},${r * 0.92} 0 1,1 ${cx - r},${cy + r * 0.28} C ${cx - r},${cy - r * 0.12} ${cx - r * 0.42},${cy - r * 0.72} ${cx},${cy - r * 1.48} Z`
-    : `M ${cx - r},${cy + r * 0.15} A ${r},${r * 0.72} 0 0,1 ${cx + r},${cy + r * 0.15} Q ${cx},${cy + r * 0.32} ${cx - r},${cy + r * 0.15} Z`;
+export const Mono: React.FC<{
+  x: number;
+  y: number;
+  text: string;
+  size?: number;
+  color?: string;
+  anchor?: 'start' | 'middle' | 'end';
+  tracking?: number;
+  weight?: 400 | 600;
+  opacity?: number;
+}> = ({ x, y, text, size = 19, color = IDENTITY.stoneText, anchor = 'start', tracking = 0.18, weight = 600, opacity = 1 }) => (
+  <text
+    x={x}
+    y={y}
+    textAnchor={anchor}
+    fill={color}
+    opacity={opacity}
+    fontFamily={IDENTITY.fontMono}
+    fontSize={size}
+    fontWeight={weight}
+    letterSpacing={`${tracking}em`}
+  >
+    {text}
+  </text>
+);
+
+export const LeaderLabel: React.FC<{
+  from: [number, number];
+  to: [number, number];
+  text: string;
+  sub?: string;
+  color?: string;
+  anchor?: 'start' | 'end' | 'middle';
+  size?: number;
+  dot?: string;
+}> = ({ from, to, text, sub, color = '#D9C9A6', anchor = 'start', size = 18, dot }) => {
+  const midX = (from[0] + to[0]) / 2;
+  return (
+    <g>
+      <path
+        d={`M ${from[0]},${from[1]} L ${midX},${to[1]} L ${to[0]},${to[1]}`}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.2}
+        opacity={0.6}
+      />
+      <circle cx={from[0]} cy={from[1]} r={4} fill={dot ?? color} opacity={0.9} />
+      <circle cx={from[0]} cy={from[1]} r={8} fill="none" stroke={dot ?? color} strokeWidth={1} opacity={0.4} />
+      <Mono x={anchor === 'end' ? to[0] - 10 : anchor === 'middle' ? to[0] : to[0] + 10} y={to[1] - 8} text={text} size={size} color={color} anchor={anchor} />
+      {sub && (
+        <Mono
+          x={anchor === 'end' ? to[0] - 10 : anchor === 'middle' ? to[0] : to[0] + 10}
+          y={to[1] + 16}
+          text={sub}
+          size={size - 4}
+          color="rgba(210, 200, 178, 0.56)"
+          anchor={anchor}
+          weight={400}
+        />
+      )}
+    </g>
+  );
+};
+
+export const RuleLine: React.FC<{ x1: number; y1: number; x2: number; y2: number; color?: string; width?: number; opacity?: number; dash?: string }> = ({
+  x1,
+  y1,
+  x2,
+  y2,
+  color = 'rgba(214, 198, 168, 0.5)',
+  width = 1.4,
+  opacity = 1,
+  dash,
+}) => <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={width} opacity={opacity} strokeDasharray={dash} />;
+
+// Mask-based letterpress reveal used by several chapters, with per-chapter feel.
+export const InkReveal: React.FC<{
+  x: number;
+  y: number;
+  p: number;
+  dir?: 'left' | 'right' | 'up';
+  pad?: number;
+  children: React.ReactNode;
+}> = ({ x, y, p, dir = 'left', pad = 28, children }) => {
+  const id = `ink-${x.toFixed(0)}-${y.toFixed(0)}-${dir}`;
+  const tw = 1500;
+  const th = 320;
+  const q = easeOutQuart(clamp01(p));
+  const rx = dir === 'left' ? x - pad : x + pad - tw * q;
+  const ry = y - pad;
+  return (
+    <g>
+      <defs>
+        <clipPath id={id}>
+          {dir === 'up' ? (
+            <rect x={x - pad} y={y + th - th * q} width={tw} height={th * q} />
+          ) : (
+            <rect x={rx} y={ry} width={tw * q} height={th} />
+          )}
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id})`} opacity={q > 0.01 ? 1 : 0}>
+        {children}
+      </g>
+    </g>
+  );
+};
+
+export const ChapterBeat: React.FC<{ index: number }> = ({ index }) => {
+  const frame = useCurrentFrame();
+  const ch = CHAPTERS[index];
+  return <>{Math.round(ch.start * 90) + frame}</>;
+};
+
+export const useChapterClock = (index: number) => {
+  const frame = useCurrentFrame();
+  const ch = CHAPTERS[index];
+  const localSec = frame / 90;
+  return { ch, localSec, globalSec: ch.start + localSec, art: CHAPTER_ART[index] };
+};
+
+// ============================================================================
+// 5. SHARED MATERIAL SUBJECTS: SOIL, WATER, CRYSTAL, GLASS
+// ============================================================================
+
+export const SoilSlab: React.FC<{
+  x: number;
+  y: number;
+  w: number;
+  d: number;
+  h: number;
+  texUrl: string;
+  dry?: number;
+  moss?: number;
+  rimColor?: string;
+  seed?: number;
+  uid: string;
+}> = ({ x, y, w, d, h, texUrl, dry = 1, moss = 1, rimColor = 'rgba(246, 214, 160, 0.4)', seed = 3, uid }) => {
+  const pebbles = useMemo(() => {
+    const rnd = makeRng(seed * 383 + 11);
+    return Array.from({ length: 26 }).map(() => ({
+      px: 60 + rnd() * (w - 120),
+      py: 26 + rnd() * (d - 52),
+      r: 3 + rnd() * 8,
+      a: 0.18 + rnd() * 0.4,
+    }));
+  }, [seed, w, d]);
+
+  const cracks = useMemo(() => {
+    const rnd = makeRng(seed * 97 + 5);
+    return Array.from({ length: 9 }).map(() => {
+      let px = 60 + rnd() * (w - 120);
+      let py = 20 + rnd() * (d - 40);
+      let dPath = `M ${px},${py}`;
+      const seg = 3 + Math.floor(rnd() * 3);
+      for (let i = 0; i < seg; i++) {
+        px += (rnd() - 0.5) * 190;
+        py += (rnd() - 0.5) * 90;
+        dPath += ` L ${px},${py}`;
+      }
+      return { dPath, w: 1.1 + rnd() * 2.1, a: 0.2 + rnd() * 0.4 };
+    });
+  }, [seed, w, d]);
+
+  const topPath = `M ${x + 44},${y} L ${x + w - 44},${y} L ${x + w},${y + d} L ${x},${y + d} Z`;
+  const frontPath = `M ${x},${y + d} L ${x + w},${y + d} L ${x + w - 10},${y + d + h} L ${x + 10},${y + d + h} Z`;
 
   return (
     <g>
       <defs>
-        <radialGradient id={`${uid}-grad`} cx="36%" cy="32%" r="72%">
-          <stop offset="0%" stopColor="rgba(242, 248, 247, 0.92)" />
-          <stop offset="34%" stopColor="rgba(176, 206, 208, 0.58)" />
-          <stop offset="78%" stopColor="rgba(68, 104, 112, 0.48)" />
-          <stop offset="100%" stopColor="rgba(26, 44, 48, 0.76)" />
-        </radialGradient>
+        <clipPath id={`${uid}-top`}>
+          <path d={topPath} />
+        </clipPath>
+        <clipPath id={`${uid}-front`}>
+          <path d={frontPath} />
+        </clipPath>
+        <linearGradient id={`${uid}-toplight`} x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0%" stopColor="rgba(255, 231, 198, 0.24)" />
+          <stop offset="40%" stopColor="rgba(255, 214, 166, 0.04)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.34)" />
+        </linearGradient>
+        <linearGradient id={`${uid}-frontshade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5E3121" />
+          <stop offset="55%" stopColor="#3C1E14" />
+          <stop offset="100%" stopColor="#24110C" />
+        </linearGradient>
       </defs>
-      <path
-        d={pathD}
-        fill={`url(#${uid}-grad)`}
-        stroke="rgba(235, 245, 244, 0.72)"
-        strokeWidth={Math.max(1.4, r * 0.045)}
-      />
-      {/* Upper-left internal refractive specular crescent */}
-      <path
-        d={
-          teardrop
-            ? `M ${cx - r * 0.56},${cy + r * 0.12} C ${cx - r * 0.58},${cy - r * 0.28} ${cx - r * 0.24},${cy - r * 0.72} ${cx - r * 0.06},${cy - r * 0.98}`
-            : `M ${cx - r * 0.68},${cy - r * 0.08} A ${r * 0.72},${r * 0.46} 0 0,1 ${cx + r * 0.18},${cy - r * 0.42}`
-        }
-        fill="none"
-        stroke="rgba(255, 255, 255, 0.78)"
-        strokeWidth={Math.max(2, r * 0.09)}
-        strokeLinecap="round"
-      />
-      {/* Bottom caustic bright focus */}
-      <ellipse
-        cx={cx + r * 0.22}
-        cy={cy + (teardrop ? r * 0.68 : r * 0.02)}
-        rx={r * 0.34}
-        ry={r * 0.12}
-        fill="rgba(236, 248, 246, 0.46)"
-      />
-    </g>
-  );
-};
 
-export const GeosminBrassMedallion: React.FC<{
-  cx: number;
-  cy: number;
-  radius: number;
-  rotationDeg?: number;
-}> = ({ cx, cy, radius, rotationDeg = 0 }) => {
-  // Bicyclic trans-1,10-dimethyl-trans-9-decalol (Geosmin C12H22O) engraved brass token
-  const s = radius * 0.28;
-  const hexA = Array.from({ length: 6 })
-    .map((_, i) => {
-      const a = (i * Math.PI) / 3 + Math.PI / 6;
-      return `${(-s * 0.866 + Math.cos(a) * s).toFixed(1)},${(Math.sin(a) * s).toFixed(1)}`;
-    })
-    .join(' ');
-  const hexB = Array.from({ length: 6 })
-    .map((_, i) => {
-      const a = (i * Math.PI) / 3 + Math.PI / 6;
-      return `${(s * 0.866 + Math.cos(a) * s).toFixed(1)},${(Math.sin(a) * s).toFixed(1)}`;
-    })
-    .join(' ');
+      {/* contact shadow */}
+      <ellipse cx={x + w / 2 + 6} cy={y + d + h + 16} rx={w * 0.53} ry={26} fill="rgba(0,0,0,0.55)" />
 
-  return (
-    <g transform={`translate(${cx}, ${cy})`}>
-      <circle
-        cx={0}
-        cy={0}
-        r={radius}
-        fill="#141915"
-        stroke={IDENTITY.amberSpore}
-        strokeWidth={3}
-      />
-      <circle
-        cx={0}
-        cy={0}
-        r={radius - 9}
-        fill="none"
-        stroke="rgba(236, 199, 126, 0.35)"
-        strokeWidth={1.2}
-        strokeDasharray="4 4"
-      />
-      {/* Fused Bicyclic Decalin Rings of Geosmin (rotates gently while text stays level) */}
-      <g transform={`translate(0, ${-radius * 0.14}) rotate(${rotationDeg})`}>
-        <polygon
-          points={hexA}
-          fill="rgba(216, 161, 72, 0.14)"
-          stroke={IDENTITY.amberLight}
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-        />
-        <polygon
-          points={hexB}
-          fill="rgba(122, 158, 115, 0.16)"
-          stroke={IDENTITY.amberLight}
-          strokeWidth={2.5}
-          strokeLinejoin="round"
-        />
-        {/* Methyl & Hydroxyl substituent pins (-OH & 2x -CH3) */}
-        <line x1={0} y1={-s * 0.5} x2={0} y2={-s * 1.24} stroke={IDENTITY.mossLight} strokeWidth={2.5} />
-        <circle cx={0} cy={-s * 1.32} r={5} fill={IDENTITY.mossSage} stroke="#F2EFE8" strokeWidth={1.3} />
-        <line x1={0} y1={s * 0.5} x2={-s * 0.45} y2={s * 1.18} stroke={IDENTITY.amberLight} strokeWidth={2.3} />
-        <line x1={-s * 1.73} y1={-s * 0.5} x2={-s * 2.22} y2={-s * 0.9} stroke={IDENTITY.amberLight} strokeWidth={2.3} />
+      {/* slab front soil wall */}
+      <path d={frontPath} fill={`url(#${uid}-frontshade)`} />
+      <g clipPath={`url(#${uid}-front)`}>
+        {texUrl && <image href={texUrl} x={x} y={y + d} width={w} height={h} preserveAspectRatio="none" opacity={0.5} />}
+        {Array.from({ length: 12 }).map((_, i) => (
+          <circle key={i} cx={x + 40 + i * 62} cy={y + d + 18 + ((i * 37) % 40)} r={2 + (i % 3)} fill="rgba(236, 214, 176, 0.16)" />
+        ))}
       </g>
-      <text
-        x={0}
-        y={radius * 0.56}
-        textAnchor="middle"
-        fill={IDENTITY.ivoryText}
-        fontFamily={IDENTITY.fontMono}
-        fontSize={Math.max(11, Math.round(radius * 0.135))}
-        fontWeight={700}
-        letterSpacing="0.08em"
-      >
-        GEOSMIN · C₁₂H₂₂O
-      </text>
+      <path d={`M ${x},${y + d} L ${x + w},${y + d}`} stroke="rgba(255, 226, 184, 0.22)" strokeWidth={2} />
+
+      {/* slab top surface */}
+      <path d={topPath} fill="#8A4A2F" />
+      <g clipPath={`url(#${uid}-top)`}>
+        {texUrl && <image href={texUrl} x={x} y={y} width={w} height={d} preserveAspectRatio="none" opacity={0.72} />}
+        <path d={topPath} fill={`url(#${uid}-toplight)`} />
+        {/* desiccation cracks */}
+        {cracks.map((c, i) => (
+          <path key={i} d={c.dPath} fill="none" stroke={`rgba(38, 18, 10, ${c.a * dry})`} strokeWidth={c.w} strokeLinecap="round" />
+        ))}
+        {/* light catching the crack rims */}
+        {cracks.slice(0, 5).map((c, i) => (
+          <path key={`r${i}`} d={c.dPath} fill="none" stroke={`rgba(255, 206, 158, ${0.09 * dry})`} strokeWidth={0.8} transform="translate(1.6, 1.6)" />
+        ))}
+        {pebbles.map((p, i) => (
+          <g key={i}>
+            <circle cx={x + p.px} cy={y + p.py} r={p.r} fill={`rgba(196, 150, 112, ${p.a})`} />
+            <circle cx={x + p.px - p.r * 0.3} cy={y + p.py - p.r * 0.35} r={p.r * 0.35} fill="rgba(255, 240, 214, 0.2)" />
+          </g>
+        ))}
+        {/* moss & lichen the rain revives */}
+        {moss > 0.02 &&
+          Array.from({ length: 34 }).map((_, i) => {
+            const mx = x + 80 + ((i * 97) % (w - 160));
+            const my = y + 22 + ((i * 53) % (d - 44));
+            return (
+              <g key={`m${i}`} opacity={clamp01(moss) * (0.4 + ((i * 13) % 30) / 60)}>
+                <circle cx={mx} cy={my} r={2.4 + (i % 4)} fill="#5F7A48" />
+                <circle cx={mx + 3} cy={my - 2} r={1.6 + (i % 3)} fill="#7E9A5C" />
+              </g>
+            );
+          })}
+      </g>
+      <path d={topPath} fill="none" stroke={rimColor} strokeWidth={1.6} />
     </g>
   );
 };
 
-export const AmberSporeCluster: React.FC<{
-  cx: number;
-  cy: number;
-  size: number;
-  sporeUrl: string;
-  rotation?: number;
-}> = ({ cx, cy, size, sporeUrl, rotation = 0 }) => {
-  const uid = `sp-${Math.round(cx)}-${Math.round(cy)}-${Math.round(size)}-${Math.round(rotation)}`;
-  const r = size;
+export const DropStreak: React.FC<{ x: number; y: number; len?: number; color?: string; opacity?: number }> = ({
+  x,
+  y,
+  len = 92,
+  color = 'rgba(210, 226, 226, 0.5)',
+  opacity = 1,
+}) => (
+  <g opacity={opacity}>
+    <line x1={x} y1={y - len} x2={x} y2={y} stroke={color} strokeWidth={2.2} strokeLinecap="round" />
+    <ellipse cx={x} cy={y + 5} rx={3.4} ry={6.4} fill="rgba(228, 242, 242, 0.78)" />
+  </g>
+);
+
+export const ImpactCrown: React.FC<{ x: number; y: number; p: number; scale?: number; color?: string }> = ({
+  x,
+  y,
+  p,
+  scale = 1,
+  color = 'rgba(226, 240, 240, 0.8)',
+}) => {
+  if (p <= 0) return null;
+  const h = smoothstep(clamp01(p)) * 42 * scale;
+  const spread = 34 * scale + smoothstep(clamp01(p)) * 66 * scale;
+  const fade = 1 - clamp01((p - 0.72) / 0.28);
   return (
-    <g transform={`translate(${cx}, ${cy}) rotate(${rotation})`}>
+    <g opacity={fade}>
+      {/* crown sheet */}
+      <path
+        d={`M ${x - spread},${y} C ${x - spread * 0.72},${y - h * 0.96} ${x - spread * 0.24},${y - h * 1.12} ${x},${y - h * 0.3} C ${x + spread * 0.24},${y - h * 1.12} ${x + spread * 0.72},${y - h * 0.96} ${x + spread},${y} Z`}
+        fill="rgba(206, 228, 228, 0.16)"
+        stroke={color}
+        strokeWidth={1.5}
+      />
+      {/* detached droplets */}
+      {Array.from({ length: 11 }).map((_, i) => {
+        const a = (i / 10 - 0.5) * 2;
+        const dx = a * spread * 1.5;
+        const dy = -h * (1.1 + Math.abs(a) * 0.5) - p * 60;
+        return <circle key={i} cx={x + dx} cy={y + dy} r={2.2 + (i % 3) * 1.2} fill={color} opacity={0.8} />;
+      })}
+      {/* ripple rings */}
+      <ellipse cx={x} cy={y + 2} rx={spread * 1.5} ry={spread * 0.24} fill="none" stroke="rgba(232, 244, 244, 0.4)" strokeWidth={1.6} />
+      <ellipse cx={x} cy={y + 2} rx={spread * 2.2} ry={spread * 0.34} fill="none" stroke="rgba(232, 244, 244, 0.2)" strokeWidth={1.2} />
+    </g>
+  );
+};
+
+export const IsoCrystal: React.FC<{ x: number; y: number; s: number; h: number; hue?: [string, string, string]; opacity?: number }> = ({
+  x,
+  y,
+  s,
+  h,
+  hue = ['#F0D9A4', '#C9A45C', '#8D6A2E'],
+  opacity = 1,
+}) => {
+  const top = `M ${x},${y} L ${x + s},${y - s * 0.55} L ${x + s * 2},${y} L ${x + s},${y + s * 0.55} Z`;
+  return (
+    <g opacity={opacity}>
+      <path d={`M ${x + s * 2},${y} L ${x + s * 2},${y - h} L ${x + s},${y + s * 0.55 - h} L ${x + s},${y + s * 0.55} Z`} fill={hue[1]} />
+      <path d={`M ${x},${y} L ${x},${y - h} L ${x + s},${y - s * 0.55 - h} L ${x + s},${y - s * 0.55} Z`} fill={hue[2]} />
+      <path d={`M ${x},${y - h} L ${x + s},${y - s * 0.55 - h} L ${x + s * 2},${y - h} L ${x + s},${y + s * 0.55 - h} Z`} fill={hue[0]} />
+      <path d={`M ${x},${y - h} L ${x},${y} M ${x + s},${y - s * 0.55 - h} L ${x + s},${y - s * 0.55}`} stroke="rgba(255, 252, 236, 0.5)" strokeWidth={1} />
+    </g>
+  );
+};
+
+export const VapourWisps: React.FC<{ x: number; y: number; p: number; color?: string; count?: number; height?: number }> = ({
+  x,
+  y,
+  p,
+  color = 'rgba(226, 208, 168, 0.4)',
+  count = 5,
+  height = 320,
+}) => {
+  if (p <= 0.01) return null;
+  return (
+    <g opacity={clamp01(p) * 0.9}>
+      {Array.from({ length: count }).map((_, i) => {
+        const sway = Math.sin(p * 3 + i) * 18;
+        const y0 = y - (height / count) * i;
+        const y1 = y0 - height * 0.5;
+        return (
+          <path
+            key={i}
+            d={`M ${x + i * 12 - count * 6},${y0} C ${x + sway - 26},${y0 - 60} ${x + sway + 34},${y1 + 60} ${x + sway},${y1}`}
+            fill="none"
+            stroke={color}
+            strokeWidth={1.4 + (i % 3) * 0.6}
+            strokeLinecap="round"
+            strokeDasharray={i % 2 === 0 ? undefined : '5 9'}
+          />
+        );
+      })}
+    </g>
+  );
+};
+
+export const GlassGauge: React.FC<{ x: number; y: number; w: number; h: number; fill: number; uid: string; ticks?: number }> = ({
+  x,
+  y,
+  w,
+  h,
+  fill,
+  uid,
+  ticks = 8,
+}) => {
+  const waterH = h * fill;
+  return (
+    <g>
       <defs>
-        <clipPath id={uid}>
-          <circle cx={0} cy={0} r={r} />
+        <linearGradient id={`${uid}-glass`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(206, 226, 226, 0.34)" />
+          <stop offset="18%" stopColor="rgba(240, 252, 250, 0.14)" />
+          <stop offset="62%" stopColor="rgba(150, 186, 186, 0.1)" />
+          <stop offset="100%" stopColor="rgba(224, 242, 240, 0.3)" />
+        </linearGradient>
+        <linearGradient id={`${uid}-water`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(148, 186, 190, 0.55)" />
+          <stop offset="100%" stopColor="rgba(52, 88, 96, 0.75)" />
+        </linearGradient>
+        <clipPath id={`${uid}-inner`}>
+          <rect x={x + 10} y={y + 8} width={w - 20} height={h - 16} rx={10} />
         </clipPath>
       </defs>
-      <circle cx={0} cy={0} r={r} fill={IDENTITY.amberSpore} />
-      {sporeUrl && (
-        <g clipPath={`url(#${uid})`}>
-          <image href={sporeUrl} x={-r} y={-r} width={r * 2} height={r * 2} />
-        </g>
-      )}
-      <circle
-        cx={0}
-        cy={0}
-        r={r}
-        fill="none"
-        stroke="#FAF0CA"
-        strokeWidth={Math.max(1.1, r * 0.09)}
-      />
-      <circle cx={-r * 0.32} cy={-r * 0.32} r={r * 0.24} fill="rgba(255, 250, 232, 0.52)" />
+
+      <ellipse cx={x + w / 2} cy={y + h + 18} rx={w * 0.66} ry={14} fill="rgba(0,0,0,0.5)" />
+
+      {/* water body */}
+      <g clipPath={`url(#${uid}-inner)`}>
+        <rect x={x + 10} y={y + h - waterH} width={w - 20} height={waterH} fill={`url(#${uid}-water)`} />
+        <ellipse cx={x + w / 2} cy={y + h - waterH} rx={(w - 20) / 2} ry={7} fill="rgba(206, 230, 230, 0.55)" />
+        <rect x={x + 10} y={y + 8} width={w - 20} height={h - 16} fill={`url(#${uid}-glass)`} />
+        {/* graduation ticks */}
+        {Array.from({ length: ticks }).map((_, i) => {
+          const ty = y + 34 + (i * (h - 62)) / (ticks - 1);
+          const long = i % 2 === 0;
+          return (
+            <g key={i}>
+              <line x1={x + 22} y1={ty} x2={x + 22 + (long ? 30 : 18)} y2={ty} stroke="rgba(226, 240, 238, 0.55)" strokeWidth={1.2} />
+              {long && <Mono x={x + 58} y={ty + 5} text={`${(ticks - 1 - i) * 25}`} size={12} color="rgba(226, 240, 238, 0.6)" tracking={0.06} weight={400} />}
+            </g>
+          );
+        })}
+        {/* caustic light band */}
+        <path d={`M ${x + 18},${y + h} L ${x + w * 0.5},${y + 20} L ${x + w * 0.78},${y + 20} L ${x + w * 0.42},${y + h} Z`} fill="rgba(226, 244, 240, 0.07)" />
+      </g>
+
+      {/* glass outline & rim */}
+      <rect x={x} y={y} width={w} height={h} rx={12} fill="none" stroke="rgba(232, 246, 244, 0.66)" strokeWidth={2.4} />
+      <rect x={x + 5} y={y + 5} width={w - 10} height={h - 10} rx={9} fill="none" stroke="rgba(255, 255, 255, 0.16)" strokeWidth={1} />
+      <ellipse cx={x + w / 2} cy={y} rx={w / 2} ry={9} fill="rgba(222, 240, 240, 0.16)" stroke="rgba(240, 252, 250, 0.7)" strokeWidth={2} />
+      <line x1={x + 18} y1={y + 26} x2={x + 18} y2={y + h - 30} stroke="rgba(255,255,255,0.4)" strokeWidth={2.2} strokeLinecap="round" />
     </g>
   );
 };
 
 // ============================================================================
-// 6. SCENE 01 — TETES HUJAN MURNI VS JEBAKAN AROMA TANAH (0.000s – 11.220s)
+// 6. SCENE 01 — "RUANG TAKAR": 0,00 ppm, A MEASUREMENT IN THE RAIN
 // ============================================================================
 
-export const Scene01JebakanAroma: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const ch = CHAPTERS[0];
-  const localSec = frame / fps;
-  const globalSec = ch.start + localSec;
+export const Scene01RuangTakar: React.FC = () => {
+  const { ch, localSec, globalSec, art } = useChapterClock(0);
+  const laterite = useTex('laterite');
+  const clay = useTex('clay-crack');
 
-  const lateriteUrl = useProceduralSurface('cracked-laterite');
-  const sporeUrl = useProceduralSurface('spore-amber');
+  const titleIn = easeOutExpo(prog(localSec, 0.18, 1.5));
+  const subIn = easeOutCubic(prog(localSec, 2.3, 3.1));
+  const strike = easeInOutCubic(prog(globalSec, 4.62, 5.35));
+  const gaugeIn = easeOutCubic(prog(localSec, 0.4, 1.6));
+  const firstDrop = prog(localSec, 1.15, 1.75);
+  const secondDrop = prog(localSec, 3.3, 3.9);
+  const trapIn = easeOutQuart(prog(globalSec, 7.2, 9.3));
+  const latticeIn = easeOutExpo(prog(globalSec, 8.1, 10.2));
+  const vapour = clamp01(prog(globalSec, 9.0, 11.0));
 
-  const plinthEnter = spring({
-    frame,
-    fps,
-    config: { damping: 18, stiffness: 86, mass: 0.95 },
-  });
-
-  // First raindrop falls (0.2s -> 1.15s) onto sun-baked terracotta clay
-  const dropFall = easeInOutCubic(prog(localSec, 0.18, 1.12));
-  const impactProg = prog(localSec, 1.12, 2.8);
-  const vaporProg = easeOutCubic(prog(localSec, 1.35, 4.4));
-  const cardEnter = prog(globalSec, 3.2, 4.05);
-  const stampProg = prog(globalSec, 4.55, 5.05);
-
-  const stampElapsed = globalSec - 4.55;
-  const shakeY =
-    stampElapsed > 0 && stampElapsed < 0.34
-      ? Math.sin(stampElapsed * 64) * Math.exp(-stampElapsed * 14) * 6.5
-      : 0;
-
-  // Deterministic gentle diagonal tropical drizzle streaks
-  const rainStreaks = useMemo(() => {
-    const rng = createSeededRng('s1-drizzle');
-    return Array.from({ length: 34 }).map(() => ({
-      x: 80 + rng() * 1280,
-      yOffset: rng(),
-      speed: 0.55 + rng() * 0.45,
-      len: 42 + rng() * 54,
-      alpha: 0.12 + rng() * 0.2,
-    }));
-  }, []);
-
-  // Rising golden-sage Petrichor aroma ribbons from wetted clay
-  const vaporPaths = [
-    'M 805,845 C 770,775 835,705 792,625 C 760,565 812,510 788,458',
-    'M 848,852 C 892,780 838,708 882,632 C 915,574 868,518 896,466',
-    'M 758,856 C 708,792 752,722 706,648 C 676,595 718,538 698,486',
-  ];
+  const dolly = 1.03 + smoothstep(clamp01(localSec / 11.22)) * 0.035;
 
   return (
-    <AbsoluteFill style={{ transform: `translateY(${shakeY}px)` }}>
-      <MatteCanvasGround
-        topColor={ch.groundTop}
-        bottomColor={ch.groundBottom}
-        surfaceKind="monsoon-slate"
-        surfaceOpacity={0.28}
-        warmLampX={54}
-        warmLampY={42}
+    <AbsoluteFill>
+      <Backdrop
+        top="#0A110F"
+        bottom={art.paper}
+        tex="slate-moss"
+        texOpacity={0.34}
+        light={{ x: 900, y: 620, rx: 760, ry: 660, color: 'rgba(150, 190, 176, 0.16)', strength: 1 }}
       />
 
-      <DocumentaryHeader
-        eyebrow={ch.eyebrow}
-        figure="0,00"
-        unit="AROMA AIR"
-        subtitle="AIR HUJAN MURNI HAMPA BAU · WANGINYA JEBAKAN BAKTERI TANAH"
-        localSec={localSec}
-        accentColor={IDENTITY.amberSpore}
-      />
+      {/* rain curtain — thin backlit streaks, parallax by depth */}
+      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
+        <g opacity={0.5}>
+          {Array.from({ length: 34 }).map((_, i) => {
+            const seedX = ((i * 173) % 1420) + 10;
+            const sp = 0.5 + ((i * 7) % 10) / 12;
+            const y = ((localSec * 420 * sp + i * 137) % 2760) - 120;
+            const len = 60 + ((i * 31) % 90);
+            const op = 0.1 + ((i * 17) % 10) / 44;
+            return <line key={i} x1={seedX} y1={y} x2={seedX - 16} y2={y + len} stroke={`rgba(206, 226, 222, ${op})`} strokeWidth={1.3} strokeLinecap="round" />;
+          })}
+        </g>
+      </svg>
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <defs>
-          <clipPath id="s1-clay-top">
-            <polygon points="432,812 1246,784 1318,912 372,946" />
-          </clipPath>
-          <radialGradient id="s1-wet-spot" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(34, 16, 9, 0.88)" />
-            <stop offset="68%" stopColor="rgba(54, 26, 15, 0.58)" />
-            <stop offset="100%" stopColor="rgba(54, 26, 15, 0)" />
-          </radialGradient>
-          <linearGradient id="s1-clay-front" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#4A2416" />
-            <stop offset="50%" stopColor="#63311F" />
-            <stop offset="100%" stopColor="#3B1C11" />
-          </linearGradient>
-          <linearGradient id="s1-glass-body" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="rgba(218, 234, 235, 0.28)" />
-            <stop offset="28%" stopColor="rgba(218, 234, 235, 0.08)" />
-            <stop offset="82%" stopColor="rgba(140, 174, 178, 0.12)" />
-            <stop offset="100%" stopColor="rgba(225, 240, 240, 0.34)" />
-          </linearGradient>
-        </defs>
-
-        {/* Soft Ambient Monsoon Drizzle Streaks */}
-        {rainStreaks.map((rs, idx) => {
-          const u = (rs.yOffset + localSec * rs.speed) % 1;
-          const x1 = rs.x - u * 48;
-          const y1 = 415 + u * 690;
-          return (
-            <line
-              key={idx}
-              x1={x1}
-              y1={y1}
-              x2={x1 - rs.len * 0.14}
-              y2={y1 + rs.len}
-              stroke={IDENTITY.rainMist}
-              strokeWidth={1.3}
-              strokeLinecap="round"
-              opacity={rs.alpha * smoothstep(Math.min(u * 5, (1 - u) * 5))}
-            />
-          );
-        })}
-
-        <g
-          transform={`translate(0, ${(1 - plinthEnter) * 44})`}
-          opacity={clamp01(plinthEnter * 1.3)}
-        >
-          {/* ============================================================== */}
-          {/* LEFT ARTIFACT: BOROSILICATE PURE RAINWATER CONTROL FLASK       */}
-          {/* ============================================================== */}
-          <g transform="translate(128, 520)">
-            <ellipse cx={106} cy={412} rx={96} ry={18} fill="rgba(0,0,0,0.48)" />
-            {/* Glass Cylinder Body */}
-            <path
-              d="M 46,72 L 32,374 C 30,396 58,408 106,408 C 154,408 182,396 180,374 L 166,72 Z"
-              fill="url(#s1-glass-body)"
-              stroke="rgba(222, 236, 236, 0.62)"
-              strokeWidth={2.2}
-            />
-            {/* Collected Pure Rainwater Inside Flask */}
-            <path
-              d="M 38,248 L 33,372 C 32,392 58,403 106,403 C 154,403 180,392 179,372 L 174,248 Z"
-              fill="rgba(138, 182, 188, 0.28)"
-            />
-            <ellipse
-              cx={106}
-              cy={248}
-              rx={68}
-              ry={11}
-              fill="rgba(214, 236, 238, 0.42)"
-              stroke="rgba(236, 248, 248, 0.65)"
-              strokeWidth={1.4}
-            />
-            {/* Flared Funnel Rim */}
-            <ellipse
-              cx={106}
-              cy={72}
-              rx={60}
-              ry={11}
-              fill="rgba(218, 236, 236, 0.16)"
-              stroke="rgba(232, 244, 244, 0.72)"
-              strokeWidth={2}
-            />
-            {/* Etched Graduation Marks */}
-            {[140, 185, 230, 275, 320, 365].map((gy, gi) => (
-              <line
-                key={gi}
-                x1={54}
-                y1={gy}
-                x2={gi % 2 === 0 ? 76 : 66}
-                y2={gy}
-                stroke="rgba(232, 244, 244, 0.46)"
-                strokeWidth={1.4}
-              />
-            ))}
-            {/* Pure Falling Droplet Entering Control Flask */}
-            <IllustratedWaterDroplet
-              cx={106}
-              cy={20 + ((localSec * 0.85) % 1) * 195}
-              radius={13}
-              uid="s1-pure-drop"
-              teardrop
-            />
-            <text
-              x={106}
-              y={446}
-              textAnchor="middle"
-              fill={IDENTITY.ivoryText}
-              fontFamily={IDENTITY.fontMono}
-              fontSize={16}
-              fontWeight={700}
-              letterSpacing="0.12em"
-            >
-              AIR MURNI (H₂O)
+        <g transform={`translate(720, 1180) scale(${dolly}) translate(-720, -1180)`}>
+          {/* ---------------- typographic architecture (left column) --------- */}
+          <g opacity={titleIn}>
+            <Mono x={104} y={330} text="FENOMENA PETRIKOR" size={21} color={art.soft} tracking={0.34} />
+            <RuleLine x1={104} y1={352} x2={104 + 210 * easeOutCubic(prog(localSec, 0.3, 1.6))} y2={352} color="rgba(196, 176, 138, 0.55)" />
+            <text x={100} y={470} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
+              BUKAN
             </text>
-            <text
-              x={106}
-              y={469}
-              textAnchor="middle"
-              fill={IDENTITY.stoneText}
-              fontFamily={IDENTITY.fontMono}
-              fontSize={14}
-              letterSpacing="0.1em"
-            >
-              0,00% MOLEKUL BAU
+            <text x={100} y={592} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
+              AROMA
+            </text>
+            <text x={100} y={714} fill="none" stroke={art.ink} strokeWidth={1.6} opacity={0.62} fontFamily={IDENTITY.fontDisplay} fontSize={132} letterSpacing="0.01em">
+              AIR
+            </text>
+            {/* rust strike-through draws across the word */}
+            <line
+              x1={100}
+              y1={676}
+              x2={100 + 300 * strike}
+              y2={676 + 12 * strike}
+              stroke={IDENTITY.stampRust}
+              strokeWidth={7}
+              strokeLinecap="round"
+              opacity={0.92}
+            />
+          </g>
+
+          <g opacity={subIn} transform={`translate(0, ${(1 - subIn) * 18})`}>
+            <Mono x={104} y={786} text="AIR HUJAN MURNI TIDAK PUNYA BAU" size={24} color="rgba(236, 230, 214, 0.86)" tracking={0.16} />
+            <text x={102} y={852} fill={art.accent} fontFamily={IDENTITY.fontFraunces} fontSize={44} fontStyle="italic">
+              yang kita hirup adalah parfum tanah
             </text>
           </g>
 
-          {/* ============================================================== */}
-          {/* RIGHT STAGE: SUN-CRACKED VORONOI LATERITE SOIL SLAB            */}
-          {/* ============================================================== */}
-          <ellipse cx={845} cy={1012} rx={485} ry={46} fill="rgba(0,0,0,0.58)" />
+          {/* ---------------- rain gauge, cropped by left margin ------------ */}
+          <g opacity={gaugeIn}>
+            <GlassGauge x={-46} y={1010} w={252} h={470} fill={0.34} uid="s1-gauge" ticks={7} />
+            <Mono x={222} y={1044} text="TAKARAN HUJAN" size={15} color="rgba(206, 214, 206, 0.72)" tracking={0.2} weight={400} />
+            <Mono x={222} y={1076} text="0,00 ppm" size={27} color={art.accent} tracking={0.06} />
+            <LeaderLabel from={[196, 1152]} to={[352, 1104]} text="H₂O MURNI" sub="TANPA MOLEKUL BAU" color="rgba(214, 206, 186, 0.72)" size={16} dot={art.accent} />
+          </g>
 
-          {/* Top Desiccated Voronoi Clay Face */}
-          <polygon points="432,812 1246,784 1318,912 372,946" fill="#7C412A" />
-          {lateriteUrl && (
-            <g clipPath="url(#s1-clay-top)">
-              <image
-                href={lateriteUrl}
-                x={365}
-                y={775}
-                width={965}
-                height={185}
-                preserveAspectRatio="none"
+          {/* ---------------- macro laterite slab bleeding off right -------- */}
+          <g>
+            <SoilSlab x={366} y={1160} w={1170} d={250} h={120} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(246, 214, 160, 0.34)" />
+            {/* standing water film in the slab depressions */}
+            <ellipse cx={706} cy={1276} rx={96} ry={20} fill="rgba(150, 190, 192, 0.2)" />
+            <ellipse cx={706} cy={1274} rx={62} ry={11} fill="rgba(196, 224, 222, 0.16)" />
+
+            {/* first drop + crown */}
+            <DropStreak x={706} y={960 + firstDrop * 300} len={110} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
+            <ImpactCrown x={706} y={1276} p={clamp01((firstDrop - 0.92) * 6)} scale={1.25} />
+            <DropStreak x={1140} y={920 + secondDrop * 350} len={86} opacity={secondDrop > 0 && secondDrop < 1 ? 0.7 : 0} />
+            <ImpactCrown x={1140} y={1304} p={clamp01((secondDrop - 0.94) * 6)} scale={0.85} />
+
+            {/* the chemical trap blooming out of the soil */}
+            <g opacity={trapIn} transform={`translate(0, ${(1 - trapIn) * 40})`}>
+              <g transform="translate(936, 1242)">
+                <IsoCrystal x={0} y={0} s={30} h={46 * latticeIn} opacity={latticeIn} />
+                <IsoCrystal x={58} y={16} s={22} h={64 * latticeIn} hue={['#F6E3B4', '#D3A963', '#8F6A34']} opacity={latticeIn} />
+                <IsoCrystal x={-48} y={20} s={18} h={38 * latticeIn} hue={['#EBD6A6', '#C39A54', '#7C5C2C']} opacity={latticeIn * 0.9} />
+                <IsoCrystal x={26} y={-16} s={14} h={30 * latticeIn} opacity={latticeIn * 0.8} />
+              </g>
+              <VapourWisps x={962} y={1210} p={vapour} count={4} height={330} />
+              <LeaderLabel
+                from={[936, 1240]}
+                to={[1236, 1046]}
+                text="GEOSMIN · C₁₂H₂₂O"
+                sub="ALKOHOL BISIKLIK TANAH"
+                color="rgba(226, 206, 166, 0.8)"
+                anchor="start"
+                size={17}
+                dot={art.accent}
               />
             </g>
-          )}
-          <polygon
-            points="432,812 1246,784 1318,912 372,946"
-            fill="none"
-            stroke="rgba(236, 195, 162, 0.34)"
-            strokeWidth={1.8}
-          />
+          </g>
 
-          {/* Cut Soil Block Front Elevation Showing Subterranean Bacterial Layer */}
-          <polygon
-            points="372,946 1318,912 1304,992 386,1026"
-            fill="url(#s1-clay-front)"
-            stroke="rgba(24, 12, 7, 0.85)"
-            strokeWidth={1.6}
+          {/* ---------------- marginalia: thin measured notes ----------------- */}
+          <g opacity={trapIn * 0.9}>
+            <RuleLine x1={104} y1={1530} x2={612} y2={1530} color="rgba(200, 190, 166, 0.28)" />
+            <Mono x={104} y={1572} text="JEBAKAN KIMIA" size={17} color={IDENTITY.stampRust} tracking={0.26} />
+            <Mono x={104} y={1604} text="DIPASANG BAKTERI TANAH UNTUK MENYEBAR SPORA" size={15} color="rgba(214, 206, 188, 0.6)" tracking={0.12} weight={400} />
+            <Mono x={1336} y={1572} text="BEAR & THOMAS · 1964" size={15} color="rgba(214, 206, 188, 0.5)" tracking={0.16} anchor="end" weight={400} />
+            <RuleLine x1={104} y1={1690} x2={1336} y2={1690} color="rgba(200, 190, 166, 0.2)" />
+            <Mono x={104} y={1732} text="AMBANG BAU MANUSIA TERHADAP GEOSMIN" size={15} color="rgba(214, 206, 188, 0.44)" tracking={0.16} weight={400} />
+            <Mono x={1336} y={1732} text="5 BAGIAN PER TRILIUN" size={17} color={IDENTITY.amberLight} tracking={0.2} anchor="end" />
+          </g>
+        </g>
+      </svg>
+
+      <FilmGrain opacity={0.13} />
+    </AbsoluteFill>
+  );
+};
+
+// ============================================================================
+// 7. SCENE 02 — "STRIP KAMERA CEPAT": A HIGH-SPEED FILM STRIP, NOT A CARD
+// ============================================================================
+
+type FastPhase = 'jatuh' | 'hentakan' | 'perangkap' | 'letupan' | 'kabut';
+
+const SoilGrainBand: React.FC<{ x: number; y: number; w: number; h: number; seed: number; opaque?: number }> = ({
+  x,
+  y,
+  w,
+  h,
+  seed,
+  opaque = 1,
+}) => {
+  const grains = useMemo(() => {
+    const rnd = makeRng(seed * 733 + 19);
+    const out: { cx: number; cy: number; rx: number; ry: number; rot: number; tone: number }[] = [];
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 17; col++) {
+        const cx = x - 20 + col * ((w + 40) / 16) + (row % 2) * 21 + (rnd() - 0.5) * 18;
+        const cy = y + row * (h / 9) + (rnd() - 0.5) * 12;
+        out.push({ cx, cy, rx: 16 + rnd() * 26, ry: 10 + rnd() * 16, rot: rnd() * 180, tone: rnd() });
+      }
+    }
+    return out;
+  }, [x, y, w, h, seed]);
+
+  return (
+    <g opacity={opaque}>
+      {grains.map((g, i) => (
+        <g key={i} transform={`rotate(${g.rot} ${g.cx} ${g.cy})`}>
+          <ellipse cx={g.cx} cy={g.cy} rx={g.rx} ry={g.ry} fill={`rgb(${74 + g.tone * 44}, ${44 + g.tone * 30}, ${30 + g.tone * 20})`} />
+          <ellipse cx={g.cx - g.rx * 0.24} cy={g.cy - g.ry * 0.28} rx={g.rx * 0.58} ry={g.ry * 0.52} fill="rgba(255, 226, 190, 0.1)" />
+          <ellipse cx={g.cx + g.rx * 0.3} cy={g.cy + g.ry * 0.34} rx={g.rx * 0.5} ry={g.ry * 0.42} fill="rgba(20, 10, 6, 0.22)" />
+        </g>
+      ))}
+    </g>
+  );
+};
+
+const HighSpeedFrame: React.FC<{
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  phase: FastPhase;
+  p: number;
+  label: string;
+  uid: string;
+}> = ({ x, y, w, h, phase, p, label, uid }) => {
+  const surfaceY = y + h * 0.62;
+  const cx = x + w * 0.5;
+
+  const bubbleP = phase === 'perangkap' ? clamp01(p) : phase === 'letupan' || phase === 'kabut' ? 1 : 0;
+  const crownP = phase === 'hentakan' ? clamp01((p - 0.15) / 0.7) : phase === 'perangkap' ? 1 : 0;
+  const plumeP = phase === 'letupan' ? clamp01(p) : phase === 'kabut' ? 1 : 0;
+
+  return (
+    <g>
+      <defs>
+        <clipPath id={`${uid}-clip`}>
+          <rect x={x} y={y} width={w} height={h} />
+        </clipPath>
+        <linearGradient id={`${uid}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#101819" />
+          <stop offset="70%" stopColor="#16201F" />
+          <stop offset="100%" stopColor="#0C1211" />
+        </linearGradient>
+        <radialGradient id={`${uid}-lamp`} cx="50%" cy="18%" r="72%">
+          <stop offset="0%" stopColor="rgba(238, 214, 168, 0.2)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </radialGradient>
+      </defs>
+
+      <rect x={x} y={y} width={w} height={h} fill={`url(#${uid}-sky)`} />
+
+      <g clipPath={`url(#${uid}-clip)`}>
+        <rect x={x} y={y} width={w} height={h} fill={`url(#${uid}-lamp)`} />
+
+        {/* porous soil cross-section */}
+        <SoilGrainBand x={x} y={surfaceY} w={w} h={h * 0.44} seed={phase.length + 3} opaque={0.96} />
+        {/* dark voids between grains = air capillaries */}
+        {Array.from({ length: 7 }).map((_, i) => (
+          <ellipse
+            key={i}
+            cx={x + w * (0.12 + i * 0.125)}
+            cy={surfaceY + 22 + ((i * 47) % 96)}
+            rx={12 + (i % 4) * 5}
+            ry={16 + (i % 3) * 8}
+            fill="rgba(10, 12, 11, 0.72)"
+            stroke="rgba(214, 190, 150, 0.14)"
+            strokeWidth={1}
           />
-          {/* Embedded Golden Bacterial Micro-Colonies Waiting Beneath Dry Crust */}
-          {[458, 542, 635, 738, 825, 918, 1024, 1126, 1215].map((bx, bi) => {
-            const by = 978 - (bx - 380) * 0.034 + (bi % 2 === 0 ? -7 : 6);
+        ))}
+
+        {/* rain film pooling on the surface */}
+        <path
+          d={`M ${x},${surfaceY} Q ${cx - w * 0.24},${surfaceY - 16} ${cx},${surfaceY - 6} Q ${cx + w * 0.26},${surfaceY - 18} ${x + w},${surfaceY}`}
+          stroke="rgba(214, 236, 236, 0.42)"
+          strokeWidth={2}
+          fill="none"
+        />
+
+        {/* --- phase-specific physics --- */}
+
+        {/* falling drop */}
+        {(phase === 'jatuh' || (phase === 'hentakan' && p < 0.2)) && (
+          <g opacity={phase === 'jatuh' ? 0.95 : 0.6}>
+            <ellipse cx={cx} cy={y + h * (0.16 + clamp01(p) * 0.28)} rx={9} ry={13} fill="rgba(226, 242, 242, 0.9)" />
+            <line x1={cx} y1={y + h * (0.02 + clamp01(p) * 0.28)} x2={cx} y2={y + h * (0.14 + clamp01(p) * 0.28)} stroke="rgba(220, 238, 238, 0.34)" strokeWidth={2} />
+          </g>
+        )}
+
+        {/* impact crown + trapped bubble */}
+        {crownP > 0.02 && <ImpactCrown x={cx} y={surfaceY} p={crownP} scale={1.05} />}
+
+        {bubbleP > 0.02 && (
+          <g>
+            {/* the air pocket dragged under the drop */}
+            <ellipse cx={cx} cy={surfaceY + 46} rx={30} ry={20} fill="rgba(206, 228, 228, 0.16)" stroke="rgba(232, 246, 244, 0.66)" strokeWidth={1.6} />
+            <ellipse cx={cx - 8} cy={surfaceY + 40} rx={9} ry={5} fill="rgba(255, 255, 255, 0.5)" />
+            {/* rising chain */}
+            {Array.from({ length: 6 }).map((_, i) => {
+              const rise = clamp01(bubbleP * 1.5 - i * 0.16);
+              if (rise <= 0) return null;
+              const by = surfaceY + 30 - rise * (120 + i * 12);
+              const bx = cx + Math.sin(i * 1.7 + p * 2) * (10 + i * 1.6);
+              return (
+                <g key={i} opacity={0.45 + rise * 0.5}>
+                  <circle cx={bx} cy={by} r={3.6 + i * 0.9} fill="rgba(214, 236, 234, 0.18)" stroke="rgba(240, 250, 248, 0.7)" strokeWidth={1.1} />
+                  <circle cx={bx - 1.2} cy={by - 1.2} r={(3.6 + i * 0.9) * 0.34} fill="rgba(255,255,255,0.7)" />
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* burst plume of aerosols */}
+        {plumeP > 0.02 &&
+          Array.from({ length: 46 }).map((_, i) => {
+            const rndA = hash2(i, 7, 31);
+            const rndB = hash2(i, 13, 57);
+            const life = clamp01(plumeP * 1.35 - rndA * 0.5);
+            if (life <= 0) return null;
+            const ang = -Math.PI / 2 + (rndA - 0.5) * 1.9;
+            const dist = life * (110 + rndB * 300);
+            const px = cx + Math.cos(ang) * dist + Math.sin(life * 4 + i) * 12;
+            const py = surfaceY - 10 + Math.sin(ang) * dist - life * 40;
             return (
-              <AmberSporeCluster
-                key={bi}
-                cx={bx}
-                cy={by}
-                size={6.5 + (bi % 3) * 1.8}
-                sporeUrl={sporeUrl}
-                rotation={bi * 37}
-              />
+              <g key={i} opacity={clamp01(1.2 - life * 0.8)}>
+                <circle cx={px} cy={py} r={2 + rndB * 5} fill="rgba(228, 240, 236, 0.72)" />
+                {rndA > 0.62 && <circle cx={px} cy={py} r={1.6 + rndB * 3} fill="rgba(208, 168, 104, 0.9)" />}
+              </g>
             );
           })}
 
-          {/* Expanding Darkened Damp Soil Ring Upon Raindrop Impact */}
-          {impactProg > 0.01 && (
-            <g>
-              <ellipse
-                cx={815}
-                cy={862}
-                rx={interpolate(easeOutCubic(impactProg), [0, 1], [18, 168])}
-                ry={interpolate(easeOutCubic(impactProg), [0, 1], [6, 42])}
-                fill="url(#s1-wet-spot)"
-              />
-              {[0, 0.35].map((off, ri) => {
-                const rp = clamp01((localSec - 1.12 - off) / 1.65);
-                if (rp <= 0 || rp >= 1) return null;
-                return (
-                  <ellipse
-                    key={ri}
-                    cx={815}
-                    cy={862}
-                    rx={26 + rp * 145}
-                    ry={8 + rp * 34}
-                    fill="none"
-                    stroke="rgba(222, 238, 236, 0.55)"
-                    strokeWidth={2 * (1 - rp)}
-                  />
-                );
-              })}
-            </g>
-          )}
-
-          {/* Hero Falling / Impacting Raindrop */}
-          {dropFall < 0.98 ? (
-            <IllustratedWaterDroplet
-              cx={815}
-              cy={interpolate(dropFall, [0, 1], [448, 842])}
-              radius={34}
-              uid="s1-hero-drop"
-              teardrop
-            />
-          ) : (
-            <IllustratedWaterDroplet
-              cx={815}
-              cy={858}
-              radius={52}
-              uid="s1-hero-dome"
-              teardrop={false}
-            />
-          )}
-
-          {/* Rising Golden-Sage Petrichor / Geosmin Plumes From Wetted Clay */}
-          {vaporPaths.map((vp, vi) => (
-            <g key={vi}>
-              <TrimPath
-                d={vp}
-                progress={clamp01((vaporProg - vi * 0.12) / 0.88)}
-                stroke={vi === 1 ? IDENTITY.mossLight : IDENTITY.amberLight}
-                strokeWidth={3.2 - vi * 0.4}
-                opacity={0.78}
-              />
-            </g>
-          ))}
-          {vaporProg > 0.15 &&
-            Array.from({ length: 12 }).map((_, si) => {
-              const cyc = (localSec * 0.26 + si * 0.083) % 1;
-              const sx = 720 + (si % 4) * 56 + Math.sin(cyc * Math.PI * 3 + si) * 22;
-              const sy = 845 - cyc * 365;
+        {/* wind vectors */}
+        {phase === 'kabut' && (
+          <g opacity={clamp01(p * 1.6)}>
+            {Array.from({ length: 5 }).map((_, i) => {
+              const yy = y + h * (0.14 + i * 0.075);
               return (
-                <g key={si} opacity={vaporProg * smoothstep(Math.min(cyc * 5, (1 - cyc) * 4))}>
-                  <AmberSporeCluster
-                    cx={sx}
-                    cy={sy}
-                    size={5.5 + (si % 3) * 2}
-                    sporeUrl={sporeUrl}
-                    rotation={localSec * 25 + si * 30}
-                  />
-                </g>
+                <path
+                  key={i}
+                  d={`M ${x + 40},${yy} C ${x + w * 0.34},${yy - 14} ${x + w * 0.62},${yy + 14} ${x + w - 40},${yy - 6}`}
+                  fill="none"
+                  stroke="rgba(206, 222, 218, 0.28)"
+                  strokeWidth={1.2}
+                  strokeDasharray="6 10"
+                  strokeDashoffset={-p * 60}
+                />
               );
             })}
+          </g>
+        )}
 
-          {/* Engraved Geosmin Bicyclic Medallion & Callout */}
-          <g opacity={easeOutCubic(prog(localSec, 1.8, 2.7))}>
-            <TrimPath
-              d="M 885,688 L 972,608 L 1052,608"
-              progress={prog(localSec, 1.8, 2.5)}
-              stroke={IDENTITY.amberLight}
-              strokeWidth={1.8}
+        {/* frame micro-vignette + scanline sheen */}
+        <rect x={x} y={y} width={w} height={h} fill="none" stroke="rgba(10, 12, 12, 0.9)" strokeWidth={26} />
+        <rect x={x + 13} y={y + 13} width={w - 26} height={h - 26} fill="none" stroke="rgba(214, 228, 224, 0.16)" strokeWidth={1} />
+      </g>
+
+      {/* burned-in lab label */}
+      <Mono x={x + 26} y={y + h - 26} text={label} size={17} color="rgba(226, 234, 228, 0.78)" tracking={0.24} />
+      <circle cx={x + 16} cy={y + h - 31} r={4} fill="rgba(226, 190, 120, 0.9)" />
+    </g>
+  );
+};
+
+export const Scene02StripCepat: React.FC = () => {
+  const { art, localSec, globalSec } = useChapterClock(1);
+
+  const stripW = 848;
+  const frameW = stripW - 96;
+  const frameH = 566;
+  const stripX = 296;
+  const stepGap = 640;
+
+  // strip advances as each measurement lands; eased between 5 stations
+  const stations = [
+    { t: 11.62, i: 0 },
+    { t: 15.66, i: 1 },
+    { t: 18.06, i: 2 },
+    { t: 20.62, i: 3 },
+    { t: 22.92, i: 4 },
+  ];
+  let pos = 0;
+  for (let i = 0; i < stations.length - 1; i++) {
+    const a = stations[i];
+    const b = stations[i + 1];
+    const k = easeInOutCubic(prog(globalSec, a.t, b.t));
+    pos = a.i + (b.i - a.i) * k;
+  }
+
+  const phases: FastPhase[] = ['jatuh', 'hentakan', 'perangkap', 'letupan', 'kabut'];
+  const labels = ['JATUH', 'HENTAKAN', 'PERANGKAP UDARA', 'LETUPAN', 'KABUT'];
+  const phaseStart = [11.62, 15.66, 18.06, 20.62, 22.92];
+
+  const flicker = 0.94 + 0.06 * Math.sin(localSec * 47) * Math.sin(localSec * 13.4);
+  const stripTop = 900;
+
+  return (
+    <AbsoluteFill>
+      <Backdrop top="#0A0F10" bottom={art.paper} tex="soot" texOpacity={0.5} />
+
+      {/* projector beam */}
+      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
+        <defs>
+          <linearGradient id="s2-beam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(240, 214, 164, 0.18)" />
+            <stop offset="62%" stopColor="rgba(240, 214, 164, 0.05)" />
+            <stop offset="100%" stopColor="rgba(240, 214, 164, 0)" />
+          </linearGradient>
+        </defs>
+        <polygon points="700,60 780,60 1250,2200 210,2200" fill="url(#s2-beam)" opacity={flicker} style={{ mixBlendMode: 'screen' }} />
+      </svg>
+
+      <DustMotes count={54} seed={12} color="rgba(240, 224, 192, 0.55)" y0={120} y1={2100} />
+
+      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
+        {/* ---------------- the film strip ---------------- */}
+        <g>
+          <rect x={stripX - 6} y={-260} width={stripW + 12} height={3100} fill="#0E1213" />
+          <rect x={stripX - 6} y={-260} width={stripW + 12} height={3100} fill="none" stroke="rgba(210, 224, 220, 0.12)" strokeWidth={2} />
+
+          {/* sprocket holes */}
+          {Array.from({ length: 68 }).map((_, i) => {
+            const yy = -240 + i * 46 - ((pos * stepGap) % 46);
+            return (
+              <g key={i} opacity={0.72}>
+                <rect x={stripX + 8} y={yy} width={30} height={24} rx={5} fill="#05080A" stroke="rgba(198, 214, 210, 0.22)" strokeWidth={1} />
+                <rect x={stripX + stripW - 38} y={yy} width={30} height={24} rx={5} fill="#05080A" stroke="rgba(198, 214, 210, 0.22)" strokeWidth={1} />
+              </g>
+            );
+          })}
+
+          {/* scratches on the emulsion */}
+          {[0.18, 0.42, 0.77].map((fx, i) => (
+            <line
+              key={i}
+              x1={stripX + stripW * fx}
+              y1={-200}
+              x2={stripX + stripW * fx + 8}
+              y2={2300}
+              stroke="rgba(240, 232, 210, 0.06)"
+              strokeWidth={1 + i * 0.6}
             />
-            <GeosminBrassMedallion
-              cx={1156}
-              cy={608}
-              radius={92}
-              rotationDeg={Math.sin(localSec * 0.8) * 3}
-            />
+          ))}
+
+          {phases.map((ph, i) => {
+            const frameY = stripTop + (i - pos) * stepGap - frameH / 2;
+            const visible = Math.abs(i - pos) < 1.6;
+            if (!visible) return null;
+            const p = clamp01((globalSec - phaseStart[i]) / 2.6);
+            return (
+              <g key={ph}>
+                <HighSpeedFrame
+                  x={stripX + 48}
+                  y={frameY}
+                  w={frameW}
+                  h={frameH}
+                  phase={ph}
+                  p={p}
+                  label={labels[i]}
+                  uid={`s2-${i}`}
+                />
+              </g>
+            );
+          })}
+        </g>
+
+        {/* ---------------- typography, set like a lab slate ---------------- */}
+        <g>
+          <Mono x={64} y={126} text="REKAMAN KAMERA KECEPATAN TINGGI" size={17} color="rgba(212, 206, 188, 0.62)" tracking={0.22} weight={400} />
+          <RuleLine x1={64} y1={150} x2={64 + 320 * easeOutCubic(prog(localSec, 0.2, 1.4))} y2={150} color="rgba(208, 196, 170, 0.4)" />
+
+          {/* giant tempo figure, set sideways along the left margin */}
+          <g transform="translate(148, 1520) rotate(-90)">
+            <text x={0} y={0} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={150} letterSpacing="0.02em">
+              200.000
+            </text>
+            <text x={8} y={44} fill={art.accent} fontFamily={IDENTITY.fontMono} fontSize={26} fontWeight={600} letterSpacing="0.4em">
+              FPS · TETES PER DETIK
+            </text>
+          </g>
+
+          {/* lab credit running up the right margin */}
+          <g transform="translate(1306, 1300) rotate(90)">
+            <Mono x={0} y={0} text="JOUNG & BUIE" size={19} color="rgba(226, 216, 194, 0.74)" tracking={0.24} />
+            <Mono x={0} y={30} text="MIT — NATURE COMMUNICATIONS 2015" size={15} color="rgba(200, 192, 172, 0.5)" tracking={0.14} weight={400} />
+            <RuleLine x1={0} y1={48} x2={430} y2={48} color="rgba(200, 192, 172, 0.28)" />
+          </g>
+
+          {/* measured comparison written straight on the dark, no plaque */}
+          <g opacity={easeOutCubic(prog(globalSec, 21.2, 22.4))}>
+            <RuleLine x1={92} y1={1600} x2={586} y2={1600} color="rgba(206, 196, 172, 0.24)" />
+            <Mono x={92} y={1636} text="GERIMIS PELAN" size={16} color={art.accent} tracking={0.24} />
+            <text x={90} y={1696} fill={art.ink} fontFamily={IDENTITY.fontGrotesk} fontSize={40} fontWeight={500} letterSpacing="-0.01em">
+              gelembung meletup
+            </text>
+            <RuleLine x1={640} y1={1600} x2={1348} y2={1600} color="rgba(206, 196, 172, 0.24)" />
+            <Mono x={640} y={1636} text="HUJAN DERAS" size={16} color="rgba(190, 196, 188, 0.5)" tracking={0.24} />
+            <text x={638} y={1696} fill="rgba(232, 228, 216, 0.34)" fontFamily={IDENTITY.fontGrotesk} fontSize={40} fontWeight={500} letterSpacing="-0.01em">
+              gelembung gagal
+            </text>
           </g>
         </g>
       </svg>
 
-      {/* Tactile Herbarium Chemical Specimen Card */}
-      <HerbariumSpecimenCard
-        x={126}
-        y={1168}
-        width={1188}
-        rotationDeg={-1.2}
-        headerLeft="ANALISIS AROMA · PETRIKOR"
-        headerRight="BEAR & THOMAS · 1964"
-        enterProgress={cardEnter}
-        stampText="BUKAN AROMA AIR"
-        stampColor={IDENTITY.stampRust}
-        stampProgress={stampProg}
-        footerCode="ARSIP KIMIA TANAH · C12H22O"
-        rows={[
-          { label: 'SAMPEL KONTROL', value: 'AIR HUJAN MURNI (H₂O · 0% BAU)' },
-          { label: 'ISTILAH ILMIAH', value: 'PETRIKOR ("DARAH BATU")' },
-          { label: 'SENYAWA UTAMA', value: 'GEOSMIN (ALKOHOL BISIKLIK)' },
-          { label: 'SUMBER ASLI', value: 'JEBAKAN KIMIA BAKTERI TANAH', highlight: true },
-        ]}
-      />
+      <FilmGrain opacity={0.2} scale={210} />
     </AbsoluteFill>
   );
 };
 
 // ============================================================================
-// 7. SCENE 02 — KAMERA MIT & PELONTAR GELEMBUNG AEROSOL (11.220s – 26.050s)
+// 8. SCENE 03 — "CAWAN AGAR": A LIVING CULTURE PLATE IN OBLIQUE LIGHT
 // ============================================================================
 
-export const Scene02PelontarAerosol: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const ch = CHAPTERS[1];
-  const localSec = frame / fps;
-  const globalSec = ch.start + localSec;
+const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: number; raised?: boolean }> = ({
+  cx,
+  cy,
+  r,
+  tone,
+  grow,
+  raised = false,
+}) => {
+  const rr = r * easeOutCubic(grow);
+  if (rr < 0.4) return null;
+  const base = ['#C7A265', '#D6C193', '#A97F49', '#E0D3B4', '#8E6A3C'][Math.floor(tone * 5) % 5];
+  const edge = ['#EBD9AE', '#F1E6C8', '#C9A268', '#F4EBD6', '#A98352'][Math.floor(tone * 5) % 5];
+  return (
+    <g opacity={clamp01(grow * 1.6)}>
+      {raised && <ellipse cx={cx + rr * 0.16} cy={cy + rr * 0.2} rx={rr * 1.02} ry={rr * 0.88} fill="rgba(20, 12, 6, 0.42)" />}
+      <circle cx={cx} cy={cy} r={rr} fill={base} opacity={0.9} />
+      <circle cx={cx} cy={cy} r={rr} fill="none" stroke={edge} strokeWidth={1.4} opacity={0.6} />
+      {/* concentric growth rings */}
+      {[0.74, 0.5, 0.28].map((k, i) => (
+        <circle key={i} cx={cx} cy={cy} r={rr * k} fill="none" stroke="rgba(60, 42, 22, 0.16)" strokeWidth={1.1} />
+      ))}
+      {/* fuzzy aerial mycelium rim */}
+      {Array.from({ length: 18 }).map((_, i) => {
+        const a = (i / 18) * Math.PI * 2 + tone * 5;
+        const len = rr * (0.1 + hash2(i, Math.round(tone * 90), 5) * 0.2);
+        return (
+          <line
+            key={`f${i}`}
+            x1={cx + Math.cos(a) * rr * 0.94}
+            y1={cy + Math.sin(a) * rr * 0.94}
+            x2={cx + Math.cos(a) * (rr + len)}
+            y2={cy + Math.sin(a) * (rr + len)}
+            stroke="rgba(240, 228, 198, 0.4)"
+            strokeWidth={1}
+          />
+        );
+      })}
+      <circle cx={cx - rr * 0.3} cy={cy - rr * 0.32} r={rr * 0.34} fill="rgba(255, 246, 222, 0.16)" />
+    </g>
+  );
+};
 
-  const lateriteUrl = useProceduralSurface('cracked-laterite');
-  const sporeUrl = useProceduralSurface('spore-amber');
+const StreptoFilament: React.FC<{
+  d: string;
+  p: number;
+  color?: string;
+  sporeEvery?: number;
+  sporeR?: number;
+  chain?: boolean;
+}> = ({ d, p, color = 'rgba(238, 230, 208, 0.92)', sporeEvery = 0, sporeR = 5, chain = false }) => {
+  const g = easeOutCubic(clamp01(p));
+  return (
+    <g>
+      <path
+        d={d}
+        fill="none"
+        stroke={color}
+        strokeWidth={4.2}
+        strokeLinecap="round"
+        pathLength={1}
+        strokeDasharray="1 1"
+        strokeDashoffset={1 - g}
+      />
+      {chain &&
+        Array.from({ length: 11 }).map((_, i) => {
+          const k = i / 10;
+          if (k > g) return null;
+          // sample along the end of the path using the same parametric curve
+          return null;
+        })}
+      {sporeEvery > 0 &&
+        Array.from({ length: Math.ceil(g * 9) }).map((_, i) => (
+          <circle key={i} cx={0} cy={0} r={sporeR * 0.001} fill={color} opacity={0} />
+        ))}
+    </g>
+  );
+};
 
-  // Phase timings synchronized to VO ("Saat gerimis pelan menimpa tanah berpori..." at 15.66s)
-  const hitPhase = prog(globalSec, 12.1, 13.6);
-  const bubblePhase = prog(globalSec, 13.5, 16.4);
-  const burstPhase = prog(globalSec, 16.1, 18.8);
-  const compareEnter = easeOutCubic(prog(globalSec, 18.4, 19.6));
+const SpiralSporeChain: React.FC<{ x: number; y: number; len: number; p: number; r?: number; color?: string; rot?: number }> = ({
+  x,
+  y,
+  len,
+  p,
+  r = 5.4,
+  color = '#E8CFA0',
+  rot = 0,
+}) => {
+  const g = easeOutCubic(clamp01(p));
+  const beads = 11;
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${rot})`}>
+      {Array.from({ length: beads }).map((_, i) => {
+        const k = i / (beads - 1);
+        if (k > g) return null;
+        const ang = k * Math.PI * 3.1;
+        const bx = Math.cos(ang) * (r * 1.9) * (0.25 + k * 0.9);
+        const by = -k * len;
+        const rr = r * (0.55 + 0.5 * Math.sin(k * Math.PI));
+        return (
+          <g key={i}>
+            <circle cx={bx} cy={by} r={rr} fill={color} opacity={0.95} />
+            <circle cx={bx - rr * 0.3} cy={by - rr * 0.34} r={rr * 0.34} fill="rgba(255, 250, 232, 0.8)" />
+            <circle cx={bx + rr * 0.34} cy={by + rr * 0.4} r={rr * 0.4} fill="rgba(120, 88, 40, 0.24)" />
+          </g>
+        );
+      })}
+    </g>
+  );
+};
 
-  // Packed porous soil mineral grains & air capillary channels
-  const soilGrains = useMemo(() => {
-    const rng = createSeededRng('s2-porous-soil');
-    const items: {
-      cx: number;
-      cy: number;
-      rx: number;
-      ry: number;
-      rot: number;
-      fill: string;
-    }[] = [];
-    const palette = ['#6B3E29', '#7E4B33', '#56301F', '#8A563C', '#4B291A'];
-    for (let row = 0; row < 5; row++) {
-      for (let col = 0; col < 15; col++) {
-        const cx = 158 + col * 80 + (row % 2) * 36 + (rng() - 0.5) * 18;
-        const cy = 1098 + row * 56 + (rng() - 0.5) * 14;
-        items.push({
-          cx,
-          cy,
-          rx: 28 + rng() * 14,
-          ry: 20 + rng() * 10,
-          rot: (rng() - 0.5) * 38,
-          fill: palette[Math.floor(rng() * palette.length)],
-        });
-      }
-    }
-    return items;
+const FrostCrystal: React.FC<{ x: number; y: number; size: number; p: number; color?: string; rot?: number }> = ({
+  x,
+  y,
+  size,
+  p,
+  color = 'rgba(244, 232, 202, 0.86)',
+  rot = 0,
+}) => {
+  const g = easeOutExpo(clamp01(p));
+  if (g < 0.02) return null;
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${rot})`} opacity={clamp01(g * 1.4)}>
+      {Array.from({ length: 6 }).map((_, i) => {
+        const a = (i / 6) * Math.PI * 2;
+        const ex = Math.cos(a) * size * g;
+        const ey = Math.sin(a) * size * g;
+        return (
+          <g key={i}>
+            <line x1={0} y1={0} x2={ex} y2={ey} stroke={color} strokeWidth={2} strokeLinecap="round" />
+            {[0.45, 0.7].map((k, j) => (
+              <g key={j}>
+                <line
+                  x1={ex * k}
+                  y1={ey * k}
+                  x2={ex * k + Math.cos(a + 0.9) * size * 0.26 * g}
+                  y2={ey * k + Math.sin(a + 0.9) * size * 0.26 * g}
+                  stroke={color}
+                  strokeWidth={1.3}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={ex * k}
+                  y1={ey * k}
+                  x2={ex * k + Math.cos(a - 0.9) * size * 0.26 * g}
+                  y2={ey * k + Math.sin(a - 0.9) * size * 0.26 * g}
+                  stroke={color}
+                  strokeWidth={1.3}
+                  strokeLinecap="round"
+                />
+              </g>
+            ))}
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+
+export const Scene03CawanAgar: React.FC = () => {
+  const { art, localSec, globalSec } = useChapterClock(2);
+  const agarUrl = useTex('agar');
+  const plate = useTex('brass-plate');
+
+  const cx = 720;
+  const cy = 968;
+  const R = 520;
+
+  const dishIn = easeOutExpo(prog(localSec, 0.1, 1.6));
+  const colonyGrow = prog(globalSec, 26.9, 33.0);
+  const nameIn = prog(globalSec, 30.3, 31.9);
+  const filamentGrow = prog(globalSec, 33.8, 39.4);
+  const drought = prog(globalSec, 36.2, 40.6);
+  const bloom = prog(globalSec, 39.6, 42.6);
+  const vapour = clamp01(prog(globalSec, 41.0, 42.7));
+  const rotation = -localSec * 0.85;
+
+  const colonies = useMemo(() => {
+    const rnd = makeRng(9102);
+    return Array.from({ length: 30 }).map(() => {
+      const a = rnd() * Math.PI * 2;
+      const rad = 60 + rnd() * (R - 120);
+      return {
+        cx: Math.cos(a) * rad,
+        cy: Math.sin(a) * rad,
+        r: 26 + rnd() * 92,
+        tone: rnd(),
+        delay: rnd() * 0.5,
+      };
+    });
+  }, [R]);
+
+  const filaments = useMemo(() => {
+    const rnd = makeRng(551);
+    return Array.from({ length: 9 }).map((_, i) => {
+      const a = -Math.PI * 0.86 + i * 0.17 + rnd() * 0.06;
+      const r0 = 60 + rnd() * 90;
+      const x0 = Math.cos(a) * r0;
+      const y0 = Math.sin(a) * r0;
+      const len = 200 + rnd() * 150;
+      const bend = (rnd() - 0.5) * 90;
+      const x1 = x0 + Math.cos(a) * len + bend;
+      const y1 = y0 + Math.sin(a) * len * 0.55;
+      const cxp = x0 + Math.cos(a) * len * 0.5 + bend * 0.8;
+      const cyp = y0 + Math.sin(a) * len * 0.3;
+      return { d: `M ${x0},${y0} Q ${cxp},${cyp} ${x1},${y1}`, tip: [x1, y1] as [number, number], len, delay: rnd() * 0.22 };
+    });
   }, []);
-
-  // Deterministic aerosol micro-droplet burst trajectories carried downwind
-  const aerosols = useMemo(() => {
-    const rng = createSeededRng('s2-aerosol-cloud');
-    return Array.from({ length: 58 }).map((_, i) => ({
-      seedOffset: i / 58,
-      launchX: 545 + (rng() - 0.5) * 250,
-      archH: 185 + rng() * 295,
-      driftX: 220 + rng() * 485,
-      r: 3.2 + rng() * 5.8,
-      hasSpore: i % 3 === 0,
-    }));
-  }, []);
-
-  const isBurstHeader = globalSec >= 16.3;
 
   return (
     <AbsoluteFill>
-      <MatteCanvasGround
-        topColor={ch.groundTop}
-        bottomColor={ch.groundBottom}
-        surfaceKind="monsoon-slate"
-        surfaceOpacity={0.25}
-        warmLampX={46}
-        warmLampY={45}
-      />
-
-      <DocumentaryHeader
-        eyebrow={ch.eyebrow}
-        figure={isBurstHeader ? '100+' : '200.000'}
-        unit={isBurstHeader ? 'KABUT AEROSOL' : 'FPS REKAMAN'}
-        subtitle={
-          isBurstHeader
-            ? 'MELETUP SEPERTI SODA · DIBAWA ANGIN MENDAHULUI AWAN HUJAN'
-            : 'GERIMIS PELAN MENJEBAK GELEMBUNG UDARA DI PORI TANAH'
-        }
-        localSec={localSec}
-        accentColor={IDENTITY.rainMist}
+      <Backdrop
+        top="#171009"
+        bottom={art.paper}
+        tex="humus-fibre"
+        texOpacity={0.3}
+        light={{ x: 1180, y: 360, rx: 900, ry: 780, color: 'rgba(226, 176, 112, 0.2)', strength: 1 }}
       />
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <defs>
-          <clipPath id="s2-macro-frame">
-            <rect x={112} y={448} width={1216} height={918} />
-          </clipPath>
-          <linearGradient id="s2-water-dome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(226, 242, 242, 0.72)" />
-            <stop offset="45%" stopColor="rgba(130, 178, 186, 0.42)" />
-            <stop offset="100%" stopColor="rgba(46, 84, 92, 0.62)" />
-          </linearGradient>
-        </defs>
+        {/* ---------------- type architecture: asymmetric, plate-like ------- */}
+        <g opacity={easeOutCubic(prog(localSec, 0.2, 1.2))}>
+          <Mono x={92} y={300} text="MIKROBIOLOGI TANAH" size={19} color={art.soft} tracking={0.34} />
+          <RuleLine x1={92} y1={322} x2={330} y2={322} color="rgba(198, 176, 136, 0.4)" />
+          <Mono x={92} y={352} text="KOLONI AKTINOBACTERIA" size={15} color="rgba(214, 200, 172, 0.5)" tracking={0.22} weight={400} />
+        </g>
 
-        {/* ================================================================ */}
-        {/* MAIN MIT HIGH-SPEED MACRO VIEWPORT (112..1328, 448..1366)        */}
-        {/* ================================================================ */}
-        <g clipPath="url(#s2-macro-frame)">
-          <rect x={112} y={448} width={1216} height={918} fill="rgba(10, 16, 18, 0.78)" />
+        {/* ---------------- the culture dish ---------------- */}
+        <g
+          opacity={dishIn}
+          transform={`translate(${cx}, ${cy}) scale(${0.93 + 0.07 * dishIn}) translate(${-cx}, ${-cy})`}
+        >
+          {/* cast shadow */}
+          <ellipse cx={cx + 18} cy={cy + R * 0.92} rx={R * 0.92} ry={R * 0.2} fill="rgba(0,0,0,0.6)" />
 
-          {/* Subtle High-Speed Optical Reticle Grid */}
-          {[620, 800, 980].map((gy, idx) => (
-            <line
-              key={idx}
-              x1={112}
-              y1={gy}
-              x2={1328}
-              y2={gy}
-              stroke="rgba(207, 220, 217, 0.07)"
-              strokeWidth={1}
-              strokeDasharray="6 8"
-            />
-          ))}
-
-          {/* Subsurface Soil Bed Base */}
-          <rect x={112} y={1055} width={1216} height={312} fill="#2A170F" />
-          {lateriteUrl && (
-            <image
-              href={lateriteUrl}
-              x={112}
-              y={1055}
-              width={1216}
-              height={312}
-              preserveAspectRatio="none"
-              opacity={0.34}
-            />
-          )}
-
-          {/* Capillary Air-Pore Channels Vertical Throats */}
-          {[442, 505, 568, 632, 696].map((px, idx) => (
-            <path
-              key={idx}
-              d={`M ${px},1055 C ${px - 8},1135 ${px + 10},1215 ${px - 4},1345`}
-              fill="none"
-              stroke="rgba(207, 220, 217, 0.24)"
-              strokeWidth={12}
-              strokeLinecap="round"
-            />
-          ))}
-
-          {/* Packed Porous Mineral Soil Grains */}
-          {soilGrains.map((g, idx) => (
-            <g key={idx} transform={`translate(${g.cx}, ${g.cy}) rotate(${g.rot})`}>
-              <ellipse
-                cx={0}
-                cy={0}
-                rx={g.rx}
-                ry={g.ry}
-                fill={g.fill}
-                stroke="rgba(238, 198, 164, 0.22)"
-                strokeWidth={1.3}
-              />
-            </g>
-          ))}
-
-          {/* Embedded Geosmin Spores Resting on Dry Soil Surface */}
-          {[435, 488, 548, 608, 668, 725].map((sx, idx) => (
-            <AmberSporeCluster
-              key={idx}
-              cx={sx}
-              cy={1052}
-              size={6.5}
-              sporeUrl={sporeUrl}
-              rotation={idx * 28}
-            />
-          ))}
-
-          {/* Falling / Flattening Raindrop Meniscus */}
-          {hitPhase < 0.35 ? (
-            <IllustratedWaterDroplet
-              cx={572}
-              cy={interpolate(hitPhase / 0.35, [0, 1], [520, 965])}
-              radius={68}
-              uid="s2-falling"
-              teardrop
-            />
-          ) : (
-            <g>
-              {(() => {
-                const spread = easeOutExpo(clamp01((hitPhase - 0.35) / 0.65));
-                const rx = interpolate(spread, [0, 1], [95, 258]);
-                const ry = interpolate(spread, [0, 1], [118, 128 - burstPhase * 22]);
-                const d = `M ${572 - rx},1055 C ${572 - rx},${1055 - ry * 1.25} ${572 + rx},${
-                  1055 - ry * 1.25
-                } ${572 + rx},1055 Z`;
+          {/* dish body / agar */}
+          <circle cx={cx} cy={cy} r={R} fill="#2A1F13" />
+          <g>
+            <defs>
+              <clipPath id="s3-agar">
+                <circle cx={cx} cy={cy} r={R - 12} />
+              </clipPath>
+            </defs>
+            <g clipPath="url(#s3-agar)">
+              {agarUrl && <image href={agarUrl} x={cx - R} y={cy - R} width={R * 2} height={R * 2} opacity={0.55} />}
+              <circle cx={cx} cy={cy} r={R} fill="rgba(70, 52, 28, 0.5)" />
+              {/* oblique light sweeping across wet agar */}
+              <ellipse cx={cx - R * 0.28} cy={cy - R * 0.34} rx={R * 0.76} ry={R * 0.5} fill="rgba(248, 220, 170, 0.14)" />
+              {/* radial pouring striations */}
+              {Array.from({ length: 42 }).map((_, i) => {
+                const a = (i / 42) * Math.PI * 2 + 0.3;
                 return (
-                  <>
-                    <path
-                      d={d}
-                      fill="url(#s2-water-dome)"
-                      stroke="rgba(236, 248, 248, 0.82)"
-                      strokeWidth={3}
-                    />
-                    <path
-                      d={`M ${572 - rx * 0.72},1022 C ${572 - rx * 0.48},${1055 - ry * 0.95} ${
-                        572 + rx * 0.15
-                      },${1055 - ry * 1.02} ${572 + rx * 0.44},${1055 - ry * 0.76}`}
-                      fill="none"
-                      stroke="rgba(255, 255, 255, 0.62)"
-                      strokeWidth={4.5}
-                      strokeLinecap="round"
-                    />
-                  </>
-                );
-              })()}
-            </g>
-          )}
-
-          {/* Trapped Silver Micro-Bubbles Rising Through the Flattened Droplet ("seperti soda") */}
-          {bubblePhase > 0.02 &&
-            [452, 498, 544, 586, 632, 678, 520, 610].map((bx, bi) => {
-              const cyc = (localSec * 0.85 + bi * 0.14) % 1;
-              const by = interpolate(cyc, [0, 1], [1048, 944]);
-              const br = 6 + (bi % 3) * 3.5 + cyc * 4;
-              return (
-                <g key={bi} opacity={clamp01(bubblePhase * 1.6) * (1 - cyc * 0.25)}>
-                  <circle
-                    cx={bx + Math.sin(cyc * 7 + bi) * 6}
-                    cy={by}
-                    r={br}
-                    fill="rgba(235, 248, 248, 0.22)"
-                    stroke="#F4FAFA"
-                    strokeWidth={1.8}
+                  <line
+                    key={i}
+                    x1={cx + Math.cos(a) * 60}
+                    y1={cy + Math.sin(a) * 60}
+                    x2={cx + Math.cos(a) * (R - 16)}
+                    y2={cy + Math.sin(a) * (R - 16)}
+                    stroke="rgba(246, 226, 186, 0.05)"
+                    strokeWidth={1 + (i % 3)}
                   />
-                  <circle
-                    cx={bx + Math.sin(cyc * 7 + bi) * 6 - br * 0.32}
-                    cy={by - br * 0.32}
-                    r={br * 0.24}
-                    fill="#FFFFFF"
-                  />
-                  {bi % 2 === 0 && (
-                    <circle
-                      cx={bx + Math.sin(cyc * 7 + bi) * 6}
-                      cy={by + br * 0.2}
-                      r={2.8}
-                      fill={IDENTITY.amberLight}
-                    />
-                  )}
-                </g>
-              );
-            })}
-
-          {/* Erupting Fizzing Aerosol Mist & Downwind Transport Streamlines */}
-          {burstPhase > 0.02 && (
-            <g opacity={easeOutCubic(burstPhase)}>
-              {[
-                'M 545,895 C 720,765 955,705 1295,668',
-                'M 585,918 C 765,818 995,775 1295,748',
-                'M 515,872 C 695,705 935,625 1295,585',
-              ].map((wd, wi) => (
-                <TrimPath
-                  key={wi}
-                  d={wd}
-                  progress={clamp01((burstPhase - wi * 0.1) / 0.9)}
-                  stroke="rgba(207, 220, 217, 0.28)"
-                  strokeWidth={1.8}
-                  strokeDasharray="8 8"
-                />
-              ))}
-
-              {aerosols.map((ae, ai) => {
-                const u = (localSec * 0.42 + ae.seedOffset) % 1;
-                const x = ae.launchX + Math.pow(u, 1.15) * ae.driftX;
-                const y = 942 - Math.sin(u * Math.PI * 0.72) * ae.archH - u * 115;
-                const op = burstPhase * smoothstep(Math.min(u * 6, (1 - u) * 3.5));
-                return (
-                  <g key={ai} opacity={op}>
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={ae.r}
-                      fill="rgba(222, 238, 238, 0.72)"
-                      stroke="#FFFFFF"
-                      strokeWidth={0.9}
-                    />
-                    {ae.hasSpore && (
-                      <circle cx={x} cy={y} r={ae.r * 0.52} fill={IDENTITY.amberSpore} />
-                    )}
-                  </g>
                 );
               })}
 
-              {/* Wind Direction Callout Inside Upper-Right Viewport (Backed Plate) */}
-              <rect
-                x={844}
-                y={528}
-                width={470}
-                height={66}
-                fill="rgba(11, 17, 14, 0.9)"
-                stroke="rgba(216, 161, 72, 0.34)"
-                strokeWidth={1.2}
-              />
-              <text
-                x={1296}
-                y={555}
-                textAnchor="end"
-                fill={IDENTITY.amberLight}
-                fontFamily={IDENTITY.fontMono}
-                fontSize={17}
-                fontWeight={700}
-                letterSpacing="0.14em"
-              >
-                KABUT AROMA DIBAWA ANGIN →
-              </text>
-              <text
-                x={1296}
-                y={580}
-                textAnchor="end"
-                fill={IDENTITY.stoneText}
-                fontFamily={IDENTITY.fontMono}
-                fontSize={15}
-                letterSpacing="0.1em"
-              >
-                TERCIUM SEBELUM AWAN HUJAN TIBA
-              </text>
+              <g transform={`rotate(${rotation} ${cx} ${cy})`}>
+                {colonies.map((c, i) => (
+                  <Colony
+                    key={i}
+                    cx={cx + c.cx}
+                    cy={cy + c.cy}
+                    r={c.r}
+                    tone={c.tone}
+                    grow={clamp01(colonyGrow * 1.5 - c.delay)}
+                    raised={i % 3 === 0}
+                  />
+                ))}
+              </g>
+
+              {/* condensation ring inside the lid */}
+              {Array.from({ length: 34 }).map((_, i) => {
+                const a = (i / 34) * Math.PI * 2;
+                const rr = R - 30 - (i % 5) * 7;
+                return (
+                  <circle
+                    key={`c${i}`}
+                    cx={cx + Math.cos(a) * rr}
+                    cy={cy + Math.sin(a) * rr}
+                    r={3 + (i % 4)}
+                    fill="rgba(240, 246, 240, 0.22)"
+                    stroke="rgba(255, 255, 255, 0.28)"
+                    strokeWidth={0.7}
+                  />
+                );
+              })}
+
+              {/* aerial filaments rising out of the agar */}
+              <g transform={`translate(${cx}, ${cy + 40})`}>
+                {filaments.map((f, i) => {
+                  const gp = clamp01((filamentGrow - f.delay * 2) / 0.8);
+                  return (
+                    <g key={i}>
+                      <StreptoFilament d={f.d} p={gp} color="rgba(236, 226, 202, 0.9)" />
+                      <SpiralSporeChain x={f.tip[0]} y={f.tip[1]} len={62} p={gp} rot={(i - 4) * 7} />
+                    </g>
+                  );
+                })}
+              </g>
+
+              {/* drought: agar dries & splits */}
+              {drought > 0.02 && (
+                <g opacity={clamp01(drought * 1.4)}>
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const a = (i / 7) * Math.PI * 2 + 0.4;
+                    const r0 = R * 0.16;
+                    const r1 = R * (0.55 + (i % 3) * 0.14);
+                    return (
+                      <path
+                        key={i}
+                        d={`M ${cx + Math.cos(a) * r0},${cy + Math.sin(a) * r0} L ${cx + Math.cos(a + 0.16) * r1},${cy + Math.sin(a + 0.16) * r1} L ${cx + Math.cos(a - 0.1) * (r1 + 46)},${cy + Math.sin(a - 0.1) * (r1 + 46)}`}
+                        fill="none"
+                        stroke="rgba(28, 16, 8, 0.55)"
+                        strokeWidth={2.6}
+                        strokeLinecap="round"
+                      />
+                    );
+                  })}
+                  <circle cx={cx} cy={cy} r={R - 12} fill="rgba(64, 44, 26, 0.28)" />
+                </g>
+              )}
+
+              {/* geosmin frost blooming out of the dying colony */}
+              {bloom > 0.01 && (
+                <g>
+                  {Array.from({ length: 9 }).map((_, i) => {
+                    const a = (i / 9) * Math.PI * 2 + 0.9;
+                    const rad = 60 + (i % 4) * 78;
+                    return (
+                      <FrostCrystal
+                        key={i}
+                        x={cx + Math.cos(a) * rad}
+                        y={cy + Math.sin(a) * rad}
+                        size={26 + (i % 3) * 16}
+                        p={clamp01(bloom * 1.6 - i * 0.06)}
+                        rot={i * 23}
+                      />
+                    );
+                  })}
+                </g>
+              )}
             </g>
-          )}
 
-          {/* MIT High-Speed Camera Stamp Bar Top-Left */}
-          <rect x={136} y={472} width={458} height={44} fill="rgba(14, 20, 22, 0.86)" stroke="rgba(207,220,217,0.28)" strokeWidth={1.2} />
-          <circle cx={162} cy={494} r={5.5} fill={IDENTITY.amberSpore} />
-          <text
-            x={180}
-            y={500}
-            fill={IDENTITY.ivoryText}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            fontWeight={600}
-            letterSpacing="0.14em"
-          >
-            JOUNG & BUIE · MIT (NATURE COMM. 2015)
-          </text>
+            {/* glass rim: double machined edge with specular run */}
+            <circle cx={cx} cy={cy} r={R} fill="none" stroke="rgba(206, 190, 160, 0.5)" strokeWidth={16} />
+            <circle cx={cx} cy={cy} r={R - 10} fill="none" stroke="rgba(255, 250, 232, 0.22)" strokeWidth={1.6} />
+            <circle cx={cx} cy={cy} r={R + 5} fill="none" stroke="rgba(30, 22, 14, 0.85)" strokeWidth={2} />
+            <path
+              d={`M ${cx - R * 0.86},${cy - R * 0.6} A ${R} ${R} 0 0 1 ${cx + R * 0.34},${cy - R * 0.94}`}
+              fill="none"
+              stroke="rgba(255, 250, 236, 0.6)"
+              strokeWidth={4}
+              strokeLinecap="round"
+            />
+          </g>
+
+          {/* engraved brass tag clipped to the rim */}
+          <g transform={`translate(${cx + 168}, ${cy + R - 152}) rotate(-3.4)`}>
+            <rect x={0} y={0} width={392} height={68} rx={3} fill="#2B2216" stroke={art.accent} strokeWidth={1.6} />
+            <rect x={5} y={5} width={382} height={58} fill="none" stroke="rgba(232, 208, 158, 0.28)" strokeWidth={0.8} />
+            {plate && <image href={plate} x={5} y={5} width={382} height={58} opacity={0.28} preserveAspectRatio="none" />}
+            <Mono x={20} y={29} text="C₁₂H₂₂O" size={22} color="#F4E6C6" tracking={0.1} />
+            <Mono x={20} y={52} text="GEOSMIN · ALKOHOL BISIKLIK" size={13} color="rgba(228, 206, 162, 0.7)" tracking={0.14} weight={400} />
+            <circle cx={356} cy={34} r={13} fill="none" stroke="rgba(232, 208, 158, 0.5)" strokeWidth={1.2} />
+            <circle cx={356} cy={34} r={3} fill="rgba(232, 208, 158, 0.8)" />
+          </g>
         </g>
 
-        {/* Viewport Outer Brass/Steel Frame */}
-        <rect
-          x={112}
-          y={448}
-          width={1216}
-          height={918}
-          fill="none"
-          stroke="rgba(207, 220, 217, 0.34)"
-          strokeWidth={2}
-        />
-
-        {/* ================================================================ */}
-        {/* BOTTOM PHYSICAL COMPARISON: GERIMIS PELAN VS HUJAN DERAS         */}
-        {/* ================================================================ */}
-        <g
-          transform={`translate(112, ${1418 + (1 - compareEnter) * 28})`}
-          opacity={compareEnter}
-        >
-          {/* Left Chamber: Light Drizzle (Optimal Aerosol) */}
-          <rect
-            x={0}
-            y={0}
-            width={592}
-            height={212}
-            fill="rgba(20, 29, 27, 0.9)"
-            stroke={IDENTITY.amberSpore}
-            strokeWidth={2}
-          />
-          <IllustratedWaterDroplet cx={88} cy={92} radius={26} uid="s2-cmp-light" teardrop />
-          {[62, 88, 114].map((bx, i) => (
-            <circle key={i} cx={bx} cy={148 - i * 8} r={4.5} fill={IDENTITY.amberLight} />
-          ))}
-          <line x1={38} y1={164} x2={138} y2={164} stroke="#8A563C" strokeWidth={5} />
-          <text
-            x={172}
-            y={64}
-            fill={IDENTITY.amberLight}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            fontWeight={700}
-            letterSpacing="0.14em"
-          >
-            GERIMIS PELAN & SEDANG
-          </text>
-          <text
-            x={172}
-            y={108}
-            fill={IDENTITY.ivoryText}
-            fontFamily={IDENTITY.fontEditorial}
-            fontSize={31}
-            fontWeight={700}
-            letterSpacing="0.04em"
-          >
-            GELEMBUNG SEMPAT MELETUP
-          </text>
-          <text
-            x={172}
-            y={144}
-            fill={IDENTITY.mossLight}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            fontWeight={600}
-            letterSpacing="0.08em"
-          >
-            WANGI TANAH PALING KUAT
-          </text>
-
-          {/* Right Chamber: Heavy Downpour (Suppressed Bubbles) */}
-          <rect
-            x={624}
-            y={0}
-            width={592}
-            height={212}
-            fill="rgba(16, 21, 23, 0.86)"
-            stroke="rgba(207, 220, 217, 0.24)"
-            strokeWidth={1.5}
-          />
-          <IllustratedWaterDroplet cx={712} cy={98} radius={38} uid="s2-cmp-heavy" teardrop />
-          <line x1={662} y1={164} x2={762} y2={164} stroke="#5B3A29" strokeWidth={5} />
-          <text
-            x={796}
-            y={64}
-            fill={IDENTITY.stoneText}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            fontWeight={600}
-            letterSpacing="0.14em"
-          >
-            HUJAN DERAS / BADAI
-          </text>
-          <text
-            x={796}
-            y={108}
-            fill="rgba(242, 239, 232, 0.76)"
-            fontFamily={IDENTITY.fontEditorial}
-            fontSize={31}
-            fontWeight={700}
-            letterSpacing="0.04em"
-          >
-            HANTAMAN TERLALU CEPAT
-          </text>
-          <text
-            x={796}
-            y={144}
-            fill={IDENTITY.mutedText}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            letterSpacing="0.08em"
-          >
-            GELEMBUNG GAGAL TERBENTUK
-          </text>
+        {/* ---------------- scale bar attached under the plate --------------- */}
+        <g opacity={easeOutCubic(prog(localSec, 0.9, 2.0))}>
+          <RuleLine x1={cx - 116} y1={cy + R - 52} x2={cx + 116} y2={cy + R - 52} color="rgba(240, 232, 210, 0.86)" width={2.2} />
+          <RuleLine x1={cx - 116} y1={cy + R - 62} x2={cx - 116} y2={cy + R - 42} color="rgba(240, 232, 210, 0.86)" width={2.2} />
+          <RuleLine x1={cx + 116} y1={cy + R - 62} x2={cx + 116} y2={cy + R - 42} color="rgba(240, 232, 210, 0.86)" width={2.2} />
+          <Mono x={cx} y={cy + R - 22} text="PERBESARAN 1.200× · 10 MIKROMETER" size={15} color="rgba(236, 226, 204, 0.82)" anchor="middle" tracking={0.16} />
         </g>
+
+        {/* ---------------- scientific name set in a living serif ---------- */}
+        <g>
+          <InkReveal x={84} y={1478} p={nameIn} dir="up" pad={10}>
+            <text x={84} y={1618} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={132} letterSpacing="-0.02em">
+              Streptomyces
+            </text>
+          </InkReveal>
+          <g opacity={easeOutCubic(prog(globalSec, 31.0, 32.2))}>
+            <RuleLine x1={92} y1={1652} x2={92 + 620 * easeOutCubic(prog(globalSec, 31.0, 32.4))} y2={1652} color="rgba(206, 190, 160, 0.36)" />
+            <Mono x={92} y={1692} text="BAKTERI BENANG · PENGHASIL 2/3 ANTIBIOTIK DUNIA" size={17} color="rgba(222, 212, 190, 0.7)" tracking={0.14} />
+          </g>
+        </g>
+
+        {/* ---------------- plate annotation lines ------------------------- */}
+        <g opacity={easeOutCubic(prog(globalSec, 34.4, 35.6))}>
+          <LeaderLabel from={[cx + 232, cy - 322]} to={[cx + 430, cy - 470]} text="RANTAI SPORA" sub="TERTAHAN DI UJUNG HIFA" color="rgba(232, 218, 190, 0.7)" size={16} dot={art.accent} />
+          <LeaderLabel from={[cx - 300, cy + 232]} to={[cx - 520, cy + 330]} text="KOLONI TANAH" sub="TERANCAM KERING" color="rgba(232, 218, 190, 0.7)" size={16} dot={art.accent} anchor="end" />
+        </g>
+
+        <VapourWisps x={cx + 60} y={cy - 120} p={vapour} count={5} height={420} color="rgba(236, 212, 164, 0.4)" />
       </svg>
+
+      <FilmGrain opacity={0.15} />
     </AbsoluteFill>
   );
 };
 
 // ============================================================================
-// 8. SCENE 03 — MIKROSKOP STREPTOMYCES & SPORA GEOSMIN (26.050s – 42.780s)
+// 9. SCENE 04 — "SPREAD EDITORIAL": TWO PRINTED LEAVES ON A WALNUT TABLE
 // ============================================================================
 
-export const Scene03PabrikStreptomyces: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const ch = CHAPTERS[2];
-  const localSec = frame / fps;
-  const globalSec = ch.start + localSec;
-
-  const humusUrl = useProceduralSurface('humus-micro');
-  const lateriteUrl = useProceduralSurface('cracked-laterite');
-  const sporeUrl = useProceduralSurface('spore-amber');
-
-  // At 33.89s narrator shifts from "2/3 antibiotik medis dunia" -> "Ketika tanah mengering saat kemarau..."
-  const droughtPhase = easeInOutCubic(prog(globalSec, 33.6, 36.4));
-  const sporulationProg = easeOutCubic(prog(globalSec, 35.2, 39.8));
-  const hyphaeGrow = easeOutCubic(prog(localSec, 0.4, 3.6));
-
-  const cx = 720;
-  const cy = 925;
-  const lensR = 374;
-
-  // Branching filamentous Streptomyces aerial hyphae & curled spiral spore tips
-  const filaments = useMemo(
-    () => [
-      {
-        stem: 'M 548,1135 C 538,1045 505,965 524,865 C 536,804 512,748 532,695',
-        branch: 'M 524,895 C 478,852 448,815 436,762',
-        spores: [
-          [532, 688],
-          [542, 668],
-          [534, 648],
-          [516, 638],
-          [436, 756],
-          [428, 736],
-        ],
-      },
-      {
-        stem: 'M 652,1148 C 646,1032 678,925 654,805 C 642,742 668,678 652,618',
-        branch: 'M 658,842 C 608,792 586,742 594,686',
-        spores: [
-          [652, 610],
-          [664, 590],
-          [654, 570],
-          [636, 560],
-          [622, 574],
-          [594, 678],
-          [602, 658],
-        ],
-      },
-      {
-        stem: 'M 758,1152 C 774,1038 738,918 766,796 C 782,728 756,664 774,604',
-        branch: 'M 762,832 C 816,784 842,732 832,672',
-        spores: [
-          [774, 596],
-          [786, 576],
-          [776, 556],
-          [758, 548],
-          [832, 664],
-          [842, 644],
-          [830, 626],
-        ],
-      },
-      {
-        stem: 'M 878,1132 C 892,1035 928,954 906,858 C 892,796 918,742 898,688',
-        branch: 'M 908,888 C 958,848 986,808 996,754',
-        spores: [
-          [898, 680],
-          [910, 660],
-          [900, 642],
-          [996, 746],
-          [1004, 726],
-        ],
-      },
-    ],
-    [],
-  );
-
-  const isDroughtHeader = globalSec >= 33.85;
-
+const PlasterNose: React.FC<{ x: number; y: number; s: number; p: number; uid: string }> = ({ x, y, s, p, uid }) => {
+  const outline =
+    'M 268,6 C 246,52 226,84 218,112 C 210,138 190,150 178,166 C 158,190 146,212 138,236 C 126,268 110,284 100,302 C 90,320 88,334 98,342 C 88,350 82,362 94,372 C 76,384 72,402 92,412 C 72,428 68,456 88,470 C 114,492 162,502 212,506 L 306,506 L 306,6 Z';
   return (
-    <AbsoluteFill>
-      <MatteCanvasGround
-        topColor={ch.groundTop}
-        bottomColor={ch.groundBottom}
-        surfaceKind="monsoon-slate"
-        surfaceOpacity={0.26}
-        warmLampX={50}
-        warmLampY={44}
-      />
+    <g transform={`translate(${x}, ${y}) scale(${s})`}>
+      <defs>
+        <clipPath id={`${uid}-face`}>
+          <path d={outline} />
+        </clipPath>
+        <linearGradient id={`${uid}-plaster`} x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0%" stopColor="#F4EBD8" />
+          <stop offset="52%" stopColor="#E4D6BE" />
+          <stop offset="100%" stopColor="#BFA98A" />
+        </linearGradient>
+        <linearGradient id={`${uid}-scent`} x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0%" stopColor="rgba(158, 59, 42, 0)" />
+          <stop offset="100%" stopColor="rgba(158, 59, 42, 0.85)" />
+        </linearGradient>
+      </defs>
 
-      <DocumentaryHeader
-        eyebrow={ch.eyebrow}
-        figure={isDroughtHeader ? 'C12H22O' : '2 / 3'}
-        unit={isDroughtHeader ? 'GEOSMIN' : 'ANTIBIOTIK DUNIA'}
-        subtitle={
-          isDroughtHeader
-            ? 'SAAT TANAH KEMARAU KERING · MERACIK SPORA & PARFUM BUMI'
-            : 'BAKTERI BENANG STREPTOMYCES · PENGHASIL OBAT MEDIS MODERN'
-        }
-        localSec={localSec}
-        accentColor={isDroughtHeader ? IDENTITY.amberSpore : IDENTITY.mossLight}
-      />
+      {/* cast shadow of the relief */}
+      <ellipse cx={168} cy={520} rx={130} ry={16} fill="rgba(40, 30, 20, 0.22)" />
 
-      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <defs>
-          <clipPath id="s3-lens-clip">
-            <circle cx={cx} cy={cy} r={lensR} />
-          </clipPath>
-          <linearGradient id="s3-brass-bezel" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#E6C275" />
-            <stop offset="48%" stopColor="#9E7329" />
-            <stop offset="100%" stopColor="#4F370E" />
-          </linearGradient>
-        </defs>
+      {/* sculpted face */}
+      <path d={outline} fill={`url(#${uid}-plaster)`} stroke="rgba(70, 56, 38, 0.55)" strokeWidth={2} />
+      <g clipPath={`url(#${uid}-face)`}>
+        {/* modelling: light from upper-left */}
+        <path d="M 306,0 L 306,506 L 190,506 C 150,470 160,420 200,380 C 232,346 236,300 214,252 C 244,210 268,140 268,60 Z" fill="rgba(96, 74, 46, 0.14)" />
+        <ellipse cx={150} cy={300} rx={70} ry={120} fill="rgba(255, 250, 236, 0.4)" />
+        <ellipse cx={118} cy={330} rx={26} ry={40} fill="rgba(255, 252, 240, 0.5)" />
 
-        {/* ================================================================ */}
-        {/* CENTERPIECE: BRASS BOTANICAL MICROSCOPE FIELD VIEWPORT           */}
-        {/* ================================================================ */}
-        {/* Precision Degree Ring Around Microscope Stage */}
-        {Array.from({ length: 72 }).map((_, i) => {
-          const a = (i * 5 * Math.PI) / 180;
-          const r1 = lensR + 18;
-          const r2 = lensR + (i % 6 === 0 ? 34 : 25);
+        {/* engraver's hatching in the shadow side */}
+        {Array.from({ length: 46 }).map((_, i) => {
+          const yy = 30 + i * 10.6;
           return (
             <line
               key={i}
-              x1={cx + Math.cos(a) * r1}
-              y1={cy + Math.sin(a) * r1}
-              x2={cx + Math.cos(a) * r2}
-              y2={cy + Math.sin(a) * r2}
-              stroke={i % 6 === 0 ? 'rgba(236, 199, 126, 0.48)' : 'rgba(242, 239, 232, 0.16)'}
-              strokeWidth={i % 6 === 0 ? 1.8 : 1}
+              x1={198 + (i % 5) * 3}
+              y1={yy}
+              x2={300}
+              y2={yy - 26}
+              stroke="rgba(78, 60, 38, 0.14)"
+              strokeWidth={1 + (i % 3) * 0.4}
             />
           );
         })}
+        {Array.from({ length: 22 }).map((_, i) => (
+          <line
+            key={`b${i}`}
+            x1={120 + i * 7}
+            y1={250 + i * 10}
+            x2={196}
+            y2={252 + i * 10}
+            stroke="rgba(96, 74, 46, 0.12)"
+            strokeWidth={0.9}
+          />
+        ))}
 
-        <g clipPath="url(#s3-lens-clip)">
-          <circle cx={cx} cy={cy} r={lensR} fill="#121410" />
+        {/* cheek & jaw contour lines */}
+        <path d="M 210,196 C 232,240 228,300 196,340" fill="none" stroke="rgba(110, 88, 58, 0.22)" strokeWidth={1.4} />
+        <path d="M 206,368 C 226,392 220,430 190,452" fill="none" stroke="rgba(110, 88, 58, 0.2)" strokeWidth={1.2} />
 
-          {/* Expanding Concentric Geosmin Aroma Halos During Sporulation */}
-          {sporulationProg > 0.02 &&
-            [0, 0.33, 0.66].map((off, hi) => {
-              const u = (localSec * 0.28 + off) % 1;
-              return (
-                <circle
-                  key={hi}
-                  cx={cx}
-                  cy={710}
-                  r={65 + u * 310}
-                  fill="none"
-                  stroke={IDENTITY.amberLight}
-                  strokeWidth={2.2 * (1 - u)}
-                  opacity={sporulationProg * (1 - u) * 0.55}
-                />
-              );
-            })}
+        {/* nostril */}
+        <ellipse cx={112} cy={300} rx={13} ry={7} fill="rgba(52, 38, 24, 0.72)" transform="rotate(-18 112 300)" />
+        <path d="M 100,296 C 112,290 124,292 130,300" fill="none" stroke="rgba(52, 38, 24, 0.6)" strokeWidth={2.4} strokeLinecap="round" />
 
-          {/* Subterranean Soil Bed Transitioning From Rich Humus to Dry Cracked Clay */}
+        {/* lips & chin crease */}
+        <path d="M 96,376 C 116,372 136,376 148,382" fill="none" stroke="rgba(120, 78, 58, 0.4)" strokeWidth={2} />
+        <path d="M 92,404 C 116,400 140,404 154,410" fill="none" stroke="rgba(120, 78, 58, 0.34)" strokeWidth={2} />
+        <path d="M 112,352 C 130,352 146,356 156,360" fill="none" stroke="rgba(120, 78, 58, 0.28)" strokeWidth={1.4} />
+      </g>
+
+      {/* scent ribbons drawn into the nostril */}
+      {[0, 1, 2].map((i) => {
+        const p2 = clamp01((p - i * 0.08) * 1.2);
+        return (
           <path
-            d="M 330,1115 Q 535,1085 720,1118 T 1110,1108 L 1110,1320 L 330,1320 Z"
-            fill="#281E15"
+            key={i}
+            d={`M ${-140 - i * 26},${238 + i * 30} C ${-40},${222 + i * 34} ${40},${276 + i * 18} ${108},${296 + i * 5}`}
+            fill="none"
+            stroke={`url(#${uid}-scent)`}
+            strokeWidth={2.6 - i * 0.5}
+            strokeLinecap="round"
+            pathLength={1}
+            strokeDasharray="1 1"
+            strokeDashoffset={1 - p2}
+            opacity={0.9}
           />
-          {humusUrl && (
-            <image
-              href={humusUrl}
-              x={330}
-              y={1085}
-              width={780}
-              height={240}
-              preserveAspectRatio="none"
-              opacity={0.75 * (1 - droughtPhase * 0.55)}
-            />
-          )}
-          {lateriteUrl && droughtPhase > 0.01 && (
-            <image
-              href={lateriteUrl}
-              x={330}
-              y={1085}
-              width={780}
-              height={240}
-              preserveAspectRatio="none"
-              opacity={droughtPhase * 0.72}
-            />
-          )}
+        );
+      })}
 
-          {/* Root-like Substrate Mycelium Web Beneath Soil Line */}
-          {[
-            'M 548,1135 C 512,1185 468,1222 422,1254',
-            'M 652,1148 C 632,1205 668,1248 642,1285',
-            'M 758,1152 C 792,1204 762,1252 804,1288',
-            'M 878,1132 C 918,1182 954,1218 992,1258',
-          ].map((rd, ri) => (
-            <TrimPath
-              key={ri}
-              d={rd}
-              progress={hyphaeGrow}
-              stroke="rgba(214, 204, 178, 0.42)"
-              strokeWidth={2.4}
-            />
-          ))}
-
-          {/* Aerial Branching Streptomyces Filaments & Golden Spore Chains */}
-          {filaments.map((fl, fi) => {
-            const sway = Math.sin(localSec * 1.2 + fi * 1.3) * 4;
-            return (
-              <g key={fi} transform={`translate(${sway}, 0)`}>
-                <TrimPath
-                  d={fl.stem}
-                  progress={hyphaeGrow}
-                  stroke="#D9DFC8"
-                  strokeWidth={6.5}
-                />
-                <TrimPath
-                  d={fl.stem}
-                  progress={hyphaeGrow}
-                  stroke={IDENTITY.mossSage}
-                  strokeWidth={3}
-                />
-                <TrimPath
-                  d={fl.branch}
-                  progress={clamp01((hyphaeGrow - 0.35) / 0.65)}
-                  stroke="#D9DFC8"
-                  strokeWidth={4.6}
-                />
-                {fl.spores.map(([sx, sy], si) => {
-                  const spAppear = clamp01(
-                    (hyphaeGrow * 0.45 + sporulationProg * 0.85) - si * 0.05,
-                  );
-                  if (spAppear <= 0.02) return null;
-                  return (
-                    <g key={si} opacity={spAppear}>
-                      <AmberSporeCluster
-                        cx={sx}
-                        cy={sy}
-                        size={9.5 + sporulationProg * 3}
-                        sporeUrl={sporeUrl}
-                        rotation={fi * 40 + si * 25}
-                      />
-                    </g>
-                  );
-                })}
-              </g>
-            );
-          })}
-
-          {/* Optical Microscope Crosshair & Calibration Bar Inside Lens */}
-          <line x1={cx - 28} y1={cy} x2={cx + 28} y2={cy} stroke="rgba(242,239,232,0.22)" strokeWidth={1.2} />
-          <line x1={cx} y1={cy - 28} x2={cx} y2={cy + 28} stroke="rgba(242,239,232,0.22)" strokeWidth={1.2} />
-          <line x1={640} y1={1224} x2={800} y2={1224} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-          <line x1={640} y1={1216} x2={640} y2={1232} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-          <line x1={800} y1={1216} x2={800} y2={1232} stroke={IDENTITY.ivoryText} strokeWidth={2} />
-        </g>
-
-        {/* Machined Brass Microscope Bezel Rim */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={lensR}
-          fill="none"
-          stroke="url(#s3-brass-bezel)"
-          strokeWidth={15}
-        />
-        <circle
-          cx={cx}
-          cy={cy}
-          r={lensR - 9}
-          fill="none"
-          stroke="rgba(255, 246, 214, 0.35)"
-          strokeWidth={1.4}
-        />
-        {/* Engraved Brass Microscope Nameplate (Unclipped Over Lower Bezel) */}
-        <g transform="translate(476, 1262)">
-          <rect
-            x={0}
-            y={0}
-            width={488}
-            height={48}
-            rx={4}
-            fill="#141915"
-            stroke={IDENTITY.amberSpore}
-            strokeWidth={1.8}
-          />
-          <text
-            x={244}
-            y={30}
-            textAnchor="middle"
-            fill={IDENTITY.ivoryText}
-            fontFamily={IDENTITY.fontMono}
-            fontSize={16}
-            fontWeight={700}
-            letterSpacing="0.14em"
-          >
-            PERBESARAN 1.200× · 10 MIKROMETER
-          </text>
-        </g>
-
-        {/* ================================================================ */}
-        {/* UPPER-LEFT ARTIFACT: AMBER GLASS ANTIBIOTIC APOTHECARY VIAL      */}
-        {/* ================================================================ */}
-        <g
-          transform="translate(114, 468)"
-          opacity={easeOutCubic(prog(localSec, 0.6, 1.5))}
-        >
-          <ellipse cx={86} cy={236} rx={68} ry={12} fill="rgba(0,0,0,0.45)" />
-          {/* Aluminum Crimp Cap & Rubber Stopper */}
-          <rect x={56} y={14} width={60} height={24} rx={3} fill="#C6C9C4" stroke="#575B56" strokeWidth={1.5} />
-          <rect x={64} y={38} width={44} height={16} fill="#5C3622" />
-          {/* Amber Glass Medicine Bottle */}
-          <path
-            d="M 64,54 L 38,84 L 38,218 C 38,228 48,234 86,234 C 124,234 134,228 134,218 L 134,84 L 108,54 Z"
-            fill="#6E3E19"
-            stroke="#D8A148"
-            strokeWidth={2}
-          />
-          <path d="M 48,92 L 48,214" stroke="rgba(255, 236, 194, 0.42)" strokeWidth={4} strokeLinecap="round" />
-          {/* Cream Paper Apothecary Label */}
-          <rect x={44} y={108} width={84} height={82} fill={IDENTITY.paperHerbarium} stroke="#2A2218" strokeWidth={1.2} />
-          <text x={86} y={132} textAnchor="middle" fill={IDENTITY.stampRust} fontFamily={IDENTITY.fontMono} fontSize={11} fontWeight={700}>
-            STREPTOMYCIN
-          </text>
-          <line x1={52} y1={140} x2={120} y2={140} stroke="#2A2218" strokeWidth={1} />
-          <text x={86} y={162} textAnchor="middle" fill={IDENTITY.paperInk} fontFamily={IDENTITY.fontEditorial} fontSize={20} fontWeight={700}>
-            2/3 OBAT
-          </text>
-          <text x={86} y={180} textAnchor="middle" fill={IDENTITY.paperMuted} fontFamily={IDENTITY.fontMono} fontSize={10} fontWeight={600}>
-            ANTIBIOTIK
-          </text>
-        </g>
-
-        {/* UPPER-RIGHT ARTIFACT: GEOSMIN MOLECULE TOKEN */}
-        <g opacity={sporulationProg}>
-          <GeosminBrassMedallion
-            cx={1208}
-            cy={585}
-            radius={94}
-            rotationDeg={localSec * 4}
-          />
-        </g>
-
-        {/* ================================================================ */}
-        {/* BOTTOM BIOLOGICAL TRIGGER SEQUENCE BAR                           */}
-        {/* ================================================================ */}
-        <g transform="translate(108, 1438)">
-          <rect
-            x={0}
-            y={0}
-            width={1224}
-            height={176}
-            fill="rgba(18, 20, 17, 0.9)"
-            stroke="rgba(216, 161, 72, 0.34)"
-            strokeWidth={1.8}
-          />
-          {[
-            {
-              x: 42,
-              step: 'TAHAP 1 · KEMARAU',
-              title: 'TANAH KERING',
-              desc: 'KOLONI TERANCAM MATI',
-              active: true,
-            },
-            {
-              x: 452,
-              step: 'TAHAP 2 · DARURAT',
-              title: 'BENTUK SPORA',
-              desc: 'CANGKANG TAHAN BANTING',
-              active: droughtPhase > 0.3,
-            },
-            {
-              x: 862,
-              step: 'TAHAP 3 · SINYAL KIMIA',
-              title: 'LEPAS GEOSMIN',
-              desc: 'PARFUM BUMI C12H22O',
-              active: sporulationProg > 0.3,
-            },
-          ].map((st, idx) => (
-            <g key={idx} transform={`translate(${st.x}, 32)`}>
-              <text
-                x={0}
-                y={18}
-                fill={st.active ? IDENTITY.amberLight : IDENTITY.mutedText}
-                fontFamily={IDENTITY.fontMono}
-                fontSize={15}
-                fontWeight={700}
-                letterSpacing="0.12em"
-              >
-                {st.step}
-              </text>
-              <text
-                x={0}
-                y={66}
-                fill={st.active ? IDENTITY.ivoryText : IDENTITY.stoneText}
-                fontFamily={IDENTITY.fontEditorial}
-                fontSize={34}
-                fontWeight={700}
-                letterSpacing="0.04em"
-              >
-                {st.title}
-              </text>
-              <text
-                x={0}
-                y={98}
-                fill={IDENTITY.stoneText}
-                fontFamily={IDENTITY.fontMono}
-                fontSize={15}
-                letterSpacing="0.08em"
-              >
-                {st.desc}
-              </text>
-              {idx < 2 && (
-                <text
-                  x={354}
-                  y={64}
-                  fill={IDENTITY.amberSpore}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={28}
-                  fontWeight={700}
-                >
-                  →
-                </text>
-              )}
-            </g>
-          ))}
-        </g>
-      </svg>
-    </AbsoluteFill>
+      {/* receptor cluster + label */}
+      <g opacity={clamp01(p * 1.4)}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <circle key={i} cx={132 + (i % 3) * 9} cy={292 + Math.floor(i / 3) * 9} r={2.6} fill="#9E3B2A" />
+        ))}
+        <line x1={158} y1={296} x2={236} y2={272} stroke="rgba(158, 59, 42, 0.6)" strokeWidth={1.1} />
+        <text x={242} y={270} fill="#9E3B2A" fontFamily={IDENTITY.fontMono} fontSize={17} fontWeight={600} letterSpacing="0.12em">
+          RESEPTOR OR4D2
+        </text>
+      </g>
+    </g>
   );
 };
 
-// ============================================================================
-// 9. SCENE 04 — 400 KOLAM OLIMPIADE VS PENCIUMAN HIU (42.780s – 59.490s)
-// ============================================================================
+const EngravedShark: React.FC<{ x: number; y: number; s: number; p: number; uid: string }> = ({ x, y, s, p, uid }) => {
+  const body =
+    'M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z';
+  const g = easeOutCubic(clamp01(p));
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={0.2 + g * 0.8}>
+      <defs>
+        <clipPath id={`${uid}-shark`}>
+          <path d={body} />
+        </clipPath>
+        <linearGradient id={`${uid}-sharkfill`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#586A70" />
+          <stop offset="54%" stopColor="#7A8A8C" />
+          <stop offset="56%" stopColor="#C6CDCB" />
+          <stop offset="100%" stopColor="#EDE7D6" />
+        </linearGradient>
+      </defs>
 
-export const Scene04EmpatRatusKolam: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const ch = CHAPTERS[3];
-  const localSec = frame / fps;
-  const globalSec = ch.start + localSec;
+      {/* caudal & dorsal fins drawn as engraved plates */}
+      <path d="M 62,150 L -34,74 C -6,116 2,136 12,150 C 2,164 -6,186 -26,222 Z" fill="#5C6D72" stroke="rgba(40, 34, 26, 0.7)" strokeWidth={1.6} />
+      <path d="M 286,96 L 330,18 C 344,50 356,74 372,94 Z" fill="#5C6D72" stroke="rgba(40, 34, 26, 0.7)" strokeWidth={1.6} />
+      <path d="M 300,190 L 246,266 C 288,246 324,222 350,196 Z" fill="#4E5F66" stroke="rgba(40, 34, 26, 0.7)" strokeWidth={1.6} />
 
-  const poolTexUrl = useProceduralSurface('pool-ceramic');
-  const sporeUrl = useProceduralSurface('spore-amber');
+      <path d={body} fill={`url(#${uid}-sharkfill)`} stroke="rgba(40, 34, 26, 0.8)" strokeWidth={2} />
+      <g clipPath={`url(#${uid}-shark)`}>
+        {/* fine engraving hatch following the fish */}
+        {Array.from({ length: 64 }).map((_, i) => {
+          const yy = 76 + i * 1.9;
+          return <line key={i} x1={20} y1={yy} x2={610} y2={yy - 26} stroke="rgba(32, 28, 22, 0.16)" strokeWidth={0.7} />;
+        })}
+        {Array.from({ length: 26 }).map((_, i) => {
+          const xx = 60 + i * 21;
+          return <line key={`v${i}`} x1={xx} y1={80} x2={xx - 10} y2={196} stroke="rgba(32, 28, 22, 0.08)" strokeWidth={0.6} />;
+        })}
+        {/* copperplate sheen */}
+        <ellipse cx={300} cy={128} rx={210} ry={34} fill="rgba(255, 250, 236, 0.22)" />
+      </g>
 
-  // Narrator says "Kepekaan kita terhadap bau hujan 200.000 kali lebih tajam daripada hiu..." at 53.48s
-  const panToShark = easeInOutCubic(prog(globalSec, 52.85, 54.05));
-  const panY = interpolate(panToShark, [0, 1], [0, -1240]);
+      {/* gills, eye, mouth, teeth */}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <line key={i} x1={402 + i * 12} y1={116} x2={396 + i * 12} y2={172} stroke="#2C3438" strokeWidth={2} strokeLinecap="round" />
+      ))}
+      <circle cx={534} cy={132} r={7} fill="#1D2427" stroke="#EFE7D4" strokeWidth={1.6} />
+      <circle cx={531} cy={129} r={2.2} fill="rgba(255,255,255,0.7)" />
+      <path d="M 574,158 C 590,160 598,164 604,168" fill="none" stroke="rgba(40, 34, 26, 0.7)" strokeWidth={2} />
+      {Array.from({ length: 7 }).map((_, i) => (
+        <path key={i} d={`M ${566 + i * 6},${158 + i * 1.4} l 4,7 l 3,-7`} fill="none" stroke="rgba(40, 34, 26, 0.55)" strokeWidth={1} />
+      ))}
 
-  const dropTip = easeInOutCubic(prog(localSec, 0.35, 1.55));
-  const poolWave = easeOutCubic(prog(localSec, 1.45, 5.2));
+      {/* blood trace + ripple of scent */}
+      <circle cx={646} cy={150} r={5} fill="#9E3B2A" opacity={g} />
+      {[0, 1, 2].map((i) => (
+        <circle key={i} cx={646} cy={150} r={16 + i * 22 + ((p * 40) % 20)} fill="none" stroke="rgba(158, 59, 42, 0.34)" strokeWidth={1.2} opacity={g} />
+      ))}
+    </g>
+  );
+};
 
-  const isSharkAct = globalSec >= 53.35;
+export const Scene04SpreadEditorial: React.FC = () => {
+  const { art, localSec, globalSec } = useChapterClock(3);
+  const paperTex = useTex('rice-paper');
+
+  const open = easeOutExpo(prog(globalSec, 42.9, 44.4));
+  const noseIn = prog(globalSec, 43.6, 47.0);
+  const sharkIn = prog(globalSec, 53.3, 55.4);
+  const flip = easeInOutCubic(prog(globalSec, 53.0, 54.6));
+  const tint = clamp01(prog(globalSec, 53.4, 55.0));
+
+  const pageW = 596;
+  const pageH = 1258;
+  const leftX = 96 - (1 - open) * 260;
+  const rightX = 748 + (1 - open) * 260;
+  const drift = 1.012 + smoothstep(clamp01(localSec / 16.7)) * 0.02;
 
   return (
     <AbsoluteFill>
-      <MatteCanvasGround
-        topColor={ch.groundTop}
-        bottomColor={ch.groundBottom}
-        surfaceKind="monsoon-slate"
-        surfaceOpacity={0.25}
-        warmLampX={50}
-        warmLampY={46}
-      />
-
-      <DocumentaryHeader
-        eyebrow={ch.eyebrow}
-        figure={isSharkAct ? '200.000×' : '5 PPT'}
-        unit={isSharkAct ? 'LEBIH TAJAM' : 'BAGIAN / TRILIUN'}
-        subtitle={
-          isSharkAct
-            ? 'KEPEKAAN HIDUNG MANUSIA PADA HUJAN VS HIU MENCIUM DARAH'
-            : 'SETARA 1 SENDOK TEH GEOSMIN DI 400 KOLAM RENANG OLIMPIADE'
-        }
-        localSec={localSec}
-        accentColor={isSharkAct ? IDENTITY.amberSpore : IDENTITY.rainMist}
+      <Backdrop
+        top="#171310"
+        bottom={art.paper}
+        tex="walnut"
+        texOpacity={0.42}
+        light={{ x: 520, y: 420, rx: 900, ry: 780, color: 'rgba(226, 190, 136, 0.2)', strength: 1 }}
       />
 
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <defs>
-          <clipPath id="s4-stage-window">
-            <rect x={0} y={415} width={1440} height={1360} />
-          </clipPath>
-          <linearGradient id="s4-silver-spoon" x1="0" y1="0" x2="1" y2="0.4">
-            <stop offset="0%" stopColor="#F4F6F5" />
-            <stop offset="48%" stopColor="#AEB8BA" />
-            <stop offset="100%" stopColor="#647073" />
-          </linearGradient>
-          <linearGradient id="s4-shark-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#566870" />
-            <stop offset="58%" stopColor="#3B4A52" />
-            <stop offset="62%" stopColor="#CBD3D4" />
-            <stop offset="100%" stopColor="#9AA6A8" />
-          </linearGradient>
-        </defs>
+        <g transform={`translate(720, 1200) scale(${drift}) translate(-720, -1200)`}>
+          {/* table shadow pool */}
+          <ellipse cx={720} cy={1770} rx={660} ry={110} fill="rgba(0,0,0,0.5)" />
 
-        <g clipPath="url(#s4-stage-window)">
-          <g transform={`translate(0, ${panY})`}>
-            {/* ============================================================ */}
-            {/* ACT 1: 1 TEASPOON OVER 400 OLYMPIC SWIMMING POOLS (20 x 20)  */}
-            {/* ============================================================ */}
-            <g opacity={1 - smoothstep(prog(panToShark, 0.55, 0.96))}>
-              {/* Level Horizontal Label Above Teaspoon (Never Clipped by Stage Top) */}
-              <text
-                x={720}
-                y={462}
-                textAnchor="middle"
-                fill={IDENTITY.amberLight}
-                fontFamily={IDENTITY.fontMono}
-                fontSize={17}
-                fontWeight={700}
-                letterSpacing="0.14em"
-              >
-                1 SENDOK TEH (5 mL GEOSMIN)
+          {/* -------------------- LEFT LEAF -------------------- */}
+          <g transform={`translate(${leftX}, ${430 + (1 - open) * 40}) rotate(-1.5)`}>
+            <rect x={0} y={0} width={pageW} height={pageH} fill="#EFE6D2" />
+            {paperTex && <image href={paperTex} x={0} y={0} width={pageW} height={pageH} opacity={0.6} preserveAspectRatio="none" />}
+            {/* printed header */}
+            <Mono x={46} y={72} text="LEMBAR SATU — PENCIUMAN" size={16} color="rgba(60, 50, 36, 0.6)" tracking={0.22} weight={400} />
+            <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
+            <text x={44} y={190} fill="#231D15" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={74} letterSpacing="-0.02em">
+              Lima bagian
+            </text>
+            <text x={44} y={266} fill="#231D15" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={74} letterSpacing="-0.02em">
+              per triliun
+            </text>
+            <Mono x={46} y={310} text="AMBANG BAU GEOSMIN PADA MANUSIA" size={15} color="rgba(60, 50, 36, 0.66)" tracking={0.14} weight={400} />
+
+            {/* letterpress numeral */}
+            <text x={pageW - 46} y={186} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={104} letterSpacing="0.01em">
+              5 PPT
+            </text>
+
+            {/* plaster relief */}
+            <PlasterNose x={128} y={356} s={0.92} p={noseIn} uid="s4-nose" />
+
+            {/* footnotes, set as real editorial columns */}
+            <RuleLine x1={46} y1={1032} x2={pageW - 46} y2={1032} color="rgba(60, 50, 36, 0.32)" />
+            <text x={46} y={1078} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+              Satu sendok teh geosmin
+            </text>
+            <text x={46} y={1112} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+              di 400 kolam renang Olimpiade
+            </text>
+            <text x={46} y={1174} fill="rgba(58, 49, 40, 0.62)" fontFamily={IDENTITY.fontMono} fontSize={14} letterSpacing="0.1em">
+              BEAR &amp; THOMAS · NATURE 1964
+            </text>
+            <Mono x={pageW - 46} y={1174} text="1 MILIAR LITER" size={14} color="rgba(58, 49, 40, 0.5)" anchor="end" tracking={0.12} weight={400} />
+
+            {/* page edge highlight */}
+            <rect x={0} y={0} width={pageW} height={pageH} fill="none" stroke="rgba(80, 64, 44, 0.3)" strokeWidth={1.4} />
+            <rect x={pageW - 26} y={0} width={26} height={pageH} fill="url(#s4-pageShade)" opacity={0.5} />
+          </g>
+
+          {/* -------------------- RIGHT LEAF -------------------- */}
+          <defs>
+            <linearGradient id="s4-pageShade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="rgba(60, 48, 32, 0)" />
+              <stop offset="100%" stopColor="rgba(60, 48, 32, 0.5)" />
+            </linearGradient>
+            <linearGradient id="s4-pageShadeL" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stopColor="rgba(60, 48, 32, 0)" />
+              <stop offset="100%" stopColor="rgba(60, 48, 32, 0.5)" />
+            </linearGradient>
+          </defs>
+
+          <g transform={`translate(${rightX}, ${430 + (1 - open) * 40}) rotate(1.2)`}>
+            <rect x={0} y={0} width={pageW} height={pageH} fill="#EFE6D2" />
+            {paperTex && <image href={paperTex} x={0} y={0} width={pageW} height={pageH} opacity={0.6} preserveAspectRatio="none" />}
+            <rect x={0} y={0} width={26} height={pageH} fill="url(#s4-pageShadeL)" opacity={0.5} />
+
+            <g opacity={1 - tint * 0.92}>
+              <Mono x={46} y={72} text="LEMBAR DUA — PEMBANDING LAUT" size={16} color="rgba(60, 50, 36, 0.6)" tracking={0.22} weight={400} />
+              <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
+              <text x={44} y={186} fill="#231D15" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={68} letterSpacing="-0.02em">
+                Hiu mencium
+              </text>
+              <text x={44} y={254} fill="#231D15" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={68} letterSpacing="-0.02em">
+                setetes darah
+              </text>
+              <text x={pageW - 46} y={344} textAnchor="end" fill="#9E3B2A" fontFamily={IDENTITY.fontDisplay} fontSize={86}>
+                1 PPM
               </text>
 
-              {/* Illustrated Gleaming Silver Teaspoon (5 mL) */}
-              <g
-                transform={`translate(720, 536) rotate(${interpolate(
-                  dropTip,
-                  [0, 1],
-                  [-4, 14],
-                )})`}
-              >
-                {/* Handle */}
-                <path
-                  d="M -290,-18 L -48,-8 L -48,6 L -290,4 C -306,2 -306,-16 -290,-18 Z"
-                  fill="url(#s4-silver-spoon)"
-                  stroke="#E8EEEE"
-                  strokeWidth={1.4}
-                />
-                {/* Spoon Bowl Holding Amber Geosmin */}
-                <path
-                  d="M -52,-10 C -18,-14 48,-14 82,-2 C 92,14 52,32 -4,30 C -42,28 -58,10 -52,-10 Z"
-                  fill="url(#s4-silver-spoon)"
-                  stroke="#F2F6F6"
-                  strokeWidth={1.8}
-                />
-                <ellipse cx={22} cy={6} rx={42} ry={10} fill={IDENTITY.amberSpore} />
+              <EngravedShark x={-6} y={420} s={0.86} p={sharkIn} uid="s4-shark" />
+
+              <RuleLine x1={46} y1={812} x2={pageW - 46} y2={812} color="rgba(60, 50, 36, 0.3)" />
+              <text x={44} y={860} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+                Satu bagian per juta —
+              </text>
+              <text x={44} y={894} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+                200.000 kali lebih pekat
+              </text>
+              <text x={44} y={928} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={23} fontWeight={500}>
+                daripada ambang geosmin.
+              </text>
+
+              {/* engraved caption block, mimicking an old naturalist plate */}
+              <g opacity={0.9}>
+                <RuleLine x1={46} y1={988} x2={pageW - 46} y2={988} color="rgba(60, 50, 36, 0.26)" />
+                <Mono x={46} y={1018} text="CARCHARODON CARCHARIAS" size={15} color="rgba(58, 49, 40, 0.62)" tracking={0.16} weight={400} />
+                <Mono x={pageW - 46} y={1018} text="PLATE VII" size={15} color="rgba(58, 49, 40, 0.62)" anchor="end" tracking={0.16} weight={400} />
               </g>
+              <Mono x={46} y={1216} text="GRAVURE · SELEMBAR KERTAS · TINTA BESI" size={13} color="rgba(58, 49, 40, 0.42)" tracking={0.12} weight={400} />
+            </g>
 
-              {/* Single Falling Amber Drop */}
-              {dropTip > 0.25 && (
-                <AmberSporeCluster
-                  cx={798}
-                  cy={interpolate(clamp01((dropTip - 0.25) / 0.75), [0, 1], [542, 658])}
-                  size={10}
-                  sporeUrl={sporeUrl}
+            {/* the reversal: our nose beats the shark by five orders of magnitude */}
+            <g opacity={tint} transform={`translate(0, ${(1 - tint) * 50})`}>
+              <Mono x={46} y={72} text="KESIMPULAN TAKARAN" size={16} color="rgba(60, 50, 36, 0.62)" tracking={0.22} weight={400} />
+              <RuleLine x1={46} y1={94} x2={pageW - 46} y2={94} color="rgba(60, 50, 36, 0.4)" width={1.6} />
+              <text x={40} y={282} fill="#231D15" fontFamily={IDENTITY.fontDisplay} fontSize={188} letterSpacing="-0.01em">
+                200.000
+              </text>
+              <text x={46} y={330} fill="#9E3B2A" fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={72}>
+                kali lebih tajam
+              </text>
+              <text x={46} y={404} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={26} fontWeight={600}>
+                Hidung kita menangkap geosmin
+              </text>
+              <text x={46} y={440} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={26} fontWeight={500}>
+                pada 5 bagian per triliun.
+              </text>
+
+              {/* tiny shark silhouette for scale, drawn as a woodcut */}
+              <g transform="translate(300, 520) scale(0.5)">
+                <path
+                  d="M 40,150 C 130,96 300,74 430,86 C 512,94 566,116 604,140 C 566,168 508,186 430,192 C 300,204 130,190 40,150 Z"
+                  fill="#2A241B"
                 />
-              )}
-
-              {/* 20 Columns x 20 Rows = 400 Olympic Swimming Pools Architectural Array */}
-              <g transform="translate(140, 646)">
-                <rect
-                  x={-14}
-                  y={-14}
-                  width={1188}
-                  height={772}
-                  fill="rgba(14, 24, 27, 0.9)"
-                  stroke="rgba(207, 220, 217, 0.28)"
-                  strokeWidth={1.8}
-                />
-                {poolTexUrl && (
-                  <image
-                    href={poolTexUrl}
-                    x={0}
-                    y={0}
-                    width={1160}
-                    height={744}
-                    preserveAspectRatio="none"
-                    opacity={0.24}
-                  />
-                )}
-
-                {Array.from({ length: 400 }).map((_, idx) => {
-                  const col = idx % 20;
-                  const row = Math.floor(idx / 20);
-                  const px = col * 58 + 4;
-                  const py = row * 37.2 + 4;
-                  const dist = Math.hypot((col - 10.5) / 14, (row - 9.5) / 14);
-                  const lit = clamp01((poolWave * 1.45 - dist) * 3.2);
-                  return (
-                    <g key={idx}>
-                      <rect
-                        x={px}
-                        y={py}
-                        width={50}
-                        height={29}
-                        fill={lit > 0.1 ? '#4E8289' : '#264750'}
-                        stroke="rgba(232, 240, 240, 0.36)"
-                        strokeWidth={0.9}
-                      />
-                      {/* Pool Racing Lane Line */}
-                      <line
-                        x1={px + 5}
-                        y1={py + 14.5}
-                        x2={px + 45}
-                        y2={py + 14.5}
-                        stroke={
-                          lit > 0.25
-                            ? 'rgba(236, 199, 126, 0.68)'
-                            : 'rgba(207, 220, 217, 0.22)'
-                        }
-                        strokeWidth={0.9}
-                      />
-                    </g>
-                  );
-                })}
-
-                {/* Expanding Golden Detection Wave Ring */}
-                {poolWave > 0.05 && (
-                  <circle
-                    cx={618}
-                    cy={360}
-                    r={poolWave * 640}
-                    fill="none"
-                    stroke={IDENTITY.amberLight}
-                    strokeWidth={3 * (1 - poolWave * 0.65)}
-                    opacity={0.75 * (1 - poolWave * 0.5)}
-                  />
-                )}
+                <path d="M 62,150 L -34,74 C -6,116 2,136 12,150 C 2,164 -6,186 -26,222 Z" fill="#2A241B" />
+                <path d="M 286,96 L 330,18 C 344,50 356,74 372,94 Z" fill="#2A241B" />
               </g>
+              <Mono x={46} y={700} text="SKALA PEMBANDING · HIU PUTIH BESAR" size={14} color="rgba(58, 49, 40, 0.5)" tracking={0.12} weight={400} />
 
-              {/* Scale Caption Plaque Under 400 Pools */}
-              <g transform="translate(126, 1448)">
-                <rect
-                  x={0}
-                  y={0}
-                  width={1188}
-                  height={146}
-                  fill="rgba(18, 24, 25, 0.92)"
-                  stroke="rgba(216, 161, 72, 0.36)"
-                  strokeWidth={1.8}
-                />
-                <text
-                  x={594}
-                  y={52}
-                  textAnchor="middle"
-                  fill={IDENTITY.amberLight}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={17}
-                  fontWeight={700}
-                  letterSpacing="0.16em"
-                >
-                  20 × 20 = 400 KOLAM RENANG OLIMPIADE (1 MILIAR LITER AIR)
-                </text>
-                <text
-                  x={594}
-                  y={106}
-                  textAnchor="middle"
-                  fill={IDENTITY.ivoryText}
-                  fontFamily={IDENTITY.fontEditorial}
-                  fontSize={38}
-                  fontWeight={700}
-                  letterSpacing="0.04em"
-                >
-                  1 SENDOK TEH MASIH TERCIUM JELAS OLEH HIDUNGMU
+              <RuleLine x1={46} y1={830} x2={pageW - 46} y2={830} color="rgba(60, 50, 36, 0.3)" />
+              <text x={44} y={886} fill="#3A3128" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
+                Bagi hidung manusia,
+              </text>
+              <text x={44} y={922} fill="#4A4034" fontFamily={IDENTITY.fontBody} fontSize={24} fontWeight={500}>
+                gerimis adalah peta.
+              </text>
+              <Mono x={46} y={1216} text="GEOSMIN · C₁₂H₂₂O · AMBANG 5 PPT" size={13} color="rgba(58, 49, 40, 0.42)" tracking={0.12} weight={400} />
+              <g transform="translate(46, 1080) rotate(-5)">
+                <rect x={0} y={0} width={252} height={64} fill="none" stroke="#9E3B2A" strokeWidth={3.4} />
+                <text x={126} y={43} textAnchor="middle" fill="#9E3B2A" fontFamily={IDENTITY.fontMono} fontSize={22} fontWeight={600} letterSpacing="0.14em">
+                  REKOR HIDUNG
                 </text>
               </g>
             </g>
 
-            {/* ============================================================ */}
-            {/* ACT 2: GREAT WHITE SHARK (1 PPM) VS HUMAN NOSE (5 PPT)       */}
-            {/* ============================================================ */}
-            <g transform="translate(0, 1240)" opacity={smoothstep(prog(panToShark, 0.05, 0.45))}>
-              {/* Upper Specimen Box: Great White Shark Blood Threshold */}
-              <g transform="translate(116, 468)">
-                <rect
-                  x={0}
-                  y={0}
-                  width={1208}
-                  height={495}
-                  fill="rgba(14, 24, 28, 0.92)"
-                  stroke="rgba(207, 220, 217, 0.26)"
-                  strokeWidth={1.8}
-                />
-                <text
-                  x={44}
-                  y={52}
-                  fill={IDENTITY.stoneText}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={17}
-                  fontWeight={700}
-                  letterSpacing="0.16em"
-                >
-                  PEMBANDING PREDATOR LAUT · HIU PUTIH BESAR
-                </text>
+            <rect x={0} y={0} width={pageW} height={pageH} fill="none" stroke="rgba(80, 64, 44, 0.3)" strokeWidth={1.4} />
+          </g>
 
-                {/* Detailed 2D Naturalist Side-Elevation of Great White Shark */}
-                <g
-                  transform={`translate(${620 + Math.sin(localSec * 1.4) * 14}, 238)`}
-                >
-                  {/* Caudal Crescent Tail Fin */}
-                  <path
-                    d="M -312,0 L -408,-96 C -382,-36 -376,-8 -364,0 C -376,12 -382,38 -402,86 Z"
-                    fill="#465760"
-                    stroke="rgba(220,232,234,0.34)"
-                    strokeWidth={1.5}
-                  />
-                  {/* Iconic Dorsal Fin */}
-                  <path
-                    d="M -38,-48 L 16,-152 C 32,-112 46,-76 68,-46 Z"
-                    fill="#465760"
-                    stroke="rgba(220,232,234,0.38)"
-                    strokeWidth={1.6}
-                  />
-                  {/* Pectoral Fin */}
-                  <path
-                    d="M 62,32 L -12,126 C 34,104 82,72 118,38 Z"
-                    fill="#394850"
-                    stroke="rgba(220,232,234,0.32)"
-                    strokeWidth={1.5}
-                  />
-                  {/* Torpedo Fuselage Body with Countershading */}
-                  <path
-                    d="M -330,0 C -225,-56 -55,-68 118,-52 C 228,-42 318,-18 378,6 C 324,38 232,54 118,56 C -55,58 -220,36 -330,0 Z"
-                    fill="url(#s4-shark-body)"
-                    stroke="rgba(232, 240, 242, 0.42)"
-                    strokeWidth={1.8}
-                  />
-                  {/* 5 Gill Slits & Eye */}
-                  {[162, 174, 186, 198, 210].map((gx, gi) => (
-                    <line
-                      key={gi}
-                      x1={gx}
-                      y1={-12}
-                      x2={gx - 4}
-                      y2={20}
-                      stroke="#1D262B"
-                      strokeWidth={2.4}
-                      strokeLinecap="round"
-                    />
-                  ))}
-                  <circle cx={296} cy={-6} r={6} fill="#101619" stroke="#DCE4E6" strokeWidth={1.2} />
-                  {/* Tiny Crimson Blood Scent Droplet Target */}
-                  <circle cx={432} cy={4} r={8} fill="#A63429" stroke="#F2D4CE" strokeWidth={1.5} />
-                  <circle
-                    cx={432}
-                    cy={4}
-                    r={22 + ((localSec * 1.1) % 1) * 34}
-                    fill="none"
-                    stroke="rgba(186, 62, 48, 0.55)"
-                    strokeWidth={1.8}
-                  />
-                </g>
-
-                <text
-                  x={44}
-                  y={424}
-                  fill={IDENTITY.ivoryText}
-                  fontFamily={IDENTITY.fontEditorial}
-                  fontSize={36}
-                  fontWeight={700}
-                  letterSpacing="0.04em"
-                >
-                  HIU MENCIUM DARAH: 1 BAGIAN PER JUTA (1 PPM)
-                </text>
-                <text
-                  x={44}
-                  y={458}
-                  fill={IDENTITY.stoneText}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={16}
-                  letterSpacing="0.1em"
-                >
-                  BUTUH KONSENTRASI 200.000 KALI LEBIH PEKAT DARI GEOSMIN
-                </text>
-              </g>
-
-              {/* Lower Specimen Box: Human Olfactory Super-Sensitivity */}
-              <g transform="translate(116, 1006)">
-                <rect
-                  x={0}
-                  y={0}
-                  width={1208}
-                  height={578}
-                  fill="rgba(22, 26, 20, 0.95)"
-                  stroke={IDENTITY.amberSpore}
-                  strokeWidth={2.4}
-                />
-                <text
-                  x={44}
-                  y={54}
-                  fill={IDENTITY.amberLight}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={17}
-                  fontWeight={700}
-                  letterSpacing="0.16em"
-                >
-                  REKOR PENCIUMAN MANUSIA · RESEPTOR OR4D2 / GEOSMIN
-                </text>
-
-                {/* Sculpted Classical Editorial Profile of Human Nose & Inhaled Rain Plume */}
-                <g transform="translate(215, 118)">
-                  <path
-                    d="M 96,12 C 98,58 118,108 156,168 C 174,196 168,224 138,232 C 114,238 94,232 76,226 C 84,256 96,280 80,304"
-                    fill="none"
-                    stroke={IDENTITY.ivoryText}
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Nostril curve */}
-                  <path
-                    d="M 102,216 C 118,208 134,212 142,222"
-                    fill="none"
-                    stroke={IDENTITY.amberLight}
-                    strokeWidth={3.5}
-                    strokeLinecap="round"
-                  />
-                  {/* Golden Geosmin Scent Ribbons Drawn Into Nostril */}
-                  {[
-                    'M 425,185 C 335,165 235,235 132,222',
-                    'M 455,238 C 352,218 248,262 136,228',
-                    'M 398,136 C 312,126 225,204 128,216',
-                  ].map((sd, si) => (
-                    <TrimPath
-                      key={si}
-                      d={sd}
-                      progress={clamp01((panToShark - 0.25) / 0.75)}
-                      stroke={si === 1 ? IDENTITY.mossLight : IDENTITY.amberLight}
-                      strokeWidth={3}
-                    />
-                  ))}
-                  <GeosminBrassMedallion cx={535} cy={192} radius={86} rotationDeg={localSec * 5} />
-                </g>
-
-                <text
-                  x={44}
-                  y={488}
-                  fill={IDENTITY.amberLight}
-                  fontFamily={IDENTITY.fontEditorial}
-                  fontSize={42}
-                  fontWeight={700}
-                  letterSpacing="0.04em"
-                >
-                  MANUSIA MENCIUM HUJAN: 5 BAGIAN PER TRILIUN (5 PPT)
-                </text>
-                <text
-                  x={44}
-                  y={528}
-                  fill={IDENTITY.ivoryText}
-                  fontFamily={IDENTITY.fontMono}
-                  fontSize={18}
-                  fontWeight={700}
-                  letterSpacing="0.12em"
-                >
-                  200.000 KALI LEBIH TAJAM DARIPADA HIU MENCIUM DARAH
-                </text>
-              </g>
+          {/* -------------------- GUTTER: vertical title --------------------- */}
+          <g opacity={open}>
+            <line x1={718} y1={470} x2={718} y2={1640} stroke="rgba(214, 198, 168, 0.2)" strokeWidth={1.2} />
+            <g transform="translate(714, 1055) rotate(-90)">
+              <Mono x={0} y={0} text="SATU MOLEKUL · DUA HIDUNG" size={17} color="rgba(226, 214, 190, 0.6)" tracking={0.34} anchor="middle" />
+            </g>
+            <g transform="translate(722, 1360) rotate(-90)">
+              <Mono x={0} y={0} text="C₁₂H₂₂O" size={15} color="rgba(226, 214, 190, 0.4)" tracking={0.24} anchor="middle" weight={400} />
             </g>
           </g>
         </g>
+
+        {/* top marginalia, set above the leaves like a book running head */}
+        <g opacity={easeOutCubic(prog(localSec, 0.4, 1.6))}>
+          <Mono x={96} y={300} text="CATATAN PENCIUMAN" size={18} color="rgba(214, 200, 172, 0.6)" tracking={0.34} />
+          <RuleLine x1={96} y1={320} x2={372} y2={320} color="rgba(206, 192, 164, 0.32)" />
+          <Mono x={1344} y={300} text="GEOSMIN · AMBANG BAU" size={16} color="rgba(214, 200, 172, 0.5)" tracking={0.22} anchor="end" weight={400} />
+        </g>
       </svg>
+
+      <FilmGrain opacity={0.12} />
     </AbsoluteFill>
   );
 };

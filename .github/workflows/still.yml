@@ -1,0 +1,46 @@
+name: QA Stills
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'scenes/**'
+      - '.github/workflows/still.yml'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+concurrency:
+  group: stills-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx remotion browser ensure
+      - name: Render QA stills
+        run: |
+          set -euo pipefail
+          mkdir -p stills
+          for t in 2.0 5.2 7.6 10.2 14.8 21.6 25.0 30.2 37.2 41.0 46.0 51.0 55.4 58.0 63.2 70.2 73.4 79.0 82.0 86.4 88.4 93.0 98.6 104.0 108.5 112.6 115.4; do
+            f=$(echo "$t" | tr '.' '_')
+            npx remotion still scenes/y3.tsx Naysi "stills/t_${f}.jpg" --frame=$(python3 -c "print(int(round($t*90)))") --scale=0.6 --jpeg-quality=88
+          done
+          ls -la stills | head -40
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qa-stills
+          path: stills
+          retention-days: 3
