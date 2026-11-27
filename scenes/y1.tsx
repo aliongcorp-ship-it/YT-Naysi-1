@@ -18,43 +18,50 @@ const Head: React.FC<{ i: number; t: number; y?: number; size?: number }> = ({ i
 // ============================================================================
 export const Scene07: React.FC = () => {
   const { ch, art, localSec: t, dur } = useChapterClock(6);
-  const sweep = easeOutCubic(prog(t, 1.4, 6.0));
-  const phase = 1 - sweep * 0.98;
+  const sweep = easeOutCubic(prog(t, 1.2, 6.2));
+  const phase = 1 - sweep * 0.97;
+  const moonCx = 720;
+  const moonCy = 1080;
+  const moonR = 186;
 
   return (
     <Stage i={6} note="ALBEDO 0,12">
       <Backdrop top={ch.groundTop} bottom={ch.groundBottom} tex="wall-plaster" texOpacity={0.1}
-        light={{ x: 760, y: 1000, rx: 860, ry: 860, color: `rgba(190,205,230,${0.16 * (0.35 + phase)})` }} />
+        light={{ x: 760, y: 1000, rx: 900, ry: 900, color: `rgba(190,205,230,${0.18 * (0.3 + phase)})` }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <StarField count={300} t={t} opacity={0.55 + sweep * 0.4} tintA="#D8E2EE" band />
+        <StarField count={320} t={t} opacity={0.6 + sweep * 0.35} tintA="#D8E2EE" band />
         <Camera localSec={t} dur={dur} push={0.045} drift={7}>
           <Head i={6} t={t} y={640} size={96} />
 
-          {/* reflected light cone from moon toward earth */}
-          <g opacity={0.5 * (1 - sweep)}>
-            <polygon points="560,1180 880,1180 1060,1560 380,1560" fill="rgba(200,216,235,0.08)" />
+          {/* reflected light: a narrow bundle, not a disc */}
+          <g opacity={0.55 * (1 - sweep * 0.85)}>
+            {Array.from({ length: 9 }).map((_, k) => {
+              const x0 = moonCx - moonR * 0.7 + k * (moonR * 1.4) / 8;
+              const x1 = moonCx - 120 + k * 30;
+              return <line key={k} x1={x0} y1={moonCy + moonR * 0.9} x2={x1} y2={1580} stroke="rgba(200,216,235,0.16)" strokeWidth={2} />;
+            })}
           </g>
 
-          <MoonDisc cx={720} cy={1180} r={196} t={t} phase={phase} opacity={0.92} tint="#DEE4EC" />
-          <circle cx={720} cy={1180} r={200} fill="none" stroke="rgba(210,224,240,0.28)" strokeWidth={1.6} strokeDasharray="10 14" />
+          <MoonDisc cx={moonCx} cy={moonCy} r={moonR} t={t} phase={phase} opacity={0.95} tint="#E2E8EF" />
+          <circle cx={moonCx} cy={moonCy} r={moonR + 8} fill="none" stroke="rgba(210,224,240,0.24)" strokeWidth={1.4} strokeDasharray="8 12" />
 
-          <EarthGlobe cx={720} cy={1620} r={54} t={t} terminator={0.62} atmosphere={0.8} />
-          <Mono x={720} y={1706} text="BUMI · MALAM PERMANEN" size={18} color="rgba(216,226,238,0.45)" tracking={0.22} anchor="middle" />
+          <EarthGlobe cx={720} cy={1640} r={44} t={t} terminator={0.58} atmosphere={0.5} />
+          <Mono x={720} y={1720} text="BUMI · MALAM PERMANEN" size={19} color="rgba(216,226,238,0.5)" tracking={0.22} anchor="middle" />
 
-          <LeaderLabel from={[880, 1080]} to={[1090, 990]} text="MEMANTULKAN 12%" sub="sinar matahari, bukan sinarnya sendiri" anchor="start"
+          <LeaderLabel from={[moonCx + moonR * 0.75, moonCy - 90]} to={[moonCx + moonR + 150, moonCy - 210]} text="MEMANTULKAN 12%" sub="bukan cahayanya sendiri" anchor="start"
             progress={prog(t, 1.0, 2.2)} color="rgba(216,226,238,0.85)" size={21} />
-          <LeaderLabel from={[560, 1300]} to={[320, 1400]} text="TANPA SUMBER" sub="tidak ada cahaya baru" anchor="end"
+          <LeaderLabel from={[moonCx - moonR * 0.8, moonCy + 120]} to={[moonCx - moonR - 150, moonCy + 60]} text="SUMBER HABIS" sub="pantulan ikut padam" anchor="end"
             progress={prog(t, 4.6, 5.8)} color="rgba(216,226,238,0.85)" size={21} />
 
           <g opacity={easeOutCubic(prog(t, 6.4, 7.6))}>
-            <RuleLine x1={116} y1={1800} x2={1324} y2={1800} color="rgba(216,226,238,0.26)" />
-            <text x={116} y={1876} fill="rgba(216,226,238,0.9)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={40}>
+            <RuleLine x1={116} y1={1810} x2={1324} y2={1810} color="rgba(216,226,238,0.26)" />
+            <text x={116} y={1884} fill="rgba(216,226,238,0.9)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
               Yang tersisa hanya bintang — terlalu redup untuk membaca.
             </text>
           </g>
           <ChapterEyebrow index={6} localSec={t} x={116} />
         </Camera>
-        <Furniture i={6} t={t} color={art.accent} note="FASE BULAN = GEOMETRI, BUKAN BAYANGAN BUMI" />
+        <Furniture i={6} t={t} color={art.accent} note="FASE BULAN = GEOMETRI" />
       </svg>
     </Stage>
   );
@@ -66,48 +73,99 @@ export const Scene07: React.FC = () => {
 export const Scene08: React.FC = () => {
   const { ch, art, localSec: t, dur } = useChapterClock(7);
   const ice = easeOutCubic(prog(t, 0.8, 4.6));
-  const iceH = 30 + 96 * ice;
+  const panelX = 116;
+  const panelW = 1208;
+  const skyY = 790;
+  const skyH = 46;
+  const iceY = skyY + skyH;
+  const iceH = 24 + 92 * ice;
+  const floorY = 1420;
 
   return (
     <Stage i={7} note="PENAMPANG LAUT">
       <Backdrop top={ch.groundTop} bottom={ch.groundBottom} tex="concrete" texOpacity={0.12}
-        light={{ x: 720, y: 1560, rx: 860, ry: 560, color: 'rgba(255,140,60,0.12)' }} />
+        light={{ x: 720, y: 1500, rx: 880, ry: 560, color: 'rgba(255,140,60,0.12)' }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <StarField count={110} t={t} opacity={0.3} tintA="#D3E4EE" />
+        <StarField count={110} t={t} opacity={0.28} tintA="#D3E4EE" />
         <Camera localSec={t} dur={dur} push={0.05} drift={7}>
           <Head i={7} t={t} y={640} size={96} />
 
-          {/* ocean panel */}
           <g>
-            <rect x={116} y={760} width={1208} height={700} fill="#04121A" />
-            <rect x={116} y={760} width={1208} height={200} fill="#061A26" />
-            {Array.from({ length: 7 }).map((_, k) => (
-              <line key={k} x1={116} y1={860 + k * 60} x2={1324} y2={860 + k * 60} stroke="rgba(120,170,200,0.10)" strokeWidth={1} strokeDasharray="6 10" />
+            <defs>
+              <linearGradient id="water8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0F3244" />
+                <stop offset="45%" stopColor="#08202C" />
+                <stop offset="100%" stopColor="#04121A" />
+              </linearGradient>
+              <linearGradient id="ice8" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#E8F6FB" />
+                <stop offset="55%" stopColor="#B4D5E5" />
+                <stop offset="100%" stopColor="#7FA9BE" />
+              </linearGradient>
+            </defs>
+            {/* sky void */}
+            <rect x={panelX} y={skyY} width={panelW} height={skyH} fill="#040A10" />
+            {/* water */}
+            <rect x={panelX} y={iceY} width={panelW} height={floorY - iceY} fill="url(#water8)" />
+            {/* thermoclines */}
+            {[0, 1, 2].map((k) => (
+              <g key={k} opacity={0.5}>
+                <line x1={panelX} y1={iceY + 150 + k * 150} x2={panelX + panelW} y2={iceY + 150 + k * 150}
+                  stroke="rgba(140,190,210,0.28)" strokeWidth={1.2} strokeDasharray="10 14" />
+              </g>
             ))}
-            <rect x={116} y={760} width={1208} height={iceH} fill="#BBD8E6" />
-            <rect x={116} y={760} width={1208} height={10} fill="#EAF6FB" opacity={0.9} />
-            {Array.from({ length: 34 }).map((_, k) => {
-              const x = 116 + hash(k, 3, 2) * 1208;
-              return <line key={k} x1={x} y1={766} x2={x + 70 + hash(k, 5) * 90} y2={766 + iceH * (0.3 + hash(k, 4) * 0.5)}
-                stroke="rgba(240,252,255,0.55)" strokeWidth={1.2} opacity={0.4 * ice} />;
+            <Mono x={panelX + panelW - 16} y={iceY + 144} text="4 °C" size={16} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 16} y={iceY + 294} text="2 °C" size={16} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 16} y={iceY + 444} text="1 °C" size={16} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
+            {/* drifting particles */}
+            {Array.from({ length: 40 }).map((_, i) => (
+              <circle key={i} cx={panelX + hash(i, 12) * panelW} cy={iceY + 60 + hash(i, 13) * (floorY - iceY - 100)}
+                r={1 + hash(i, 14) * 2.2} fill="rgba(190,225,240,0.3)" opacity={0.3 + hash(i, 15) * 0.4} />
+            ))}
+            {/* ice lid */}
+            <rect x={panelX} y={iceY} width={panelW} height={iceH} fill="url(#ice8)" />
+            <rect x={panelX} y={iceY} width={panelW} height={5} fill="#F2FBFE" opacity={0.95} />
+            {Array.from({ length: 46 }).map((_, k) => {
+              const x = panelX + hash(k, 3, 2) * panelW;
+              const w = 40 + hash(k, 5) * 90;
+              return (
+                <g key={k} opacity={0.5 * ice}>
+                  <path d={`M ${x} ${iceY + 2} l ${w * 0.4} ${iceH * 0.35} l ${-w * 0.15} ${iceH * 0.3}`} fill="none" stroke="rgba(30,70,95,0.55)" strokeWidth={1.6} />
+                  <path d={`M ${x + 8} ${iceY + iceH} l ${w * 0.5} ${-iceH * 0.4}`} fill="none" stroke="rgba(240,252,255,0.5)" strokeWidth={1.2} />
+                </g>
+              );
             })}
-            {/* seafloor + vent glow */}
-            <path d={`M 116 ${1460} Q 380 1418 620 1452 T 980 1436 T 1324 1456 L 1324 1460 Z`} fill="#0A1A24" />
-            <ellipse cx={700} cy={1430} rx={250} ry={54} fill="rgba(255,140,60,0.22)" />
-            <ellipse cx={700} cy={1430} rx={120} ry={26} fill="rgba(255,178,110,0.28)" />
-            <rect x={116} y={760} width={1208} height={700} fill="none" stroke="rgba(155,185,199,0.3)" strokeWidth={1.4} />
-            <Mono x={128} y={742} text="PENAMPANG VERTIKAL · 0 – 4 KM" size={18} color="rgba(226,240,248,0.42)" tracking={0.22} />
+            {/* seafloor + crust */}
+            <path d={`M ${panelX} ${floorY} Q 360 ${floorY - 44} 640 ${floorY - 12} T 980 ${floorY - 26} T ${panelX + panelW} ${floorY - 6} L ${panelX + panelW} 1500 L ${panelX} 1500 Z`} fill="#0A161C" />
+            <path d={`M ${panelX} ${floorY + 26} Q 420 ${floorY - 6} 760 ${floorY + 20} T ${panelX + panelW} ${floorY + 10} L ${panelX + panelW} 1500 L ${panelX} 1500 Z`} fill="#0C1A20" />
+            <ellipse cx={700} cy={floorY - 6} rx={240} ry={46} fill="rgba(255,140,60,0.18)" />
+            <ellipse cx={700} cy={floorY - 6} rx={110} ry={20} fill="rgba(255,178,110,0.26)" />
+            {Array.from({ length: 18 }).map((_, i) => {
+              const k = (t * 0.4 + i / 18) % 1;
+              return <circle key={i} cx={700 + Math.sin(i * 2) * (30 + k * 60)} cy={floorY - 20 - k * 240} r={2 + k * 6} fill="rgba(255,200,150,0.5)" opacity={0.4 * (1 - k)} />;
+            })}
+            <rect x={panelX} y={skyY} width={panelW} height={1500 - skyY} fill="none" stroke="rgba(155,185,199,0.32)" strokeWidth={1.4} />
+            <Mono x={panelX + 12} y={skyY - 18} text="PENAMPANG VERTIKAL · 0 – 4 KM" size={18} color="rgba(226,240,248,0.42)" tracking={0.22} />
+            {/* depth ruler */}
+            {[0, 1, 2, 3, 4].map((k) => (
+              <g key={k}>
+                <line x1={panelX - 12} y1={skyY + k * 178} x2={panelX} y2={skyY + k * 178} stroke="rgba(226,240,248,0.35)" strokeWidth={1.4} />
+                <text x={panelX - 22} y={skyY + k * 178 + 6} fill="rgba(226,240,248,0.42)" fontFamily={IDENTITY.fontMono} fontSize={16} textAnchor="end">
+                  {k} km
+                </text>
+              </g>
+            ))}
           </g>
 
-          <LeaderLabel from={[520, 800]} to={[300, 700]} text="ES 1–2 M" sub="terbentuk dari atas" anchor="end" progress={prog(t, 3.0, 4.0)} color="rgba(226,240,248,0.85)" size={21} />
-          <LeaderLabel from={[900, 1240]} to={[1150, 1140]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="start" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={21} />
-          <LeaderLabel from={[700, 1420]} to={[980, 1330]} text="PANAS INTI BUMI" sub="0,087 W/m²" anchor="start" progress={prog(t, 5.2, 6.2)} color="rgba(250,190,150,0.9)" size={21} />
+          <LeaderLabel from={[420, iceY + 20]} to={[300, 700]} text="ES 1–2 M" sub="terbentuk dari atas" anchor="end" progress={prog(t, 3.0, 4.0)} color="rgba(226,240,248,0.85)" size={21} />
+          <LeaderLabel from={[980, iceY + 300]} to={[1150, 1120]} text="AIR CAIR" sub="ratusan ribu tahun" anchor="start" progress={prog(t, 4.0, 5.0)} color="rgba(226,240,248,0.85)" size={21} />
+          <LeaderLabel from={[700, floorY - 30]} to={[1010, 1300]} text="PANAS INTI BUMI" sub="0,087 W/m²" anchor="start" progress={prog(t, 5.2, 6.2)} color="rgba(250,190,150,0.9)" size={21} />
 
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
-            <Mono x={116} y={1540} text="SUHU PERMUKAAN · SETELAH SETAHUN" size={20} color="rgba(226,240,248,0.45)" tracking={0.2} />
-            <BigNumber x={108} y={1720} value="-73" size={186} color={art.ink} />
-            <BigNumber x={470} y={1650} value="°C" size={96} color={art.accent} />
-            <Mono x={116} y={1790} text="DI ATAS ES, SUHU BISA LEBIH RENDAH LAGI" size={18} color="rgba(226,240,248,0.4)" tracking={0.16} />
+            <Mono x={116} y={1600} text="SUHU PERMUKAAN · SETELAH SETAHUN" size={20} color="rgba(226,240,248,0.45)" tracking={0.2} />
+            <BigNumber x={108} y={1780} value="-73" size={186} color={art.ink} />
+            <BigNumber x={470} y={1710} value="°C" size={96} color={art.accent} />
+            <Mono x={560} y={1770} text="DI ATAS ES BISA LEBIH RENDAH" size={18} color="rgba(226,240,248,0.4)" tracking={0.16} />
           </g>
           <ChapterEyebrow index={7} localSec={t} x={116} />
         </Camera>

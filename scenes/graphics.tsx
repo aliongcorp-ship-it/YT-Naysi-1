@@ -110,7 +110,7 @@ export const SunCore: React.FC<{
           x: cx + Math.cos(a) * rr,
           y: cy + Math.sin(a) * rr,
           s: (0.018 + hash(i, 73) * 0.055) * r,
-          o: 0.05 + hash(i, 74) * 0.16,
+          o: 0.10 + hash(i, 74) * 0.24,
           ph: hash(i, 75) * 6.283,
           sp: 0.5 + hash(i, 76) * 2.4,
           warm: hash(i, 77) > 0.55,
@@ -150,7 +150,7 @@ export const SunCore: React.FC<{
           <circle cx={cx} cy={cy} r={r} />
         </clipPath>
       </defs>
-      <circle cx={cx} cy={cy} r={r * 2.6} fill={`url(#${id}-halo)`} />
+      <circle cx={cx} cy={cy} r={r * 2.05} fill={`url(#${id}-halo)`} />
       <circle cx={cx} cy={cy} r={r} fill={`url(#${id}-body)`} />
       <g clipPath={`url(#${id}-clip)`}>
         {grains.map((g, i) => (
@@ -160,7 +160,7 @@ export const SunCore: React.FC<{
             cy={g.y + Math.cos(t * g.sp * 0.85 + g.ph) * r * 0.014}
             rx={g.s}
             ry={g.s * 0.76}
-            fill={g.warm ? '#FFE9BC' : '#7E2C07'}
+            fill={g.warm ? '#FFEFC6' : '#6B2405'}
             opacity={g.o * (0.5 + 0.5 * Math.sin(t * g.sp * 1.6 + g.ph))}
           />
         ))}

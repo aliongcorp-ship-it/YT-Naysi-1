@@ -90,8 +90,8 @@ export const Scene01: React.FC = () => {
             <rect x={214} y={766} width={1012} height={1012} fill="rgba(10,8,6,0.38)" stroke="rgba(233,214,186,0.22)" strokeWidth={1.4} />
             {[0, 1, 2, 3].map((k) => (
               <g key={k} opacity={0.55}>
-                <line x1={214} y1={766 + k * 337} x2={1226} y2={766 + k * 337} stroke="rgba(233,214,186,0.10)" strokeWidth={1} />
-                <line x1={214 + k * 337} y1={766} x2={214 + k * 337} y2={1778} stroke="rgba(233,214,186,0.10)" strokeWidth={1} />
+                <line x1={214} y1={766 + k * 337} x2={1226} y2={766 + k * 337} stroke="rgba(233,214,186,0.05)" strokeWidth={1} />
+                <line x1={214 + k * 337} y1={766} x2={214 + k * 337} y2={1778} stroke="rgba(233,214,186,0.05)" strokeWidth={1} />
               </g>
             ))}
             <Mono x={214} y={740} text="PELAT FOTOGRAFI · 1/2000 s" size={20} color="rgba(233,214,186,0.5)" tracking={0.26} />
@@ -100,8 +100,10 @@ export const Scene01: React.FC = () => {
 
           <Corona4K cx={720} cy={1268} r={296} t={t} strength={0.95 * alive} rays={120} />
           <SunCore cx={720} cy={1268} r={296} t={t} alive={alive} cores={240} spots={4} />
-          <Prominence cx={720} cy={1268} r={296} angle={-0.7} height={104} t={t} phase={0.4} />
-          <Prominence cx={720} cy={1268} r={296} angle={2.3} height={80} t={t} phase={2.1} />
+          <Prominence cx={720} cy={1268} r={296} angle={-0.55} height={150} t={t} phase={0.4} />
+          <Prominence cx={720} cy={1268} r={296} angle={2.45} height={112} t={t} phase={2.1} />
+          <Prominence cx={720} cy={1268} r={296} angle={-2.2} height={88} t={t} phase={4.2} />
+          <circle cx={720} cy={1268} r={296} fill="none" stroke="rgba(255,236,196,0.55)" strokeWidth={2} />
           {off > 0.12 && <GhostSun cx={720} cy={1268} r={296} t={t} color={art.accent} />}
 
           {/* light already in flight toward the lower left */}
@@ -171,8 +173,8 @@ export const Scene02: React.FC = () => {
             <Counter x={104} y={1780} from={0} to={499} localSec={t} startSec={5.0} durSec={1.8} size={290} color={art.ink} weight={400} tracking="-0.035em" />
             <Mono x={1324} y={1706} text="DETIK" size={44} color="rgba(243,233,214,0.45)" tracking={0.2} anchor="end" />
             <RuleLine x1={116} y1={1840} x2={1324} y2={1840} color="rgba(226,206,172,0.28)" />
-            <text x={116} y={1906} fill="rgba(243,233,214,0.62)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={40}>
-              8 menit 19 detik — jarak antara matahari yang ada dan yang kamu lihat.
+            <text x={116} y={1906} fill="rgba(243,233,214,0.66)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
+              499 detik. Matahari yang kamu lihat selalu terlambat.
             </text>
           </g>
           <ChapterEyebrow index={1} localSec={t} x={116} />
@@ -222,8 +224,8 @@ export const Scene03: React.FC = () => {
             <circle key={k} cx={x} cy={y} r={3 + (k % 3)} fill="#EAF1F8" opacity={0.75} />
           ))}
 
-          <TickRule x1={x0} y1={baseY} x2={x1} y2={baseY} major={8} minor={4} color="rgba(230,237,244,0.45)"
-            labels={['', '1 th', '', '100 th', '', '10 rb th', '', '1 jt th', '100 jt th']} labelSize={22} progress={prog(t, 0.3, 2.0)} />
+          <TickRule x1={x0} y1={baseY} x2={x1} y2={baseY} major={4} minor={4} color="rgba(230,237,244,0.5)"
+            labels={['1 hr', '1 th', '1 rb th', '1 jt th', '1 M th']} labelSize={23} progress={prog(t, 0.3, 2.0)} />
           <Mono x={x0} y={baseY + 108} text="SKALA LOGARITMIS · JARAK CAHAYA" size={20} color="rgba(230,237,244,0.42)" tracking={0.24} />
 
           {objects.map((o, i) => {
@@ -298,13 +300,13 @@ export const Scene04: React.FC = () => {
           </g>
 
           <GhostSun cx={cx} cy={cy} r={112} t={t} color={art.accent} />
-          <Mono x={cx} y={cy + 168} text="TITIK KOSONG" size={20} color="rgba(220,231,236,0.5)" tracking={0.24} anchor="middle" />
+          <Mono x={cx} y={cy + 196} text="TITIK KOSONG" size={20} color="rgba(220,231,236,0.55)" tracking={0.24} anchor="middle" />
 
           <path d={`M ${cx + Math.cos(ang - 0.8) * R} ${cy + Math.sin(ang - 0.8) * R} A ${R} ${R} 0 0 1 ${ex} ${ey}`}
             fill="none" stroke={art.ink} strokeWidth={4} opacity={0.6} strokeLinecap="round" />
-          <EarthGlobe cx={ex} cy={ey} r={46} t={t} terminator={0.45} />
+          <EarthGlobe cx={ex} cy={ey} r={46} t={t} terminator={0.45} atmosphere={0.45} />
 
-          <LeaderLabel from={[cx + 230, cy - 210]} to={[cx + 330, cy - 360]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/detik" anchor="start"
+          <LeaderLabel from={[cx + 250, cy - 250]} to={[cx + 356, cy - 420]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/detik" anchor="start"
             progress={prog(t, 2.2, 3.4)} color="rgba(226,238,244,0.85)" size={22} />
           <LeaderLabel from={[ex, ey]} to={[ex + 40, ey - 230]} text="ORBIT MASIH BERJALAN" sub="mengelilingi ketiadaan" anchor="start"
             progress={prog(t, 4.6, 5.8)} color="rgba(226,238,244,0.85)" size={22} />
