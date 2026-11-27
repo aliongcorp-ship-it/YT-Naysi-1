@@ -630,10 +630,30 @@ export const SoilSlab: React.FC<{
       {/* slab front soil wall */}
       <path d={frontPath} fill={`url(#${uid}-frontshade)`} />
       <g clipPath={`url(#${uid}-front)`}>
-        {texUrl && <image href={texUrl} x={x} y={y + d} width={w} height={h} preserveAspectRatio="none" opacity={0.5} />}
-        {Array.from({ length: 12 }).map((_, i) => (
-          <circle key={i} cx={x + 40 + i * 62} cy={y + d + 18 + ((i * 37) % 40)} r={2 + (i % 3)} fill="rgba(236, 214, 176, 0.16)" />
-        ))}
+        {texUrl && <image href={texUrl} x={x} y={y + d} width={w} height={h} preserveAspectRatio="none" opacity={0.34} />}
+        {/* strata: the wall is a cut, not a painted panel */}
+        <path d={`M ${x - 10},${y + d + h * 0.3} C ${x + w * 0.25},${y + d + h * 0.22} ${x + w * 0.6},${y + d + h * 0.4} ${x + w + 10},${y + d + h * 0.3} L ${x + w + 10},${y + d + h * 0.44} C ${x + w * 0.6},${y + d + h * 0.54} ${x + w * 0.25},${y + d + h * 0.36} ${x - 10},${y + d + h * 0.44} Z`} fill="rgba(24, 12, 6, 0.34)" />
+        <path d={`M ${x - 10},${y + d + h * 0.68} C ${x + w * 0.3},${y + d + h * 0.6} ${x + w * 0.55},${y + d + h * 0.76} ${x + w + 10},${y + d + h * 0.66} L ${x + w + 10},${y + d + h} L ${x - 10},${y + d + h} Z`} fill="rgba(14, 8, 4, 0.4)" />
+        {/* fine grit in the cut face */}
+        {Array.from({ length: Math.round(w / 12) }).map((_, i) => {
+          const gx = x + ((i * 173) % w);
+          const gy = y + d + ((i * 61) % h);
+          return <circle key={i} cx={gx} cy={gy} r={1 + (i % 3) * 0.8} fill={i % 4 === 0 ? 'rgba(236, 208, 168, 0.22)' : 'rgba(18, 10, 4, 0.34)'} />;
+        })}
+        {/* root threads hanging out of the cut */}
+        {Array.from({ length: 9 }).map((_, i) => {
+          const rx = x + 70 + ((i * 131) % (w - 140));
+          return (
+            <path
+              key={`rt${i}`}
+              d={`M ${rx},${y + d + 4} C ${rx - 10},${y + d + h * 0.3} ${rx + 12},${y + d + h * 0.55} ${rx - 4},${y + d + h * 0.9}`}
+              fill="none"
+              stroke="rgba(206, 182, 138, 0.22)"
+              strokeWidth={1.2 + (i % 3) * 0.5}
+              strokeLinecap="round"
+            />
+          );
+        })}
       </g>
       <path d={`M ${x},${y + d} L ${x + w},${y + d}`} stroke="rgba(255, 226, 184, 0.22)" strokeWidth={2} />
 
@@ -675,7 +695,19 @@ export const SoilSlab: React.FC<{
             );
           })}
       </g>
-      <path d={topPath} fill="none" stroke={rimColor} strokeWidth={1.6} />
+      <path d={topPath} fill="none" stroke={rimColor} strokeWidth={1.4} opacity={0.7} />
+
+      {/* crumbs breaking the silhouette so it never reads as a plank */}
+      {Array.from({ length: 26 }).map((_, i) => {
+        const cxp = x + 50 + ((i * 149) % (w - 100));
+        const ry2 = 3 + (i % 4) * 2.6;
+        return (
+          <g key={`cr${i}`}>
+            <ellipse cx={cxp} cy={y + (i % 2 === 0 ? 0 : y === y ? d : d) + (i % 3 === 0 ? -2 : 0)} rx={9 + (i % 5) * 4} ry={ry2} fill={i % 3 === 0 ? '#3A2212' : '#2A180D'} />
+            <ellipse cx={cxp - 2} cy={y + (i % 2 === 0 ? 0 : d) - 3} rx={4 + (i % 3) * 2} ry={2} fill="rgba(238, 202, 154, 0.24)" />
+          </g>
+        );
+      })}
     </g>
   );
 };
@@ -928,9 +960,11 @@ export const Scene01RuangTakar: React.FC = () => {
           <g>
             <SoilSlab x={452} y={1152} w={1130} d={228} h={150} texUrl={laterite} dry={1} moss={0.5} uid="s1-slab" seed={7} rimColor="rgba(240, 206, 152, 0.3)" />
             {/* standing water film in the slab depressions */}
-            <ellipse cx={742} cy={1266} rx={104} ry={21} fill="rgba(150, 190, 192, 0.18)" />
-            <ellipse cx={742} cy={1263} rx={66} ry={12} fill="rgba(206, 230, 226, 0.2)" />
-            <ellipse cx={1160} cy={1290} rx={82} ry={15} fill="rgba(150, 190, 192, 0.14)" />
+            <ellipse cx={742} cy={1266} rx={104} ry={21} fill="rgba(22, 14, 8, 0.44)" />
+            <ellipse cx={742} cy={1266} rx={104} ry={21} fill="none" stroke="rgba(196, 220, 214, 0.16)" strokeWidth={1.4} />
+            <path d="M 690,1256 C 716,1248 762,1248 792,1254" fill="none" stroke="rgba(226, 242, 238, 0.28)" strokeWidth={2} strokeLinecap="round" />
+            <ellipse cx={1160} cy={1290} rx={82} ry={15} fill="rgba(22, 14, 8, 0.36)" />
+            <path d="M 1122,1284 C 1144,1278 1176,1278 1196,1283" fill="none" stroke="rgba(226, 242, 238, 0.2)" strokeWidth={1.6} strokeLinecap="round" />
 
             {/* first drop + crown */}
             <DropStreak x={742} y={920 + firstDrop * 320} len={112} opacity={firstDrop > 0 && firstDrop < 1 ? 0.9 : 0} />
@@ -1033,6 +1067,13 @@ const SoilGrainBand: React.FC<{ x: number; y: number; w: number; h: number; seed
 
   return (
     <g opacity={opaque}>
+      <defs>
+        <linearGradient id={`sgb-${seed}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(0,0,0,0)" />
+          <stop offset="34%" stopColor="rgba(10, 6, 3, 0.28)" />
+          <stop offset="100%" stopColor="rgba(6, 4, 2, 0.66)" />
+        </linearGradient>
+      </defs>
       {clods.map((c, i) => (
         <ellipse key={`k${i}`} cx={c.cx} cy={c.cy} rx={c.rx} ry={c.ry} fill="rgba(24, 14, 8, 0.5)" />
       ))}
@@ -1045,13 +1086,14 @@ const SoilGrainBand: React.FC<{ x: number; y: number; w: number; h: number; seed
             ry={g.ry}
             fill={
               g.dark
-                ? `rgba(${26 + g.tone * 26}, ${18 + g.tone * 16}, ${12 + g.tone * 10}, 0.92)`
-                : `rgba(${66 + g.tone * 52}, ${42 + g.tone * 34}, ${28 + g.tone * 22}, 0.95)`
+                ? `rgba(${22 + g.tone * 22}, ${16 + g.tone * 14}, ${11 + g.tone * 9}, 0.92)`
+                : `rgba(${56 + g.tone * 44}, ${36 + g.tone * 28}, ${25 + g.tone * 18}, 0.95)`
             }
           />
-          <ellipse cx={g.cx - g.rx * 0.22} cy={g.cy - g.ry * 0.3} rx={g.rx * 0.5} ry={g.ry * 0.42} fill="rgba(248, 222, 184, 0.07)" />
+          <ellipse cx={g.cx - g.rx * 0.22} cy={g.cy - g.ry * 0.3} rx={g.rx * 0.5} ry={g.ry * 0.42} fill="rgba(248, 222, 184, 0.05)" />
         </g>
       ))}
+      <rect x={x - 16} y={y} width={w + 32} height={h} fill={`url(#sgb-${seed})`} />
     </g>
   );
 };
@@ -1415,13 +1457,13 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
   const rr = r * easeOutCubic(grow);
   if (rr < 0.4) return null;
   const palette = [
-    ['#D9CBA6', '#F1E8CE', '#9A8658'],
-    ['#CBC7AF', '#EDE9D8', '#8B8768'],
-    ['#D7C3A0', '#F4EBD4', '#96805A'],
-    ['#C9C2A6', '#EFE8D2', '#8A8163'],
-    ['#DFD2B4', '#F6EEDA', '#A08A62'],
+    ['#C9C6AE', '#E9E5D4', '#8B8768'],
+    ['#C2C2AE', '#E4E3D2', '#83826C'],
+    ['#CDC6AC', '#EBE6D2', '#8C856A'],
+    ['#C6C0A8', '#E7E1CE', '#86805F'],
+    ['#D2CBB2', '#EEE8D6', '#948B6D'],
   ][Math.floor(tone * 5) % 5];
-  const warm = ['#E9D2A4', '#E4D8B8', '#EBD8AE', '#E2D6BA', '#EFDCB6'][Math.floor(tone * 5) % 5];
+  const warm = ['#DCD2AE', '#D8D2B4', '#DFD4AC', '#D6CFB2', '#E1D6B0'][Math.floor(tone * 5) % 5];
 
   // a smooth, lobed colony edge — catmull-rom through noise radii, never a polygon
   const edge = useMemo(() => {
@@ -1463,11 +1505,12 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
   return (
     <g transform={`translate(${cx}, ${cy})`} opacity={clamp01(grow * 1.7)}>
       <defs>
-        <radialGradient id={`col-${seed}`} cx="32%" cy="26%" r="82%">
+        <radialGradient id={`col-${seed}`} cx="34%" cy="28%" r="86%">
           <stop offset="0%" stopColor={palette[1]} />
-          <stop offset="46%" stopColor={palette[0]} />
-          <stop offset="88%" stopColor={palette[2]} />
-          <stop offset="100%" stopColor="#5C4A2C" />
+          <stop offset="40%" stopColor={palette[0]} />
+          <stop offset="82%" stopColor={palette[0]} />
+          <stop offset="96%" stopColor={palette[2]} />
+          <stop offset="100%" stopColor="#6B6146" />
         </radialGradient>
         <radialGradient id={`colw-${seed}`} cx="50%" cy="52%" r="52%">
           <stop offset="0%" stopColor={warm} stopOpacity={0.62} />
@@ -1488,45 +1531,61 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
       <g clipPath={`url(#colclip-${seed})`}>
         <path d={edge} fill={`url(#colw-${seed})`} />
 
-        {/* concentric growth rings, hand-waved */}
-        {[0.86, 0.7, 0.54, 0.38, 0.22].map((k, i) => (
-          <ellipse
-            key={i}
-            cx={rr * 0.1 * Math.sin(seed + i) - rr * 0.03}
-            cy={rr * 0.08 * Math.cos(seed * 1.3 + i)}
-            rx={rr * k}
-            ry={rr * k * 0.95}
-            fill="none"
-            stroke={`rgba(96, 74, 40, ${0.15 - i * 0.02})`}
-            strokeWidth={1.3}
-            strokeDasharray={i % 2 === 0 ? undefined : '9 12'}
-          />
-        ))}
+        {/* a single faint growth front, never a bullseye */}
+        <ellipse
+          cx={rr * 0.08 * Math.sin(seed)}
+          cy={rr * 0.06 * Math.cos(seed * 1.3)}
+          rx={rr * 0.7}
+          ry={rr * 0.67}
+          fill="none"
+          stroke="rgba(104, 96, 66, 0.12)"
+          strokeWidth={1.2}
+          strokeDasharray="14 26"
+        />
+        {/* powdery flakes drifting toward the rim */}
+        {Array.from({ length: 64 }).map((_, i) => {
+          const a = hash2(i, Math.round(seed * 3), 23) * Math.PI * 2;
+          const rad = rr * (0.42 + hash2(i, 7, 19) * 0.6);
+          const ln = 2 + hash2(i, 2, 9) * 5;
+          return (
+            <line
+              key={`fl${i}`}
+              x1={Math.cos(a) * rad}
+              y1={Math.sin(a) * rad}
+              x2={Math.cos(a + 0.5) * (rad + ln)}
+              y2={Math.sin(a + 0.5) * (rad + ln)}
+              stroke={i % 3 === 0 ? 'rgba(250, 248, 236, 0.34)' : 'rgba(112, 104, 74, 0.16)'}
+              strokeWidth={1}
+              strokeLinecap="round"
+            />
+          );
+        })}
 
         {/* chalky powder: the surface of a Streptomyces colony is matte and dusty */}
         {specks.map((sp, i) => (
           <circle key={i} cx={sp.x} cy={sp.y} r={sp.r} fill={sp.light ? `rgba(255, 252, 236, ${0.2 + (i % 4) * 0.06})` : 'rgba(74, 58, 30, 0.16)'} />
         ))}
 
-        {/* radial striae toward the edge */}
-        {Array.from({ length: 26 }).map((_, i) => {
-          const a = (i / 26) * Math.PI * 2 + seed;
-          return (
-            <line
-              key={`st${i}`}
-              x1={Math.cos(a) * rr * 0.66}
-              y1={Math.sin(a) * rr * 0.66}
-              x2={Math.cos(a) * rr * 1.02}
-              y2={Math.sin(a) * rr * 1.02}
-              stroke="rgba(90, 70, 38, 0.09)"
-              strokeWidth={1.6}
-            />
-          );
-        })}
+        {/* dried crust detail at the oldest centre */}
+        {dry > 0.03 &&
+          Array.from({ length: 16 }).map((_, i) => {
+            const a = hash2(i, Math.round(seed * 5), 31) * Math.PI * 2;
+            const rad = rr * (0.1 + hash2(i, 3, 7) * 0.42);
+            return (
+              <path
+                key={`pz${i}`}
+                d={`M ${Math.cos(a) * rad},${Math.sin(a) * rad} l ${Math.cos(a + 1.2) * 9},${Math.sin(a + 1.2) * 9} l ${Math.cos(a) * 7},${Math.sin(a) * 7}`}
+                fill="none"
+                stroke={`rgba(88, 74, 46, ${0.2 * dry})`}
+                strokeWidth={1.1}
+                strokeLinecap="round"
+              />
+            );
+          })}
 
-        {/* inner dome shading for thickness */}
-        <ellipse cx={-rr * 0.2} cy={-rr * 0.24} rx={rr * 0.44} ry={rr * 0.34} fill="rgba(255, 250, 232, 0.16)" />
-        <ellipse cx={rr * 0.3} cy={rr * 0.34} rx={rr * 0.5} ry={rr * 0.4} fill="rgba(52, 38, 16, 0.1)" />
+        {/* shallow modelling: a crust, not a dome */}
+        <ellipse cx={-rr * 0.22} cy={-rr * 0.26} rx={rr * 0.5} ry={rr * 0.36} fill="rgba(255, 252, 240, 0.1)" />
+        <ellipse cx={rr * 0.34} cy={rr * 0.38} rx={rr * 0.46} ry={rr * 0.34} fill="rgba(74, 62, 36, 0.07)" />
 
         {/* starving centre cracks */}
         {dry > 0.02 &&
@@ -1542,9 +1601,9 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
           })}
       </g>
 
-      {/* rim: a thin lit edge, thicker on the shadow side, as a real colony does */}
-      <path d={edge} fill="none" stroke="rgba(254, 248, 228, 0.5)" strokeWidth={1.7} />
-      <path d={edge} fill="none" stroke="rgba(64, 46, 20, 0.42)" strokeWidth={3.4} strokeDasharray={`${rr * 4} ${rr * 24}`} transform="rotate(28)" />
+      {/* rim: a narrow chalky margin, brighter where the light lands */}
+      <path d={edge} fill="none" stroke="rgba(252, 250, 236, 0.46)" strokeWidth={1.5} />
+      <path d={edge} fill="none" stroke="rgba(94, 82, 54, 0.34)" strokeWidth={2.6} strokeDasharray={`${rr * 3} ${rr * 18}`} transform="rotate(28)" />
 
       {/* chalky aerial tufts */}
       {Array.from({ length: 40 }).map((_, i) => {
@@ -1703,14 +1762,14 @@ export const Scene03CawanAgar: React.FC = () => {
 
   const colonies = useMemo(() => {
     const rnd = makeRng(9102);
-    const clusters = Array.from({ length: 6 }).map(() => {
+    const clusters = Array.from({ length: 9 }).map(() => {
       const a = rnd() * Math.PI * 2;
       const rad = 90 + rnd() * (R - 230);
       return { cx: Math.cos(a) * rad, cy: Math.sin(a) * rad };
     });
     const out: { cx: number; cy: number; r: number; tone: number; delay: number; seed: number }[] = [];
     clusters.forEach((c, ci) => {
-      const n = 4 + Math.floor(rnd() * 4);
+      const n = 4 + Math.floor(rnd() * 5);
       for (let i = 0; i < n; i++) {
         const a = rnd() * Math.PI * 2;
         const rad = 20 + rnd() * 120;
@@ -1720,7 +1779,7 @@ export const Scene03CawanAgar: React.FC = () => {
         out.push({
           cx: px,
           cy: py,
-          r: 22 + rnd() * (i === 0 ? 96 : 58),
+          r: 16 + rnd() * (i === 0 ? 62 : 34),
           tone: rnd(),
           delay: rnd() * 0.45,
           seed: ci * 31 + i * 7 + 3,

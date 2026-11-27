@@ -91,15 +91,15 @@ const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: st
 
       {/* neck: a long S from the shoulder into the skull */}
       <path
-        d="M 56,-140 C 80,-152 92,-176 98,-196 C 103,-214 116,-222 126,-214 L 134,-206 C 120,-198 112,-184 106,-166 C 98,-142 84,-120 66,-110 Z"
+        d="M 58,-138 C 84,-146 96,-166 100,-182 C 104,-198 116,-206 128,-198 L 136,-190 C 122,-184 114,-172 108,-158 C 100,-138 86,-120 68,-110 Z"
         fill={color}
       />
       {/* skull, muzzle, jaw */}
-      <path d="M 120,-218 C 134,-222 148,-214 152,-202 C 156,-190 148,-182 136,-180 C 126,-179 118,-186 118,-196 C 118,-204 118,-212 120,-218 Z" fill={color} />
-      <path d="M 146,-206 C 158,-208 166,-204 166,-198 C 166,-193 158,-190 150,-192 Z" fill={color} />
-      <path d="M 118,-186 C 128,-184 138,-186 144,-190" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={2.4} />
+      <path d="M 122,-202 C 136,-208 152,-202 158,-190 C 164,-178 156,-170 144,-168 C 132,-166 122,-174 122,-184 C 122,-192 121,-197 122,-202 Z" fill={color} />
+      <path d="M 152,-194 C 166,-197 174,-192 173,-185 C 172,-179 162,-177 154,-180 Z" fill={color} />
+      <path d="M 122,-174 C 132,-171 143,-173 150,-178" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={2.2} />
       {/* ear */}
-      <path d="M 120,-218 L 114,-230 L 124,-226 Z" fill={color} />
+      <path d="M 124,-202 L 118,-216 L 130,-210 Z" fill={color} />
 
       {/* near-side legs, fully weighted */}
       {legs
@@ -130,15 +130,15 @@ const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: st
       {/* cargo roll, or a seated rider */}
       {rider ? (
         <g fill={color}>
-          <path d="M -6,-172 C -14,-186 -6,-198 6,-198 C 16,-198 22,-188 20,-176 L 16,-152 L 2,-152 Z" />
-          <circle cx={8} cy={-206} r={9} />
-          <path d="M 18,-196 C 28,-184 30,-168 24,-158 L 14,-160 C 18,-170 16,-182 10,-190 Z" />
+          <path d="M -8,-170 C -16,-182 -8,-192 4,-192 C 14,-192 20,-183 18,-172 L 15,-150 L 0,-150 Z" />
+          <circle cx={6} cy={-199} r={8.4} />
+          <path d="M 16,-190 C 26,-179 28,-164 22,-155 L 13,-157 C 17,-166 15,-177 9,-185 Z" />
         </g>
       ) : (
         <g>
-          <ellipse cx={-4} cy={-172} rx={26} ry={13} fill={color} transform="rotate(-6 -4 -172)" />
-          <ellipse cx={-4} cy={-172} rx={26} ry={13} fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={2} transform="rotate(-6 -4 -172)" />
-          <path d="M -30,-176 C -20,-166 -4,-164 12,-168" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth={2} />
+          <ellipse cx={-4} cy={-168} rx={27} ry={12} fill={color} transform="rotate(-8 -4 -168)" />
+          <ellipse cx={-4} cy={-168} rx={27} ry={12} fill="none" stroke="rgba(0,0,0,0.26)" strokeWidth={2} transform="rotate(-8 -4 -168)" />
+          <path d="M -31,-172 C -20,-162 -4,-160 13,-164" fill="none" stroke="rgba(0,0,0,0.26)" strokeWidth={2} />
         </g>
       )}
     </g>
@@ -330,24 +330,53 @@ export const Scene07KompasGurun: React.FC = () => {
 
         {/* waterhole */}
         <g>
-          <ellipse cx={1078} cy={1462} rx={256} ry={58} fill="rgba(12, 8, 4, 0.5)" />
-          <ellipse cx={1078} cy={1454} rx={244} ry={50} fill="url(#s7-water)" />
-          <ellipse cx={1078} cy={1454} rx={244} ry={50} fill="url(#s7-glow)" opacity={0.8} />
-          {Array.from({ length: 9 }).map((_, i) => (
-            <ellipse key={i} cx={1078 - 170 + i * 44} cy={1444 + (i % 3) * 12} rx={50 - i * 2} ry={4.4} fill="rgba(232, 214, 172, 0.16)" />
+          <ellipse cx={1082} cy={1468} rx={268} ry={62} fill="rgba(10, 7, 3, 0.5)" />
+          {/* mud rim */}
+          <path
+            d="M 830,1452 C 852,1424 936,1408 1030,1406 C 1130,1404 1234,1416 1300,1440 C 1318,1448 1316,1466 1296,1474 C 1240,1496 1130,1508 1032,1506 C 940,1504 866,1490 836,1472 C 822,1464 820,1458 830,1452 Z"
+            fill="#2E2416"
+          />
+          <path
+            d="M 852,1452 C 872,1430 946,1416 1032,1414 C 1124,1412 1216,1422 1278,1442 C 1294,1448 1292,1462 1274,1468 C 1224,1486 1126,1496 1034,1494 C 950,1492 884,1480 858,1464 C 846,1458 846,1456 852,1452 Z"
+            fill="url(#s7-water)"
+          />
+          {/* reflected sky and a broken horizon line */}
+          <path d="M 880,1440 C 950,1424 1130,1422 1250,1440 L 1250,1452 C 1120,1436 960,1438 880,1452 Z" fill="rgba(226, 186, 126, 0.2)" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <ellipse key={i} cx={960 + i * 56} cy={1458 + (i % 3) * 10} rx={38 - i * 3} ry={3.4} fill="rgba(238, 214, 170, 0.14)" />
           ))}
-          {/* far bank + reeds */}
-          <path d="M 836,1442 C 900,1424 980,1428 1040,1436 C 1120,1446 1200,1438 1318,1428 L 1318,1460 L 836,1460 Z" fill="rgba(38, 32, 20, 0.8)" />
-          {Array.from({ length: 15 }).map((_, i) => {
-            const rx = 866 + i * 30;
-            const sway = Math.sin(localSec * 0.7 + i) * 5;
+          {/* far bank reeds, varied and leaning */}
+          {Array.from({ length: 24 }).map((_, i) => {
+            const rx = 856 + i * 19 + (i % 3) * 6;
+            const hgt = 58 + (i % 7) * 22;
+            const sway = Math.sin(localSec * 0.6 + i * 0.7) * 5;
             return (
               <g key={i}>
-                <path d={`M ${rx},${1444} C ${rx + sway},${1404} ${rx + 9 + sway},${1372} ${rx + 3 + sway * 1.6},${1340}`} fill="none" stroke="#4B5738" strokeWidth={2.6} strokeLinecap="round" />
-                <path d={`M ${rx + 1 + sway * 1.6},${1344} l -8,-15 M ${rx + 1 + sway * 1.6},${1344} l 9,-17 M ${rx + 1 + sway * 1.6},${1344} l 1,-20`} fill="none" stroke="#5C6B44" strokeWidth={1.8} strokeLinecap="round" />
+                <path
+                  d={`M ${rx},${1448} C ${rx + sway * 0.4},${1448 - hgt * 0.5} ${rx + sway + 8},${1448 - hgt * 0.8} ${rx + sway * 1.4 + 10},${1448 - hgt}`}
+                  fill="none"
+                  stroke={i % 4 === 0 ? '#5A6640' : '#48543A'}
+                  strokeWidth={1.8 + (i % 3) * 0.7}
+                  strokeLinecap="round"
+                />
+                {(i % 3 === 0) &&
+                  [0.55, 0.78].map((k, j) => (
+                    <path
+                      key={j}
+                      d={`M ${rx + sway * k},${1448 - hgt * k} q ${10 + j * 6},-8 ${16 + j * 8},-18`}
+                      fill="none"
+                      stroke="#5E6C46"
+                      strokeWidth={1.4}
+                      strokeLinecap="round"
+                    />
+                  ))}
               </g>
             );
           })}
+          {/* a few stones on the mud */}
+          {[0, 1, 2, 3].map((i) => (
+            <ellipse key={i} cx={880 + i * 118} cy={1470 + (i % 2) * 12} rx={9 + (i % 3) * 4} ry={5} fill="rgba(58, 46, 28, 0.9)" />
+          ))}
         </g>
 
         {/* the geosmin plume, carried from the waterhole toward the caravan */}
@@ -394,7 +423,7 @@ export const Scene07KompasGurun: React.FC = () => {
 
         {/* typography */}
         <g opacity={reveal}>
-          <g transform="translate(150, 940) rotate(-90)">
+          <g transform="translate(196, 940) rotate(-90)">
             <text x={0} y={0} fill={art.ink} fontFamily={IDENTITY.fontInstrument} fontStyle="italic" fontSize={104} letterSpacing="-0.02em">
               Kompas
             </text>
@@ -541,10 +570,10 @@ const RainWindow: React.FC<{ x: number; y: number; w: number; h: number; p: numb
 
   const bokeh = Array.from({ length: 16 }).map((_, i) => ({
     bx: gx + hash2(i, 4, 9) * gw,
-    by: gy + hash2(i, 8, 3) * gh * 0.72,
-    br: 7 + hash2(i, 2, 7) * 26,
+    by: gy + hash2(i, 8, 3) * gh * 0.62,
+    br: 4 + hash2(i, 2, 7) * 11,
     warm: i % 3 !== 0,
-    op: 0.1 + hash2(i, 6, 5) * 0.22,
+    op: 0.05 + hash2(i, 6, 5) * 0.09,
   }));
 
   const beads = Array.from({ length: 44 }).map((_, i) => {
@@ -638,8 +667,8 @@ const RainWindow: React.FC<{ x: number; y: number; w: number; h: number; p: numb
         {/* rivulets running down the pane */}
         {rivulets.map((d, i) => (
           <g key={i}>
-            <path d={d} fill="none" stroke="rgba(210, 234, 228, 0.14)" strokeWidth={7} strokeLinecap="round" />
-            <path d={d} fill="none" stroke="rgba(244, 252, 248, 0.3)" strokeWidth={1.6} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="rgba(210, 234, 228, 0.08)" strokeWidth={4} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="rgba(244, 252, 248, 0.2)" strokeWidth={1.2} strokeLinecap="round" />
           </g>
         ))}
 
@@ -696,6 +725,11 @@ export const Scene08StillLife: React.FC = () => {
             <stop offset="0%" stopColor="rgba(238, 190, 126, 0.2)" />
             <stop offset="46%" stopColor="rgba(238, 190, 126, 0.03)" />
             <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+          </linearGradient>
+          <linearGradient id="s8-cupShade" x1="0" y1="0" x2="1" y2="0.3">
+            <stop offset="0%" stopColor="rgba(255, 250, 236, 0.34)" />
+            <stop offset="52%" stopColor="rgba(255, 246, 226, 0.02)" />
+            <stop offset="100%" stopColor="rgba(96, 74, 44, 0.26)" />
           </linearGradient>
           <linearGradient id="s8-cold" x1="1" y1="0" x2="0" y2="0">
             <stop offset="0%" stopColor="rgba(148, 182, 178, 0.16)" />
@@ -755,6 +789,37 @@ export const Scene08StillLife: React.FC = () => {
         </g>
 
         {/* ---------------- closing note, torn paper, no glass card -------- */}
+        {/* the cup that stayed home */}
+        <g opacity={easeOutCubic(prog(globalSec, 108.4, 110.2))} transform="translate(268, 1210)">
+          <ellipse cx={6} cy={96} rx={132} ry={22} fill="rgba(0,0,0,0.44)" />
+          <ellipse cx={0} cy={82} rx={122} ry={19} fill="#CBB894" />
+          <ellipse cx={0} cy={78} rx={122} ry={18} fill="#E4D6B8" />
+          <ellipse cx={0} cy={76} rx={92} ry={12} fill="rgba(120, 96, 64, 0.28)" />
+          <path d="M -66,-6 C -74,40 -60,78 0,78 C 60,78 74,40 66,-6 Z" fill="#E6D8BA" />
+          <path d="M -66,-6 C -74,40 -60,78 0,78 C 60,78 74,40 66,-6 Z" fill="url(#s8-cupShade)" />
+          <ellipse cx={0} cy={-6} rx={66} ry={15} fill="#F0E4CA" />
+          <ellipse cx={0} cy={-4} rx={54} ry={11} fill="#3A2416" />
+          <ellipse cx={-12} cy={-7} rx={26} ry={5} fill="rgba(240, 200, 140, 0.28)" />
+          <path d="M 64,10 C 104,10 108,52 66,54" fill="none" stroke="#E2D4B6" strokeWidth={13} strokeLinecap="round" />
+          <path d="M 64,10 C 104,10 108,52 66,54" fill="none" stroke="rgba(120, 96, 64, 0.24)" strokeWidth={2} strokeLinecap="round" />
+          <path d="M -66,-6 C -74,40 -60,78 0,78" fill="none" stroke="rgba(255, 250, 236, 0.5)" strokeWidth={3} />
+          {/* steam, thin and rising */}
+          {[0, 1, 2].map((i) => {
+            const sp = ((localSec * 26 + i * 40) % 120) / 120;
+            return (
+              <path
+                key={i}
+                d={`M ${-24 + i * 22},${-18 - sp * 96} C ${-34 + i * 22},${-50 - sp * 96} ${-10 + i * 22},${-70 - sp * 96} ${-20 + i * 22},${-104 - sp * 96}`}
+                fill="none"
+                stroke="rgba(246, 232, 206, 0.22)"
+                strokeWidth={3 - i * 0.6}
+                strokeLinecap="round"
+                opacity={1 - sp}
+              />
+            );
+          })}
+        </g>
+
         <g opacity={noteIn} transform={`translate(0, ${(1 - noteIn) * 34})`}>
           <g opacity={easeOutCubic(prog(globalSec, 111.9, 112.6))}>
             <path

@@ -35,159 +35,173 @@ export const Springtail: React.FC<{
   alpha?: number;
   bodyFill?: string;
   rim?: string;
-}> = ({ x, y, s, walk = 0, look = 0, furcula = 0, gut = 0, sporeP = 0, alpha = 1, bodyFill = '#E3D5B4', rim = 'rgba(255, 248, 226, 0.62)' }) => {
+}> = ({ x, y, s, walk = 0, look = 0, furcula = 0, gut = 0, sporeP = 0, alpha = 1, bodyFill = '#DCCFAD', rim = 'rgba(255, 250, 232, 0.66)' }) => {
+  const uid = `sp-${Math.round(x)}-${Math.round(y)}-${Math.round(s * 100)}`;
+
+  // thorax legs: three pairs, each with a real knee and two claws
   const legs = [
-    { x0: -34, y0: 20, kx: -52, ky: 54, x1: -66, y1: 84, ph: 0.0 },
-    { x0: -18, y0: 24, kx: -22, ky: 60, x1: -34, y1: 92, ph: 0.5 },
-    { x0: 0, y0: 26, kx: 10, ky: 60, x1: 2, y1: 94, ph: 1.0 },
-    { x0: 16, y0: 24, kx: 30, ky: 56, x1: 28, y1: 88, ph: 1.5 },
-    { x0: 30, y0: 18, kx: 46, ky: 48, x1: 48, y1: 78, ph: 2.0 },
-    { x0: 40, y0: 10, kx: 56, ky: 38, x1: 60, y1: 66, ph: 2.5 },
+    { x0: 30, y0: 16, kx: 44, ky: 40, x1: 54, y1: 62, ph: 0 },
+    { x0: 12, y0: 20, kx: 20, ky: 44, x1: 24, y1: 68, ph: 1.6 },
+    { x0: -6, y0: 20, kx: -14, ky: 44, x1: -12, y1: 66, ph: 3.1 },
   ];
 
-  const uid = `sp-${Math.round(x)}-${Math.round(y)}-${Math.round(s * 100)}`;
   const body =
-    'M -132,-6 C -136,-26 -118,-40 -96,-40 C -70,-52 -38,-50 -14,-40 C 10,-32 28,-22 38,-10 C 46,0 46,12 38,20 C 20,32 -10,36 -44,32 C -80,30 -108,22 -124,12 C -130,6 -132,0 -132,-6 Z';
+    'M -152,-4 C -154,-18 -140,-28 -120,-30 C -96,-34 -66,-32 -44,-26 C -24,-22 -8,-18 6,-12 C 20,-8 30,-3 33,5 C 35,15 24,20 10,22 C -12,26 -46,28 -76,24 C -106,22 -132,18 -146,8 C -152,4 -152,0 -152,-4 Z';
+  const head =
+    'M 30,-14 C 36,-30 54,-36 70,-28 C 84,-20 88,-2 82,10 C 76,22 58,26 46,20 C 34,13 27,2 30,-14 Z';
 
   return (
     <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={alpha}>
-      {/* soft contact shadow */}
-      <ellipse cx={-40} cy={100} rx={128} ry={15} fill="rgba(0,0,0,0.4)" />
+      <ellipse cx={-40} cy={70} rx={112} ry={11} fill="rgba(0,0,0,0.34)" />
 
-      {/* antennae: four jointed segments, tapering */}
+      {/* antennae: two four-segment, beaded feelers off the snout */}
       {[
-        { pts: [[52, -22], [86, -40], [118, -44], [150, -34], [176, -44]], ph: 0 },
-        { pts: [[54, -8], [90, -14], [122, -4], [150, 10], [172, 10]], ph: 1.5 },
-      ].map((a, i) => {
-        const sway = Math.sin(look * 2 + a.ph) * 4;
-        const d = `M ${a.pts[0][0]},${a.pts[0][1]} C ${a.pts[1][0]},${a.pts[1][1] + sway} ${a.pts[2][0]},${a.pts[2][1] - sway} ${a.pts[3][0]},${a.pts[3][1]} L ${a.pts[4][0]},${a.pts[4][1] + sway}`;
+        { a: -18, spread: -1, ph: 0 },
+        { a: 4, spread: 1, ph: 1.7 },
+      ].map((ant, i) => {
+        const sway = Math.sin(look * 2 + ant.ph) * 3;
+        const x0 = 80;
+        const y0 = ant.a;
+        const d = `M ${x0},${y0} C ${x0 + 26},${y0 - 10 + sway * ant.spread} ${x0 + 44},${y0 + 12} ${x0 + 62},${y0 + 6 + sway}`;
         return (
           <g key={i}>
-            <path d={d} fill="none" stroke={bodyFill} strokeWidth={5.4} strokeLinecap="round" />
-            <path d={d} fill="none" stroke="rgba(96, 74, 42, 0.28)" strokeWidth={1.2} strokeLinecap="round" transform="translate(0.8, 1.4)" />
-            {[0.28, 0.52, 0.76, 0.93].map((k, j) => {
-              const px = a.pts[0][0] + (a.pts[4][0] - a.pts[0][0]) * k;
-              const py = a.pts[0][1] + (a.pts[4][1] - a.pts[0][1]) * k + Math.sin(k * 4) * (i === 0 ? -8 : 6);
-              return <circle key={j} cx={px} cy={py} r={2.2} fill="rgba(255, 250, 232, 0.9)" stroke="rgba(96, 74, 42, 0.4)" strokeWidth={0.6} />;
+            <path d={d} fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="rgba(96, 76, 44, 0.3)" strokeWidth={1.2} strokeLinecap="round" transform="translate(0.8, 1.2)" />
+            {[0.25, 0.48, 0.7, 0.9, 1].map((k, j) => {
+              const px = x0 + 62 * k;
+              const py = y0 + Math.sin(k * 2.6) * 8 + sway * k;
+              return <circle key={j} cx={px} cy={py} r={j === 4 ? 2.4 : 2.9} fill="rgba(250, 244, 226, 0.92)" stroke="rgba(96, 76, 44, 0.42)" strokeWidth={0.6} />;
             })}
           </g>
         );
       })}
 
-      {/* furcula: folded beneath, or snapped out for the launch */}
-      {furcula > 0.02 ? (
-        <g>
+      {/* furcula: folded beneath the abdomen, or snapped open for the jump */}
+      <g>
+        <path
+          d={furcula > 0.02
+            ? `M -34,20 Q ${-34 - 64 * furcula},${26 + 34 * furcula} ${-34 - 150 * furcula},${10 + 96 * furcula}`
+            : 'M -34,20 Q -70,34 -104,30'}
+          fill="none"
+          stroke={bodyFill}
+          strokeWidth={4.6}
+          strokeLinecap="round"
+        />
+        {furcula > 0.02 && (
           <path
-            d={`M -126,10 Q ${-126 - 70 * furcula},${30 - 40 * furcula} ${-126 - 168 * furcula},${64 - 92 * furcula}`}
+            d={`M ${-34 - 150 * furcula},${10 + 96 * furcula} l -12,${-8 * furcula - 4} M ${-34 - 150 * furcula},${10 + 96 * furcula} l -12,${8 * furcula + 4}`}
             fill="none"
             stroke={bodyFill}
-            strokeWidth={7}
-            strokeLinecap="round"
-            opacity={0.95}
-          />
-          <path
-            d={`M -126,10 Q ${-126 - 56 * furcula},${44 - 20 * furcula} ${-126 - 150 * furcula},${86 - 60 * furcula}`}
-            fill="none"
-            stroke="rgba(120, 92, 52, 0.7)"
-            strokeWidth={3.4}
+            strokeWidth={3.6}
             strokeLinecap="round"
           />
-          <path d={`M ${-126 - 168 * furcula},${64 - 92 * furcula} l -14,-6 l 16,-8`} fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
-        </g>
-      ) : (
-        <path d="M -126,8 Q -164,26 -170,54" fill="none" stroke={bodyFill} strokeWidth={6} strokeLinecap="round" opacity={0.9} />
-      )}
+        )}
+      </g>
 
-      {/* six jointed walking legs */}
+      {/* legs */}
       {legs.map((l, i) => {
-        const swing = Math.sin(walk * Math.PI * 2 + l.ph) * 8;
+        const swing = Math.sin(walk * Math.PI * 2 + l.ph) * 7;
         return (
           <g key={i}>
             <path
-              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.5},${l.ky} ${l.x1 + swing},${l.y1}`}
+              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.4},${l.ky} ${l.x1 + swing},${l.y1}`}
               fill="none"
               stroke={bodyFill}
-              strokeWidth={5.2}
+              strokeWidth={4.8}
               strokeLinecap="round"
             />
             <path
-              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.5},${l.ky} ${l.x1 + swing},${l.y1}`}
+              d={`M ${l.x0},${l.y0} Q ${l.kx + swing * 0.4},${l.ky} ${l.x1 + swing},${l.y1}`}
               fill="none"
-              stroke="rgba(110, 84, 48, 0.24)"
-              strokeWidth={1.3}
+              stroke="rgba(104, 82, 48, 0.26)"
+              strokeWidth={1.2}
               strokeLinecap="round"
-              transform="translate(0.9, 1.2)"
+              transform="translate(0.8, 1)"
             />
-            <line x1={l.x1 + swing} y1={l.y1} x2={l.x1 + swing + 6} y2={l.y1 + 5} stroke={bodyFill} strokeWidth={2.4} strokeLinecap="round" />
+            <path d={`M ${l.x1 + swing},${l.y1} l 5,7 M ${l.x1 + swing},${l.y1} l -5,7`} fill="none" stroke={bodyFill} strokeWidth={2.2} strokeLinecap="round" />
           </g>
         );
       })}
 
-      {/* body: one continuous silhouette, humpbacked */}
+      {/* abdomen + thorax */}
+      <defs>
+        <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0.1" y2="1">
+          <stop offset="0%" stopColor="rgba(255, 250, 234, 0.62)" />
+          <stop offset="46%" stopColor="rgba(255, 246, 222, 0.1)" />
+          <stop offset="100%" stopColor="rgba(104, 80, 44, 0.34)" />
+        </linearGradient>
+        <clipPath id={`${uid}-clip`}>
+          <path d={body} />
+        </clipPath>
+      </defs>
       <path d={body} fill={bodyFill} />
-      <g>
-        <defs>
-          <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255, 252, 238, 0.55)" />
-            <stop offset="52%" stopColor="rgba(255, 248, 226, 0.06)" />
-            <stop offset="100%" stopColor="rgba(108, 82, 46, 0.3)" />
-          </linearGradient>
-          <clipPath id={`${uid}-clip`}>
-            <path d={body} />
-          </clipPath>
-        </defs>
-        <path d={body} fill={`url(#${uid}-fill)`} />
-        {/* segment ridges */}
-        {[-104, -84, -64, -44, -24, -4, 16].map((sx, i) => (
+      <path d={body} fill={`url(#${uid}-fill)`} />
+      <g clipPath={`url(#${uid}-clip)`}>
+        {/* abdominal segment ridges, shallow and curved */}
+        {[-136, -114, -92, -70, -48, -26].map((sx, i) => (
           <path
             key={i}
-            d={`M ${sx},${-38 + Math.abs(sx + 50) * 0.05} C ${sx + 8},${-18} ${sx + 8},${10} ${sx},${30}`}
+            d={`M ${sx},${-30 + i * 0.4} C ${sx + 7},${-14} ${sx + 7},${10} ${sx},${24}`}
             fill="none"
-            stroke="rgba(104, 78, 44, 0.24)"
-            strokeWidth={1.6}
+            stroke="rgba(104, 80, 44, 0.2)"
+            strokeWidth={1.5}
           />
         ))}
-        <g clipPath={`url(#${uid}-clip)`}>
-          {/* fine dorsal setae */}
-          {Array.from({ length: 26 }).map((_, i) => {
-            const bx = -132 + i * 6.6;
-            const by = -40 + Math.sin((i / 26) * Math.PI) * 6;
-            return <line key={i} x1={bx} y1={by} x2={bx - 3} y2={by - 8} stroke="rgba(246, 236, 208, 0.42)" strokeWidth={0.9} />;
-          })}
-        </g>
+        {/* translucent gut */}
+        {gut > 0.01 && (
+          <g opacity={clamp01(gut)}>
+            <path d="M 34,2 C 6,10 -30,14 -70,8 C -104,3 -128,6 -146,2" fill="none" stroke="rgba(178, 138, 78, 0.34)" strokeWidth={11} strokeLinecap="round" />
+            <path d="M 34,2 C 6,10 -30,14 -70,8 C -104,3 -128,6 -146,2" fill="none" stroke="rgba(248, 238, 210, 0.22)" strokeWidth={5} strokeLinecap="round" />
+            {sporeP > 0.01 &&
+              Array.from({ length: 14 }).map((_, i) => {
+                const t = i / 13;
+                if (t > sporeP * 1.2) return null;
+                const px = 24 - t * 160;
+                const py = 4 + Math.sin(t * Math.PI * 1.3) * 7;
+                return (
+                  <g key={i}>
+                    <circle cx={px} cy={py} r={3.1} fill="rgba(226, 176, 96, 0.92)" />
+                    <circle cx={px - 0.9} cy={py - 0.9} r={1.1} fill="rgba(255, 246, 216, 0.9)" />
+                  </g>
+                );
+              })}
+          </g>
+        )}
+        {/* body sheen */}
+        <ellipse cx={-70} cy={-12} rx={70} ry={11} fill="rgba(255, 252, 240, 0.16)" />
       </g>
-      <path d={body} fill="none" stroke="rgba(112, 86, 48, 0.4)" strokeWidth={1.2} />
-      <path d="M -128,-12 C -130,-30 -112,-42 -92,-42" fill="none" stroke={rim} strokeWidth={2} strokeLinecap="round" opacity={0.6} />
+      <path d={body} fill="none" stroke="rgba(108, 84, 46, 0.36)" strokeWidth={1.2} />
 
-      {/* head: rounded capsule with a downward snout */}
-      <path
-        d="M 26,-24 C 34,-40 54,-46 70,-40 C 88,-33 96,-16 92,0 C 88,16 72,24 54,22 C 36,20 24,8 26,-8 Z"
-        fill={bodyFill}
-        stroke="rgba(112, 86, 48, 0.4)"
-        strokeWidth={1.2}
-      />
-      <path d="M 34,-32 C 44,-42 62,-42 74,-35" fill="none" stroke="rgba(255, 250, 232, 0.6)" strokeWidth={3} strokeLinecap="round" />
-      {/* eye patch + mouth cone */}
-      <ellipse cx={66} cy={-14} rx={10} ry={9} fill="#241C12" opacity={0.85} />
-      <circle cx={62.6} cy={-17} r={2.6} fill="rgba(255, 255, 255, 0.72)" />
-      <path d="M 88,2 C 96,8 98,16 92,22" fill="none" stroke={bodyFill} strokeWidth={6} strokeLinecap="round" />
-      <path d="M 92,18 C 100,20 104,26 102,32" fill="none" stroke="rgba(96, 74, 42, 0.5)" strokeWidth={1.8} strokeLinecap="round" />
+      {/* dorsal setae */}
+      {Array.from({ length: 22 }).map((_, i) => {
+        const bx = -140 + i * 7.6;
+        const by = -30 + Math.abs(bx + 60) * 0.03;
+        return <line key={i} x1={bx} y1={by} x2={bx - 4} y2={by - 7} stroke="rgba(250, 242, 218, 0.42)" strokeWidth={0.9} strokeLinecap="round" />;
+      })}
 
-      {/* translucent gut with surviving spores */}
-      {gut > 0.01 && (
-        <g opacity={clamp01(gut)}>
-          <path d="M 30,4 C 4,16 -36,20 -68,10 C -96,2 -118,8 -134,20" fill="none" stroke="rgba(196, 158, 96, 0.3)" strokeWidth={14} strokeLinecap="round" />
-          <path d="M 30,4 C 4,16 -36,20 -68,10 C -96,2 -118,8 -134,20" fill="none" stroke="rgba(244, 232, 202, 0.24)" strokeWidth={8} strokeLinecap="round" />
-          {Array.from({ length: 12 }).map((_, i) => {
-            const t = i / 11;
-            const px = 26 - t * 158;
-            const py = 6 + Math.sin(t * Math.PI) * 12;
-            return (
-              <circle key={i} cx={px} cy={py} r={4} fill="#D8A148" opacity={clamp01(sporeP * 1.5 - t * 0.4)} stroke="rgba(60, 40, 16, 0.5)" strokeWidth={0.7} />
-            );
-          })}
-        </g>
-      )}
+      {/* collophore tube under the thorax */}
+      <path d="M 6,22 L 4,32 L 12,32 Z" fill={bodyFill} stroke="rgba(108, 84, 46, 0.3)" strokeWidth={0.8} />
+
+      {/* head capsule, set slightly forward of the thorax */}
+      <path d={head} fill={bodyFill} stroke="rgba(108, 84, 46, 0.36)" strokeWidth={1.2} />
+      <path d="M 36,-16 C 44,-30 60,-32 72,-26" fill="none" stroke={rim} strokeWidth={2.4} strokeLinecap="round" opacity={0.6} />
+      {/* eye patch: a small cluster of ommatidia, not one cartoon eye */}
+      <g>
+        <ellipse cx={62} cy={-6} rx={12} ry={11} fill="rgba(38, 28, 16, 0.8)" />
+        {[
+          [58, -10],
+          [66, -9],
+          [57, -2],
+          [64, -1],
+          [61, -6],
+        ].map(([ox, oy], i) => (
+          <circle key={i} cx={ox} cy={oy} r={2.3} fill="#171008" />
+        ))}
+        <circle cx={57.4} cy={-11.4} r={1.4} fill="rgba(255, 250, 232, 0.7)" />
+      </g>
+      {/* mouth cone */}
+      <path d="M 76,10 C 84,16 84,26 76,32" fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
+      <path d="M 78,28 C 84,30 86,34 84,38" fill="none" stroke="rgba(96, 76, 44, 0.5)" strokeWidth={1.6} strokeLinecap="round" />
     </g>
   );
 };
@@ -586,17 +600,17 @@ export const Scene06AtlasLontaran: React.FC = () => {
           <g opacity={easeOutCubic(prog(globalSec, 79.4, 80.6))}>
             <LeaderLabel from={[820, 1082]} to={[1006, 1188]} text="SALURAN CERNA" sub="SPORA BERTAHAN DARI ENZIM" color="rgba(232, 218, 190, 0.74)" size={16} dot="#D8A148" />
             <LeaderLabel from={[604, 986]} to={[404, 868]} text="KUTIKULA BERBULU" sub="TEMPAT SPORA MENEMPEL" color="rgba(232, 218, 190, 0.7)" size={16} dot="#D8A148" anchor="end" />
-            <LeaderLabel from={[436, 1112]} to={[300, 1272]} text="EKOR PEGAS (FURCULA)" sub="PELONTAR PULUHAN KALI TINGGI TUBUH" color="rgba(232, 218, 190, 0.7)" size={15} dot="#D8A148" anchor="end" />
+            <LeaderLabel from={[436, 1112]} to={[436, 1330]} text="EKOR PEGAS (FURCULA)" sub="PELONTAR 30× TINGGI TUBUH" color="rgba(232, 218, 190, 0.7)" size={15} dot="#D8A148" anchor="end" />
           </g>
 
           {/* measured scale bar */}
-          <g opacity={easeOutCubic(prog(globalSec, 80.0, 81.4))} transform="translate(468, 1276)">
+          <g opacity={easeOutCubic(prog(globalSec, 80.0, 81.4))} transform="translate(1016, 1748)">
             <RuleLine x1={0} y1={0} x2={300} y2={0} color="rgba(232, 220, 196, 0.8)" width={2} />
             {[0, 1, 2, 3].map((i) => (
               <line key={i} x1={i * 100} y1={-9} x2={i * 100} y2={9} stroke="rgba(232, 220, 196, 0.8)" strokeWidth={2} />
             ))}
-            <Mono x={0} y={38} text="0" size={13} color="rgba(232, 220, 196, 0.62)" tracking={0.1} weight={400} />
-            <Mono x={300} y={38} text="1,5 MM" size={13} color="rgba(232, 220, 196, 0.62)" anchor="end" tracking={0.1} weight={400} />
+            <Mono x={0} y={34} text="0" size={13} color="rgba(232, 220, 196, 0.58)" tracking={0.1} weight={400} />
+            <Mono x={300} y={34} text="1,5 MM" size={13} color="rgba(232, 220, 196, 0.58)" anchor="end" tracking={0.1} weight={400} />
           </g>
 
           {/* the strategy, stated as typography not as a chart */}
