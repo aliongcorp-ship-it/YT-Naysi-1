@@ -25,8 +25,8 @@ import {
   easeInOutCubic,
   easeOutCubic,
 } from './script';
-import { Scene01, Scene02, Scene03, Scene04, Scene05, Scene06, Scene07, Scene08 } from './matahari';
-import { Scene09, Scene10, Scene11, Scene12 } from './y1';
+import { Scene01, Scene02, Scene03, Scene04, Scene05, Scene06 } from './matahari';
+import { Scene07, Scene08, Scene09, Scene10, Scene11, Scene12 } from './y1';
 
 // ============================================================================
 // 1. LOCAL FONTS — no network at render time

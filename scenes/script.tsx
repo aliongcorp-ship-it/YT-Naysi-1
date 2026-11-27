@@ -51,7 +51,7 @@ export const VIDEO_SPEC = {
 // headline of every chapter, used by the scene compositions
 export const CHAPTER_TITLES: readonly string[] = [
   'CAHAYA YANG TERLAMBAT',
-  'EMPAT RATUS SEMBILAN PULUH SEMBILAN',
+  '499 DETIK',
   'MELIHAT MASA LALU',
   'MENGELILINGI BAYANGAN',
   'ORBIT LEPAS',
@@ -66,7 +66,7 @@ export const CHAPTER_TITLES: readonly string[] = [
 
 export const CHAPTER_KICKERS: readonly string[] = [
   'skenario yang mustahil, tapi tetap diajarkan',
-  'aritmetika cahaya',
+  'jarak dibagi kecepatan cahaya',
   'skala yang membuat kepala pusing',
   'relativitas umum, versi sederhana',
   'kecepatan melarikan diri',
