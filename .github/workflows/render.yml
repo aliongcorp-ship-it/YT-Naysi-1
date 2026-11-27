@@ -37,17 +37,17 @@ jobs:
       matrix:
         include:
           - shard: 0
-            range: '0-1736'
+            range: '0-2694'
           - shard: 1
-            range: '1737-3473'
+            range: '2695-5389'
           - shard: 2
-            range: '3474-5210'
+            range: '5390-8084'
           - shard: 3
-            range: '5211-6947'
+            range: '8085-10779'
           - shard: 4
-            range: '6948-8684'
+            range: '10780-13474'
           - shard: 5
-            range: '8685-10418'
+            range: '13475-16167'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -119,7 +119,7 @@ jobs:
               -of default=noprint_wrappers=1 "$VIDEO_OUT"
           } | tee out/qa/probe.txt
 
-          TIMES=(2.20 9.50 18.00 26.00 36.00 42.50 49.00 56.00 62.00 68.00 74.00 82.00 88.50 96.00 104.00 112.50)
+          TIMES=(4.00 10.00 20.00 26.00 34.00 40.00 50.00 57.00 64.00 70.00 80.00 88.00 97.00 102.00 110.00 118.00)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
             ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
@@ -127,15 +127,19 @@ jobs:
           ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_1.jpg"
           ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_2.jpg"
 
-          ffmpeg -y -v error -ss 9.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 12.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1b.jpg"
+          ffmpeg -y -v error -ss 10.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
+          ffmpeg -y -v error -ss 12.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1b.jpg"
           ffmpeg -y -v error -ss 26.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
-          ffmpeg -y -v error -ss 42.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
-          ffmpeg -y -v error -ss 56.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
-          ffmpeg -y -v error -ss 68.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
-          ffmpeg -y -v error -ss 82.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 96.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 112.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -ss 40.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 57.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
+          ffmpeg -y -v error -ss 70.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 88.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 102.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 118.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -ss 128.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch9.jpg"
+          ffmpeg -y -v error -ss 145.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch10.jpg"
+          ffmpeg -y -v error -ss 158.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch11.jpg"
+          ffmpeg -y -v error -ss 172.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch12.jpg"
           rm -f out/qa/f_*.jpg
 
           cat << 'PAKET_EOF' > "out/Paket YouTube - 8 Menit Setelah Matahari Mati.txt"
@@ -244,6 +248,10 @@ jobs:
               "hi_ch6.jpg": "out/qa/hi_ch6.jpg",
               "hi_ch7.jpg": "out/qa/hi_ch7.jpg",
               "hi_ch8.jpg": "out/qa/hi_ch8.jpg",
+              "hi_ch9.jpg": "out/qa/hi_ch9.jpg",
+              "hi_ch10.jpg": "out/qa/hi_ch10.jpg",
+              "hi_ch11.jpg": "out/qa/hi_ch11.jpg",
+              "hi_ch12.jpg": "out/qa/hi_ch12.jpg",
           }
           for name, fpath in extra_files.items():
               with open(fpath, "rb") as ef:
