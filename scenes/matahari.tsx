@@ -690,10 +690,10 @@ const InsetCoolingTable: React.FC<{ t: number; color: string }> = ({ t, color })
 
 
 const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const x = 110;
-  const y = 1714;
-  const w = 566;
-  const h = 186;
+  const x = 862;
+  const y = 612;
+  const w = 468;
+  const h = 200;
   const rows: [string, string, number][] = [
     ['1 detik cahaya', '299.792 km', 0.1],
     ['1 menit cahaya', '17,9 juta km', 0.35],
@@ -705,11 +705,11 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
     <InsetFrame x={x} y={y} w={w} h={h} title="RANTAI SATUAN" note="JARAK = WAKTU × c" color={color} p={prog(t, 1.6, 2.6)}>
       {rows.map(([label, val, at], k) => {
         const p = easeOutCubic(prog(t, 2.0 + k * 0.45, 2.7 + k * 0.45));
-        const yy = y + 56 + k * 26;
+        const yy = y + 56 + k * 27;
         return (
           <g key={k} opacity={p}>
             <Mono x={x + 20} y={yy} text={label} size={11} color="rgba(238,228,208,0.42)" tracking={0.14} />
-            <line x1={x + 226} y1={yy - 4} x2={x + 330} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
+            <line x1={x + 214} y1={yy - 4} x2={x + 296} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
             <Mono x={x + w - 20} y={yy} text={val} size={12} color={at > 0.8 ? color : 'rgba(238,228,208,0.7)'} tracking={0.1} anchor="end" />
           </g>
         );
@@ -719,12 +719,12 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
 };
 
 const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const x = 110;
-  const y = 1714;
-  const w = 566;
-  const h = 186;
+  const x = 862;
+  const y = 612;
+  const w = 468;
+  const h = 200;
   const bx = x + 34;
-  const by = y + 116;
+  const by = y + 112;
   const bw = w - 68;
   const marks: [number, string][] = [
     [0.08, '1 km'],
@@ -765,8 +765,8 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
           </g>
         );
       })}
-      <Mono x={bx} y={by + 38} text="MATAHARI → PROXIMA: 4 TAHUN CAHAYA" size={9} color="rgba(238,228,208,0.3)" tracking={0.14} />
-      <Mono x={bx + bw} y={by + 38} text="LOG10 JARAK" size={9} color="rgba(238,228,208,0.2)" tracking={0.2} anchor="end" />
+      <Mono x={bx} y={by + 40} text="MATAHARI → PROXIMA: 4 TH CAHAYA" size={9} color="rgba(238,228,208,0.3)" tracking={0.14} />
+      <Mono x={bx + bw} y={by + 40} text="LOG10 JARAK" size={9} color="rgba(238,228,208,0.2)" tracking={0.2} anchor="end" />
     </InsetFrame>
   );
 };
