@@ -99,7 +99,7 @@ export const Scene01: React.FC = () => {
           </g>
 
           <Corona4K cx={720} cy={1268} r={296} t={t} strength={0.95 * alive} rays={120} />
-          <SunCore cx={720} cy={1268} r={296} t={t} alive={alive} cores={240} spots={4} />
+          <SunCore cx={720} cy={1268} r={296} t={t} alive={alive} cores={1500} spots={4} />
           <Prominence cx={720} cy={1268} r={296} angle={-0.55} height={150} t={t} phase={0.4} />
           <Prominence cx={720} cy={1268} r={296} angle={2.45} height={112} t={t} phase={2.1} />
           <Prominence cx={720} cy={1268} r={296} angle={-2.2} height={88} t={t} phase={4.2} />
@@ -109,7 +109,7 @@ export const Scene01: React.FC = () => {
           {/* light already in flight toward the lower left */}
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
             {[0.1, 0.32, 0.54, 0.76].map((k, i) => (
-              <PhotonPacket key={i} x1={720} y1={1268} x2={190} y2={1830} head={(t * 0.2 + k) % 1}
+              <PhotonPacket key={i} x1={514} y1={1486} x2={190} y2={1830} head={(t * 0.2 + k) % 1}
                 color={i % 2 === 0 ? '#FFD79A' : '#FFB463'} trail={300 - i * 40} width={2.6} />
             ))}
             <TickRule x1={190} y1={1856} x2={1250} y2={1856} major={8} minor={4} color="rgba(226,206,172,0.45)"

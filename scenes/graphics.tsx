@@ -109,8 +109,8 @@ export const SunCore: React.FC<{
         return {
           x: cx + Math.cos(a) * rr,
           y: cy + Math.sin(a) * rr,
-          s: (0.018 + hash(i, 73) * 0.055) * r,
-          o: 0.10 + hash(i, 74) * 0.24,
+          s: (0.0055 + hash(i, 73) * 0.017) * r,
+          o: 0.09 + hash(i, 74) * 0.3,
           ph: hash(i, 75) * 6.283,
           sp: 0.5 + hash(i, 76) * 2.4,
           warm: hash(i, 77) > 0.55,
@@ -147,8 +147,8 @@ export const SunCore: React.FC<{
           <stop offset="100%" stopColor="rgba(255,120,40,0)" />
         </radialGradient>
         <radialGradient id={`${id}-halo`} cx="50%" cy="50%" r="50%">
-          <stop offset="46%" stopColor="rgba(222,234,246,0.16)" />
-          <stop offset="76%" stopColor="rgba(210,224,240,0.05)" />
+          <stop offset="42%" stopColor="rgba(222,234,246,0.18)" />
+          <stop offset="74%" stopColor="rgba(210,224,240,0.05)" />
           <stop offset="100%" stopColor="rgba(200,216,236,0)" />
         </radialGradient>
         <clipPath id={`${id}-clip`}>
@@ -161,12 +161,12 @@ export const SunCore: React.FC<{
         {grains.map((g, i) => (
           <ellipse
             key={i}
-            cx={g.x + Math.sin(t * g.sp + g.ph) * r * 0.014}
-            cy={g.y + Math.cos(t * g.sp * 0.85 + g.ph) * r * 0.014}
+            cx={g.x + Math.sin(t * g.sp + g.ph) * r * 0.005}
+            cy={g.y + Math.cos(t * g.sp * 0.85 + g.ph) * r * 0.005}
             rx={g.s}
-            ry={g.s * 0.76}
+            ry={g.s * 0.82}
             fill={g.warm ? '#FFEFC6' : '#6B2405'}
-            opacity={g.o * (0.5 + 0.5 * Math.sin(t * g.sp * 1.6 + g.ph))}
+            opacity={g.o * (0.72 + 0.28 * Math.sin(t * g.sp * 1.6 + g.ph))}
           />
         ))}
         {sunspots.map((s, i) => (
@@ -231,20 +231,20 @@ export const Prominence: React.FC<{ cx: number; cy: number; r: number; angle: nu
   color = '#FF8A4A',
   phase = 0,
 }) => {
-  const a0 = angle - 0.28;
-  const a1 = angle + 0.28;
-  const x0 = cx + Math.cos(a0) * r;
-  const y0 = cy + Math.sin(a0) * r;
-  const x1 = cx + Math.cos(a1) * r;
-  const y1 = cy + Math.sin(a1) * r;
-  const mx = cx + Math.cos(angle) * (r + height);
-  const my = cy + Math.sin(angle) * (r + height);
-  const pulse = 0.72 + 0.28 * Math.sin(t * 1.6 + phase);
+  const pulse = 0.78 + 0.22 * Math.sin(t * 1.1 + phase);
+  const sway = Math.sin(t * 0.7 + phase) * 0.05;
+  const p0 = [cx + Math.cos(angle - 0.2) * r * 0.985, cy + Math.sin(angle - 0.2) * r * 0.985];
+  const p1 = [cx + Math.cos(angle + 0.2) * r * 0.985, cy + Math.sin(angle + 0.2) * r * 0.985];
+  const tipR = r + height * pulse;
+  const tip = [cx + Math.cos(angle + sway) * tipR, cy + Math.sin(angle + sway) * tipR];
+  const c0 = [cx + Math.cos(angle - 0.13) * (r + height * 0.62), cy + Math.sin(angle - 0.13) * (r + height * 0.62)];
+  const c1 = [cx + Math.cos(angle + 0.13) * (r + height * 0.62), cy + Math.sin(angle + 0.13) * (r + height * 0.62)];
+  const mid = [cx + Math.cos(angle + sway) * (r + height * 0.55), cy + Math.sin(angle + sway) * (r + height * 0.55)];
   return (
-    <g opacity={pulse}>
-      <path d={`M ${x0} ${y0} Q ${mx} ${my} ${x1} ${y1}`} fill="none" stroke={color} strokeWidth={7} opacity={0.22} strokeLinecap="round" />
-      <path d={`M ${x0} ${y0} Q ${mx} ${my} ${x1} ${y1}`} fill="none" stroke={color} strokeWidth={2.4} opacity={0.6} strokeLinecap="round" />
-      <circle cx={mx} cy={my} r={5} fill="#FFE6B8" opacity={0.5 * pulse} />
+    <g opacity={0.9}>
+      <path d={`M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]} Q ${c1[0]} ${c1[1]} ${p1[0]} ${p1[1]} Z`} fill={color} opacity={0.26} />
+      <path d={`M ${p0[0]} ${p0[1]} Q ${c0[0]} ${c0[1]} ${tip[0]} ${tip[1]} Q ${c1[0]} ${c1[1]} ${p1[0]} ${p1[1]} Z`} fill={color} opacity={0.12} stroke={color} strokeWidth={1.6} />
+      <path d={`M ${(p0[0] + p1[0]) / 2} ${(p0[1] + p1[1]) / 2} Q ${mid[0]} ${mid[1]} ${(tip[0] + mid[0]) / 2} ${(tip[1] + mid[1]) / 2}`} fill="none" stroke="#FFE9BE" strokeWidth={2} opacity={0.45} strokeLinecap="round" />
     </g>
   );
 };
@@ -389,7 +389,7 @@ export const MoonDisc: React.FC<{
           <circle key={`c${i}`} cx={cx + (hash(i, 56) - 0.5) * r * 1.7} cy={cy + (hash(i, 57) - 0.5) * r * 1.7}
             r={r * (0.02 + hash(i, 58) * 0.05)} fill="none" stroke="#6E7885" strokeWidth={1.2} opacity={0.5} />
         ))}
-        <rect x={cx - r + r * 2 * clamp01(phase)} y={cy - r} width={r * 2} height={r * 2} fill="rgba(3,5,10,0.82)" />
+        <rect x={cx - r + r * 2 * clamp01(phase)} y={cy - r} width={r * 2} height={r * 2} fill="rgba(3,5,10,0.94)" />
       </g>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(230,240,250,0.25)" strokeWidth={1.2} />
       <ellipse cx={cx} cy={cy + r * 0.2} rx={r * 0.9} ry={r * 0.06} fill="rgba(220,235,250,0.08)" transform={`rotate(-18 ${cx} ${cy})`} />

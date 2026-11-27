@@ -18,11 +18,11 @@ const Head: React.FC<{ i: number; t: number; y?: number; size?: number }> = ({ i
 // ============================================================================
 export const Scene07: React.FC = () => {
   const { ch, art, localSec: t, dur } = useChapterClock(6);
-  const sweep = easeOutCubic(prog(t, 1.2, 6.2));
+  const sweep = prog(t, 1.0, 9.0);
   const phase = 1 - sweep * 0.97;
   const moonCx = 720;
   const moonCy = 1080;
-  const moonR = 186;
+  const moonR = 208;
 
   return (
     <Stage i={6} note="ALBEDO 0,12">
