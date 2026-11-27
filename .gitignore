@@ -4,3 +4,6 @@ dist/
 .cache/
 .bin/
 *.tsbuildinfo
+public/audio/raw_*.mp3
+public/audio/_*.mp3
+out/

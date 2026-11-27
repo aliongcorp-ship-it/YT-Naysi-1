@@ -37,17 +37,17 @@ jobs:
       matrix:
         include:
           - shard: 0
-            range: '0-1747'
+            range: '0-1736'
           - shard: 1
-            range: '1748-3495'
+            range: '1737-3473'
           - shard: 2
-            range: '3496-5243'
+            range: '3474-5210'
           - shard: 3
-            range: '5244-6991'
+            range: '5211-6947'
           - shard: 4
-            range: '6992-8739'
+            range: '6948-8684'
           - shard: 5
-            range: '8740-10489'
+            range: '8685-10418'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,7 +59,7 @@ jobs:
       - name: Render shard ${{ matrix.shard }} (${{ matrix.range }})
         run: |
           mkdir -p out
-          npx remotion render scenes/y3.tsx Naysi "out/shard_${{ matrix.shard }}.mp4" \
+          npx remotion render scenes/film.tsx Naysi "out/shard_${{ matrix.shard }}.mp4" \
             --frames="${{ matrix.range }}" \
             --muted \
             --codec=h264 \
@@ -100,7 +100,7 @@ jobs:
             echo "file '$f'" >> concat.txt
           done
 
-          VIDEO_OUT="out/Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri - Naysi - 1440x2560 90fps.mp4"
+          VIDEO_OUT="8 Menit Setelah Matahari Mati, Bumi Masih Mengorbit Ketiadaannya - Naysi - 1440x2560 90fps.mp4"
           ffmpeg -y -v error -f concat -safe 0 -i concat.txt -i public/audio/master.mp3 \
             -map 0:v:0 -map 1:a:0 \
             -c:v copy \
@@ -119,7 +119,7 @@ jobs:
               -of default=noprint_wrappers=1 "$VIDEO_OUT"
           } | tee out/qa/probe.txt
 
-          TIMES=(2.20 6.80 14.20 21.50 29.80 39.20 48.50 56.50 64.20 70.80 79.80 86.20 93.20 99.50 107.20 114.20)
+          TIMES=(2.20 9.50 18.00 26.00 36.00 42.50 49.00 56.00 62.00 68.00 74.00 82.00 88.50 96.00 104.00 112.50)
           for idx in "${!TIMES[@]}"; do
             num=$(printf "%02d" $((idx + 1)))
             ffmpeg -y -v error -ss "${TIMES[$idx]}" -i "$VIDEO_OUT" -frames:v 1 -vf "scale=540:960" "out/qa/f_${num}.jpg"
@@ -127,55 +127,55 @@ jobs:
           ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_1.jpg"
           ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_2.jpg"
 
-          ffmpeg -y -v error -ss 6.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 14.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2a.jpg"
-          ffmpeg -y -v error -ss 21.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
-          ffmpeg -y -v error -ss 39.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
-          ffmpeg -y -v error -ss 48.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4a.jpg"
-          ffmpeg -y -v error -ss 56.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
-          ffmpeg -y -v error -ss 70.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
-          ffmpeg -y -v error -ss 79.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6a.jpg"
-          ffmpeg -y -v error -ss 86.20 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 98.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 113.80 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
+          ffmpeg -y -v error -ss 9.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
+          ffmpeg -y -v error -ss 12.60 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1b.jpg"
+          ffmpeg -y -v error -ss 26.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
+          ffmpeg -y -v error -ss 42.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
+          ffmpeg -y -v error -ss 56.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
+          ffmpeg -y -v error -ss 68.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
+          ffmpeg -y -v error -ss 82.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
+          ffmpeg -y -v error -ss 96.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
+          ffmpeg -y -v error -ss 112.50 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
           rm -f out/qa/f_*.jpg
 
-          cat << 'PAKET_EOF' > "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt"
+          cat << 'PAKET_EOF' > "out/Paket YouTube - 8 Menit Setelah Matahari Mati.txt"
           Judul:
-          Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri
+          8 Menit Setelah Matahari Mati, Bumi Masih Mengorbit Ketiadaannya
 
           Deskripsi:
-          Aroma khas yang langsung tercium saat gerimis pertama turun sebenarnya sama sekali bukan bau air hujan. Air hujan murni tidak memiliki bau sedikit pun — wangi hangat yang kita kenal sebagai petrikor itu ternyata jebakan kimia berusia ratusan juta tahun yang dipasang bakteri tanah.
+          Kalau matahari padam detik ini, kamu tidak akan tahu apa-apa selama 8 menit 20 detik. Bumi tetap terang, tetap hangat, dan tetap mengorbit — karena cahaya dan gravitasi sama-sama butuh waktu untuk sampai ke kita. Setelah itu, semuanya berubah sekaligus.
 
-          0:00 Bau hujan ternyata bukan aroma air langit
-          0:11 Kamera MIT: gerimis pelan meletupkan kabut pembawa bau
-          0:26 Bakteri Streptomyces peracik antibiotik & geosmin
-          0:43 1 sendok teh di 400 kolam Olimpiade (200.000x hiu)
-          0:59 Riset 2020: umpan pemancing kutu pegas tanah
-          1:14 Spora tahan dicerna & lontaran kurir ekor pegas
-          1:29 Kompas alami manusia purba & unta melacak mata air
-          1:42 Paradoks geosmin pada bau lumpur ikan lele & gurame
+          0:00 Cahaya yang menyentuhmu berangkat 8 menit lalu
+          0:15 149.600.000 km ÷ 299.792 km/detik = 499 detik
+          0:33 Gravitasi juga bergerak secepat cahaya
+          0:46 Bumi lepas orbit, 107.000 km/jam ke luar tata surya
+          0:59 Minggu pertama: suhu jatuh di bawah nol
+          1:10 Tahun pertama: −73°C, laut membeku dari atas
+          1:25 Matahari tidak meledak, ia membengkak jadi raksasa merah
+          1:40 Kamu selalu melihat matahari yang dulu
 
-          Rekaman kamera kecepatan tinggi di Massachusetts Institute of Technology (MIT) membuktikan bagaimana aroma dari dalam tanah sanggup melompat ke hidung kita. Ketika tetes gerimis pelan menimpa tanah kering berpori, air mengurung gelembung udara mikroskopis yang kemudian meletup ke atas seperti buih soda, melontarkan ratusan butir aerosol halus pembawa molekul wangi yang diterbangkan angin mendahului awan hujan.
+          Cahaya matahari menempuh 149,6 juta kilometer sebelum menyentuh wajahmu. Dengan kecepatan 299.792 kilometer per detik, perjalanan itu memakan 499 detik — 8 menit 19 detik. Artinya setiap kali kamu melihat matahari, kamu sedang menatap masa lalu: matahari yang sudah berubah sebelum cahayanya tiba di sini.
 
-          Peracik utama aroma tersebut adalah bakteri benang tanah bernama Streptomyces — keluarga mikroba yang juga berjasa menghasilkan sekitar dua pertiga antibiotik medis dunia. Saat musim kemarau mengeringkan tanah, koloni Streptomyces yang terancam mati membentuk spora keras sambil melepaskan molekul alkohol bisiklik bernama geosmin (C12H22O). Hidung manusia luar biasa peka terhadap geosmin hingga sanggup menciumnya pada kadar 5 bagian per triliun — setara satu sendok teh di dalam 400 kolam renang Olimpiade, atau sekitar 200.000 kali lebih tajam daripada penciuman hiu terhadap darah di laut.
+          Gravitasi juga merambat dengan kecepatan cahaya. Jadi dalam skenario mustahil matahari lenyap seketika, bumi masih mengorbit titik kosong selama 8 menit penuh, lalu melesat lurus ke luar tata surya dengan kecepatan 107.000 kilometer per jam.
 
-          Pada tahun 2020, riset di Nature Microbiology akhirnya terpecahkan: geosmin sesungguhnya adalah umpan evolusi berusia ratusan juta tahun untuk memancing kutu pegas (Collembola), arthropoda tanah seukuran ujung jarum yang memiliki reseptor khusus geosmin di ujung antenanya. Saat kutu pegas melahap koloni bakteri itu, cangkang spora Streptomyces bertahan utuh di saluran pencernaannya dan menempel di bulu tubuhnya, lalu ikut terlontar jauh bersama pegas ekornya ke tanah lembap baru. Uniknya, molekul geosmin yang persis sama juga menjadi penyebab sensasi "bau tanah" pada ikan air tawar seperti lele dan gurame yang dibenci lidah manusia, sementara hidung kita memujanya sebagai tanda datangnya air dan kehidupan.
+          Tanpa energi matahari, planet ini kehilangan sumber panas utamanya. Menurut perhitungan ilmuwan planet David Stevenson (Caltech), suhu rata-rata permukaan bumi jatuh di bawah nol derajat Fahrenheit dalam sepekan, menyentuh sekitar −73°C dalam setahun, dan akhirnya stabil di kisaran −240°C ketika panas inti bumi hanya cukup menggantikan panas yang hilang ke angkasa. Lautan membeku dari permukaan, tetapi lapisan es itu justru menjadi selimut yang menjaga air di bawahnya tetap cair selama ratusan ribu tahun.
 
-          Saat gerimis pertama turun, kamu tim langsung keluar menghirup udaranya atau tetap di dalam rumah? Tulis di komentar.
+          Yang paling mengejutkan: matahari sungguhan tidak akan pernah "padam seperti lampu". Sekitar 5 miliar tahun lagi, hidrogen di intinya habis, ia membengkak menjadi raksasa merah yang menelan Merkurius dan Venus, lalu melepas lapisan luarnya dan menyisakan bara putih seukuran bumi.
 
-          Sumber: P. G. Becher et al., "Developmentally regulated volatiles geosmin and 2-methylisoborneol attract a soil arthropod to Streptomyces bacteria promoting spore dispersal", Nature Microbiology 5, 821–829 (2020); Y. S. Joung & C. R. Buie, "Aerosol generation by raindrop impact on soil", Nature Communications 6, 6083 (2015); I. J. Bear & R. G. Thomas, "Nature of argillaceous odour", Nature 201, 993–995 (1964).
+          Kalau matahari benar-benar bisa dimatikan malam ini, hal pertama apa yang kamu lakukan di kegelapan? Tulis di komentar.
+
+          Sumber: NASA Sun Fact Sheet (jarak & luminositas matahari); kecepatan cahaya 299.792.458 m/s (BIPM); David Stevenson, Caltech — skenario hilangnya matahari (Popular Science/NASA Science News); teori evolusi bintang deret utama menuju raksasa merah dan bara putih (NASA/ESA).
 
           Naysi — penjelasan singkat soal sains, sejarah, dan angka di baliknya.
           Kerja sama: elths.i09@gmail.com
 
           Hashtag:
-          #Shorts #Sains #Biologi #FaktaUnik #Hujan
+          #Shorts #Astronomi #Sains #FaktaUnik #Matahari
 
           Tag:
-          bau hujan, kenapa hujan berbau wangi, petrikor, petrichor adalah, geosmin, bakteri tanah, streptomyces, kutu pegas, fakta hujan, kenapa suka bau hujan, bau tanah saat hujan, bau tanah ikan lele, fakta biologi, fakta unik dunia, penciuman manusia vs hiu, sains populer, edukasi, ilmu pengetahuan, wawasan baru, naysi, shorts indonesia
+          matahari mati, kalau matahari hilang, 8 menit cahaya matahari, kecepatan cahaya, jarak matahari bumi, gravitasi kecepatan cahaya, bumi lepas orbit, suhu bumi tanpa matahari, raksasa merah, bara putih, evolusi bintang, astronomi, fakta astronomi, sains populer, fakta unik dunia, edukasi, ilmu pengetahuan, tata surya, naysi, shorts indonesia
           PAKET_EOF
-          sed -i 's/^          //' "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt"
+          sed -i 's/^          //' "out/Paket YouTube - 8 Menit Setelah Matahari Mati.txt"
           ls -lh out/ out/qa/
       - name: Register Git object deliverables manifest
         env:
@@ -213,7 +213,7 @@ jobs:
               return res["sha"]
 
           tree_items = []
-          video_path = "out/Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri - Naysi - 1440x2560 90fps.mp4"
+          video_path = "8 Menit Setelah Matahari Mati, Bumi Masih Mengorbit Ketiadaannya - Naysi - 1440x2560 90fps.mp4"
           chunk_size = 18 * 1024 * 1024
           with open(video_path, "rb") as vf:
               idx = 0
@@ -231,18 +231,16 @@ jobs:
                   idx += 1
 
           extra_files = {
-              "paket.txt": "out/Paket YouTube - Bau Hujan Itu Bukan Aroma Air, Tapi Jebakan Bakteri.txt",
+              "paket.txt": "out/Paket YouTube - 8 Menit Setelah Matahari Mati.txt",
               "probe.txt": "out/qa/probe.txt",
               "qa_sheet_1.jpg": "out/qa/qa_sheet_1.jpg",
               "qa_sheet_2.jpg": "out/qa/qa_sheet_2.jpg",
               "hi_ch1.jpg": "out/qa/hi_ch1.jpg",
-              "hi_ch2a.jpg": "out/qa/hi_ch2a.jpg",
+              "hi_ch1b.jpg": "out/qa/hi_ch1b.jpg",
               "hi_ch2.jpg": "out/qa/hi_ch2.jpg",
               "hi_ch3.jpg": "out/qa/hi_ch3.jpg",
-              "hi_ch4a.jpg": "out/qa/hi_ch4a.jpg",
               "hi_ch4.jpg": "out/qa/hi_ch4.jpg",
               "hi_ch5.jpg": "out/qa/hi_ch5.jpg",
-              "hi_ch6a.jpg": "out/qa/hi_ch6a.jpg",
               "hi_ch6.jpg": "out/qa/hi_ch6.jpg",
               "hi_ch7.jpg": "out/qa/hi_ch7.jpg",
               "hi_ch8.jpg": "out/qa/hi_ch8.jpg",
@@ -270,6 +268,7 @@ jobs:
         with:
           name: naysi-master-deliverables
           path: |
+            *.mp4
             out/*.mp4
             out/*.txt
             out/qa/*.jpg

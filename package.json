@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "render": "remotion render scenes/y3.tsx Naysi out/master.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --jpeg-quality=94 --overwrite"
+    "render": "remotion render scenes/film.tsx Naysi out/master.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --jpeg-quality=94 --overwrite"
   },
   "dependencies": {
     "@fontsource-variable/cormorant-garamond": "^5.3.0",

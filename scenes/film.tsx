@@ -7,7 +7,6 @@ import {
   cancelRender,
   continueRender,
   delayRender,
-  interpolate,
   registerRoot,
   staticFile,
   useCurrentFrame,
@@ -26,12 +25,11 @@ import {
   easeInOutCubic,
   easeOutCubic,
 } from './script';
-import { Scene01RuangTakar, Scene02StripCepat, Scene03CawanAgar, Scene04SpreadEditorial } from './hujan';
-import { Scene05Loupe, Scene06AtlasLontaran } from './y1';
-import { Scene07KompasGurun, Scene08StillLife } from './y2';
+import { Scene01, Scene02, Scene03, Scene04 } from './act1';
+import { Scene05, Scene06, Scene07, Scene08 } from './act2';
 
 // ============================================================================
-// 1. LOCAL FONT LOADER (ZERO NETWORK DEPENDENCE)
+// 1. LOCAL FONTS — no network at render time
 // ============================================================================
 
 interface LocalFontDef {
@@ -94,21 +92,23 @@ function useLocalFonts(): boolean {
 }
 
 // ============================================================================
-// 2. CHAPTER STAGE WITH A DIFFERENT TRANSITION PER CHAPTER FAMILY
+// 2. CHAPTER STAGE — dissolve plus a per-chapter camera push
 // ============================================================================
 
-const TRANSITION_FRAMES = 26;
+const TRANSITION_FRAMES = 24;
 
 const SCENE_COMPONENTS: readonly React.FC[] = [
-  Scene01RuangTakar,
-  Scene02StripCepat,
-  Scene03CawanAgar,
-  Scene04SpreadEditorial,
-  Scene05Loupe,
-  Scene06AtlasLontaran,
-  Scene07KompasGurun,
-  Scene08StillLife,
+  Scene01,
+  Scene02,
+  Scene03,
+  Scene04,
+  Scene05,
+  Scene06,
+  Scene07,
+  Scene08,
 ];
+
+const PUSH = [0.03, 0.02, 0.045, 0.038, 0.028, 0.042, 0.034, 0.05];
 
 const ChapterStage: React.FC<{ index: number; durationFrames: number; Component: React.FC }> = ({
   index,
@@ -121,21 +121,14 @@ const ChapterStage: React.FC<{ index: number; durationFrames: number; Component:
     index === CHAPTERS.length - 1
       ? 1
       : 1 - easeInOutCubic(clamp01((frame - (durationFrames - TRANSITION_FRAMES)) / TRANSITION_FRAMES));
-
-  // each chapter pushes the camera differently instead of one global template push
-  const pushPattern = [0.02, 0.045, 0.018, 0.03, 0.04, 0.026, 0.05, 0.03];
-  const drift = interpolate(frame, [0, durationFrames], [1, 1 + pushPattern[index]], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  const panX = Math.sin(frame / durationFrames * Math.PI) * (index % 2 === 0 ? -8 : 8);
+  const drift = 1 + PUSH[index] * clamp01(frame / Math.max(1, durationFrames));
 
   return (
     <AbsoluteFill
       style={{
         opacity: clamp01(fadeIn * fadeOut),
-        transform: `translateX(${panX}px) scale(${drift})`,
-        transformOrigin: '50% 46%',
+        transform: `scale(${drift})`,
+        transformOrigin: '50% 44%',
       }}
     >
       <Component />
@@ -144,12 +137,11 @@ const ChapterStage: React.FC<{ index: number; durationFrames: number; Component:
 };
 
 // ============================================================================
-// 3. CAPTIONS — PER-CHAPTER ALIGNMENT, MASK-RISE WORDS, NO UNIFIED CARD
+// 3. CAPTIONS — per-word timing, one amber word per card
 // ============================================================================
 
 const ALL_CARDS: readonly CaptionCard[] = CHAPTERS.flatMap((c) => c.cards);
-
-const captionAlign: readonly ('center' | 'left')[] = ['center', 'left', 'center', 'left', 'center', 'left', 'left', 'center'];
+const captionAlign: readonly ('center' | 'left')[] = ['left', 'left', 'center', 'left', 'left', 'left', 'left', 'left'];
 
 const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
   let activeCard: CaptionCard | null = null;
@@ -173,7 +165,7 @@ const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
 
   const art = CHAPTER_ART[cardChapter];
   const align = captionAlign[cardChapter];
-  const enterP = easeOutCubic(clamp01((currentSec - (activeCard.start - 0.05)) / 0.18));
+  const enterP = easeOutCubic(clamp01((currentSec - (activeCard.start - 0.05)) / 0.16));
   const exitP = clamp01((activeCard.end + 0.26 - currentSec) / 0.14);
   const cardAlpha = enterP * exitP;
 
@@ -183,49 +175,47 @@ const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 232,
-        minHeight: 330,
+        bottom: 214,
+        minHeight: 340,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: align === 'center' ? 'center' : 'flex-start',
-        padding: align === 'center' ? '0 84px' : '0 96px 0 96px',
+        padding: align === 'center' ? '0 96px' : '0 100px 0 100px',
         pointerEvents: 'none',
-        background:
-          'linear-gradient(180deg, rgba(6,8,7,0) 0%, rgba(6,8,7,0.66) 34%, rgba(6,8,7,0.88) 100%)',
+        background: 'linear-gradient(180deg, rgba(6,6,8,0) 0%, rgba(6,6,8,0.72) 38%, rgba(6,6,8,0.94) 100%)',
       }}
     >
       <div
         style={{
-          maxWidth: 1250,
+          maxWidth: 1240,
           textAlign: align === 'center' ? 'center' : 'left',
           display: 'flex',
           flexWrap: 'wrap',
           justifyContent: align === 'center' ? 'center' : 'flex-start',
-          columnGap: 16,
-          rowGap: 6,
+          columnGap: 17,
+          rowGap: 4,
           opacity: cardAlpha,
         }}
       >
         {activeCard.words.map(([word, wStart, wEnd, emph], idx) => {
           const started = currentSec >= wStart - 0.02;
           const speaking = currentSec >= wStart - 0.02 && currentSec <= wEnd + 0.08;
-          const local = clamp01((currentSec - wStart + 0.06) / 0.16);
-          const rise = (1 - easeOutCubic(local)) * 18;
-          const color = !started ? 'rgba(244, 241, 234, 0.26)' : emph === 1 ? art.accent : IDENTITY.ivoryText;
+          const local = clamp01((currentSec - wStart + 0.06) / 0.15);
+          const rise = (1 - easeOutCubic(local)) * 16;
+          const color = !started ? 'rgba(244, 239, 228, 0.24)' : emph === 1 ? art.accent : art.ink;
           return (
             <span
               key={idx}
               style={{
                 display: 'inline-block',
                 fontFamily: IDENTITY.fontBody,
-                fontSize: 57,
-                fontWeight: emph === 1 ? 800 : 650,
-                lineHeight: 1.26,
-                letterSpacing: '-0.014em',
+                fontSize: 58,
+                fontWeight: emph === 1 ? 800 : 600,
+                lineHeight: 1.28,
+                letterSpacing: '-0.015em',
                 color,
-                transform: `translateY(${rise}px) scale(${speaking ? 1.02 : 1})`,
-                textShadow: '0 5px 20px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.95)',
-                transition: 'none',
+                transform: `translateY(${rise}px) scale(${speaking ? 1.015 : 1})`,
+                textShadow: '0 6px 24px rgba(0, 0, 0, 0.92), 0 1px 2px rgba(0, 0, 0, 0.95)',
               }}
             >
               {word}
@@ -238,104 +228,112 @@ const CaptionStage: React.FC<{ currentSec: number }> = ({ currentSec }) => {
 };
 
 // ============================================================================
-// 4. WATERMARK — CHANNEL NAME + TOPIC ONLY
+// 4. MASTHEAD — channel, plate number, hairline progress
 // ============================================================================
 
-const TopWatermark: React.FC<{ currentSec: number }> = ({ currentSec }) => {
-  const chIndex = (() => {
-    for (let i = CHAPTERS.length - 1; i >= 0; i--) if (currentSec >= CHAPTERS[i].start) return i;
-    return 0;
-  })();
+const Masthead: React.FC<{ currentSec: number }> = ({ currentSec }) => {
+  let chIndex = 0;
+  for (let i = CHAPTERS.length - 1; i >= 0; i--) {
+    if (currentSec >= CHAPTERS[i].start) {
+      chIndex = i;
+      break;
+    }
+  }
   const art = CHAPTER_ART[chIndex];
+  const progress = clamp01(currentSec / VIDEO_SPEC.durationSec);
+
   return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 86,
-        right: 86,
-        top: 82,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        pointerEvents: 'none',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-        <span
-          style={{
-            width: 14,
-            height: 14,
-            backgroundColor: art.accent,
-            display: 'inline-block',
-            transform: 'rotate(45deg)',
-            boxShadow: '0 0 0 3px rgba(0,0,0,0.28)',
-          }}
-        />
-        <span
-          style={{
-            fontFamily: IDENTITY.fontGrotesk,
-            fontSize: 26,
-            fontWeight: 700,
-            letterSpacing: '0.22em',
-            color: IDENTITY.ivoryText,
-          }}
-        >
-          NAYSI
-        </span>
+    <div style={{ position: 'absolute', left: 84, right: 84, top: 76, pointerEvents: 'none' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span
+            style={{
+              width: 13,
+              height: 13,
+              backgroundColor: art.accent,
+              display: 'inline-block',
+              transform: 'rotate(45deg)',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: IDENTITY.fontGrotesk,
+              fontSize: 27,
+              fontWeight: 700,
+              letterSpacing: '0.22em',
+              color: 'rgba(246, 240, 228, 0.92)',
+            }}
+          >
+            NAYSI
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ width: 30, height: 1, backgroundColor: 'rgba(226, 214, 190, 0.36)' }} />
+          <span
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 19,
+              letterSpacing: '0.24em',
+              color: 'rgba(226, 214, 190, 0.66)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {VIDEO_SPEC.topicWatermark}
+          </span>
+          <span
+            style={{
+              fontFamily: IDENTITY.fontMono,
+              fontSize: 19,
+              letterSpacing: '0.16em',
+              color: art.accent,
+            }}
+          >
+            {String(chIndex + 1).padStart(2, '0')}/08
+          </span>
+        </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ width: 34, height: 1, backgroundColor: 'rgba(226, 214, 190, 0.4)' }} />
-        <span
-          style={{
-            fontFamily: IDENTITY.fontMono,
-            fontSize: 20,
-            fontWeight: 400,
-            letterSpacing: '0.22em',
-            color: 'rgba(226, 214, 190, 0.72)',
-            textTransform: 'uppercase',
-          }}
-        >
-          {VIDEO_SPEC.topicWatermark}
-        </span>
+      <div style={{ marginTop: 16, height: 2, backgroundColor: 'rgba(226, 214, 190, 0.14)' }}>
+        <div style={{ height: 2, width: `${progress * 100}%`, backgroundColor: art.accent, opacity: 0.8 }} />
       </div>
     </div>
   );
 };
 
 // ============================================================================
-// 5. MASTER COMPOSITION
+// 5. COMPOSITION
 // ============================================================================
 
-export const NaysiPetrichorShort: React.FC = () => {
+export const NaysiSunShort: React.FC = () => {
   const fontsReady = useLocalFonts();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const currentSec = frame / fps;
 
   if (!fontsReady) {
-    return <AbsoluteFill style={{ backgroundColor: '#080C0B' }} />;
+    return <AbsoluteFill style={{ backgroundColor: '#08090B' }} />;
   }
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#080C0B', overflow: 'hidden' }}>
+    <AbsoluteFill style={{ backgroundColor: '#08090B', overflow: 'hidden' }}>
       <Audio src={staticFile('audio/master.mp3')} />
 
       {CHAPTERS.map((ch, idx) => {
         const rawStart = Math.round(ch.start * fps);
         const rawEnd = Math.round(ch.end * fps);
         const fromFrame = idx === 0 ? 0 : Math.max(0, rawStart - TRANSITION_FRAMES);
-        const endFrame = idx === CHAPTERS.length - 1 ? TOTAL_FRAMES : Math.min(TOTAL_FRAMES, rawEnd + TRANSITION_FRAMES);
+        const endFrame =
+          idx === CHAPTERS.length - 1 ? TOTAL_FRAMES : Math.min(TOTAL_FRAMES, rawEnd + TRANSITION_FRAMES);
         const durFrames = Math.max(1, endFrame - fromFrame);
-        const SceneComp = SCENE_COMPONENTS[idx];
+        const Comp = SCENE_COMPONENTS[idx];
         return (
           <Sequence key={ch.slug} from={fromFrame} durationInFrames={durFrames} name={ch.slug}>
-            <ChapterStage index={idx} durationFrames={durFrames} Component={SceneComp} />
+            <ChapterStage index={idx} durationFrames={durFrames} Component={Comp} />
           </Sequence>
         );
       })}
 
       <CaptionStage currentSec={currentSec} />
-      <TopWatermark currentSec={currentSec} />
+      <Masthead currentSec={currentSec} />
     </AbsoluteFill>
   );
 };
@@ -343,7 +341,7 @@ export const NaysiPetrichorShort: React.FC = () => {
 export const RemotionRoot: React.FC = () => (
   <Composition
     id={VIDEO_SPEC.id}
-    component={NaysiPetrichorShort}
+    component={NaysiSunShort}
     durationInFrames={VIDEO_SPEC.durationInFrames}
     fps={VIDEO_SPEC.fps}
     width={WIDTH}
