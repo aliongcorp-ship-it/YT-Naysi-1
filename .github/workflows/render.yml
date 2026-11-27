@@ -37,17 +37,11 @@ jobs:
       matrix:
         include:
           - shard: 0
-            range: '0-2694'
           - shard: 1
-            range: '2695-5389'
           - shard: 2
-            range: '5390-8084'
           - shard: 3
-            range: '8085-10779'
           - shard: 4
-            range: '10780-13474'
           - shard: 5
-            range: '13475-16167'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,11 +50,15 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx remotion browser ensure
-      - name: Render shard ${{ matrix.shard }} (${{ matrix.range }})
+      - name: Render shard ${{ matrix.shard }}
         run: |
           mkdir -p out
+          TOTAL=$(grep -o 'totalFrames: [0-9]*' scenes/timing.ts | head -1 | grep -o '[0-9]*')
+          START=$(( TOTAL * ${{ matrix.shard }} / 6 ))
+          END=$(( TOTAL * (${{ matrix.shard }} + 1) / 6 - 1 ))
+          echo "shard ${{ matrix.shard }}: frames $START-$END of $TOTAL"
           npx remotion render scenes/film.tsx Naysi "out/shard_${{ matrix.shard }}.mp4" \
-            --frames="${{ matrix.range }}" \
+            --frames="$START-$END" \
             --muted \
             --codec=h264 \
             --crf=18 \
