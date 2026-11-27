@@ -62,14 +62,14 @@ const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: st
                 d={`M ${l.x0},${-96} C ${l.x0 + sw * 0.2},${-70} ${l.x0 + sw * 0.6},${-46} ${l.x0 + sw},${-24}`}
                 fill="none"
                 stroke={color}
-                strokeWidth={13}
+                strokeWidth={16}
                 strokeLinecap="round"
               />
               <path
                 d={`M ${l.x0 + sw},${-28} C ${l.x0 + sw * 1.1},${-20} ${l.x0 + sw * 1.1},${-8} ${l.x0 + sw * 1.05},${-2}`}
                 fill="none"
                 stroke={color}
-                strokeWidth={8}
+                strokeWidth={10}
                 strokeLinecap="round"
               />
               <ellipse cx={l.x0 + sw * 1.05} cy={-2} rx={11} ry={5} fill={color} />
@@ -112,14 +112,14 @@ const Camel: React.FC<{ x: number; y: number; s: number; walk: number; color: st
                 d={`M ${l.x0},${-96} C ${l.x0 + sw * 0.15},${-72} ${l.x0 + sw * 0.55},${-48} ${l.x0 + sw},${-26}`}
                 fill="none"
                 stroke={color}
-                strokeWidth={15}
+                strokeWidth={19}
                 strokeLinecap="round"
               />
               <path
                 d={`M ${l.x0 + sw},${-30} C ${l.x0 + sw * 1.12},${-22} ${l.x0 + sw * 1.12},${-9} ${l.x0 + sw * 1.06},${-3}`}
                 fill="none"
                 stroke={color}
-                strokeWidth={8.5}
+                strokeWidth={11}
                 strokeLinecap="round"
               />
               <ellipse cx={l.x0 + sw * 1.06} cy={-3} rx={12} ry={5.5} fill={color} />
@@ -276,9 +276,9 @@ export const Scene07KompasGurun: React.FC = () => {
             <stop offset="100%" stopColor="#080502" />
           </linearGradient>
           <linearGradient id="s7-water" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6B6E52" />
-            <stop offset="42%" stopColor="#4E5644" />
-            <stop offset="100%" stopColor="#2A2E22" />
+            <stop offset="0%" stopColor="#3E4436" />
+            <stop offset="42%" stopColor="#2F372C" />
+            <stop offset="100%" stopColor="#191E18" />
           </linearGradient>
           <linearGradient id="s7-plume" x1="1" y1="0" x2="0" y2="0">
             <stop offset="0%" stopColor="rgba(232, 190, 116, 0.02)" />
@@ -316,10 +316,10 @@ export const Scene07KompasGurun: React.FC = () => {
         <path d={duneWalk} fill="url(#s7-walk)" transform={`translate(${-localSec * 6}, 0)`} />
 
         <g transform={`translate(${-90 + camelWalk * 160}, 0)`} opacity={camelsIn}>
-          <ellipse cx={540} cy={1444} rx={330} ry={18} fill="rgba(0,0,0,0.26)" />
-          <Camel x={420} y={1408} s={1.02} walk={camelWalk * 3.2} color="#180E06" rider />
-          <Camel x={664} y={1424} s={0.86} walk={camelWalk * 3.2 + 0.34} color="#140B05" />
-          <Camel x={820} y={1438} s={0.7} walk={camelWalk * 3.2 + 0.62} color="#110803" />
+          <ellipse cx={560} cy={1456} rx={380} ry={20} fill="rgba(0,0,0,0.3)" />
+          <Camel x={404} y={1412} s={1.22} walk={camelWalk * 3.2} color="#170D06" rider />
+          <Camel x={690} y={1436} s={0.94} walk={camelWalk * 3.2 + 0.34} color="#130A04" />
+          <Camel x={858} y={1452} s={0.72} walk={camelWalk * 3.2 + 0.62} color="#0F0703" />
           <g transform="translate(846, 1432)">
             <ellipse cx={0} cy={0} rx={14} ry={4} fill="rgba(0,0,0,0.32)" />
             <path d="M -6,-2 L -4,-38 L 6,-38 L 8,-2 Z" fill="#150B04" />
@@ -341,14 +341,14 @@ export const Scene07KompasGurun: React.FC = () => {
             fill="url(#s7-water)"
           />
           {/* reflected sky and a broken horizon line */}
-          <path d="M 880,1440 C 950,1424 1130,1422 1250,1440 L 1250,1452 C 1120,1436 960,1438 880,1452 Z" fill="rgba(226, 186, 126, 0.2)" />
+          <path d="M 880,1440 C 950,1424 1130,1422 1250,1440 L 1250,1452 C 1120,1436 960,1438 880,1452 Z" fill="rgba(226, 186, 126, 0.14)" />
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <ellipse key={i} cx={960 + i * 56} cy={1458 + (i % 3) * 10} rx={38 - i * 3} ry={3.4} fill="rgba(238, 214, 170, 0.14)" />
           ))}
           {/* far bank reeds, varied and leaning */}
           {Array.from({ length: 24 }).map((_, i) => {
-            const rx = 856 + i * 19 + (i % 3) * 6;
-            const hgt = 58 + (i % 7) * 22;
+            const rx = 842 + i * 20 + (i % 3) * 7;
+            const hgt = 74 + (i % 7) * 26;
             const sway = Math.sin(localSec * 0.6 + i * 0.7) * 5;
             return (
               <g key={i}>
@@ -631,7 +631,7 @@ const RainWindow: React.FC<{ x: number; y: number; w: number; h: number; p: numb
         <path d={`M ${gx},${gy + gh * 0.66} L ${gx + gw * 0.2},${gy + gh * 0.6} L ${gx + gw * 0.34},${gy + gh * 0.63} L ${gx + gw * 0.55},${gy + gh * 0.55} L ${gx + gw * 0.7},${gy + gh * 0.6} L ${gx + gw},${gy + gh * 0.54} L ${gx + gw},${gy + gh} L ${gx},${gy + gh} Z`} fill="#0C1315" opacity={0.92} />
         <path d={`M ${gx},${gy + gh * 0.86} L ${gx + gw},${gy + gh * 0.82} L ${gx + gw},${gy + gh} L ${gx},${gy + gh} Z`} fill="#0A1012" />
         {/* street lamp glow + bokeh */}
-        <circle cx={gx + gw * 0.72} cy={gy + gh * 0.52} r={gw * 0.3} fill="rgba(232, 176, 108, 0.16)" />
+        <circle cx={gx + gw * 0.72} cy={gy + gh * 0.52} r={gw * 0.26} fill="rgba(232, 176, 108, 0.1)" />
         {bokeh.map((b, i) => (
           <circle key={i} cx={b.bx} cy={b.by} r={b.br} fill={b.warm ? `rgba(244, 190, 122, ${b.op})` : `rgba(168, 206, 208, ${b.op * 0.6})`} />
         ))}

@@ -613,14 +613,14 @@ export const SoilSlab: React.FC<{
           <path d={frontPath} />
         </clipPath>
         <linearGradient id={`${uid}-toplight`} x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0%" stopColor="rgba(255, 231, 198, 0.24)" />
-          <stop offset="40%" stopColor="rgba(255, 214, 166, 0.04)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0.34)" />
+          <stop offset="0%" stopColor="rgba(255, 231, 198, 0.16)" />
+          <stop offset="38%" stopColor="rgba(255, 214, 166, 0.02)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.5)" />
         </linearGradient>
         <linearGradient id={`${uid}-frontshade`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5E3121" />
-          <stop offset="55%" stopColor="#3C1E14" />
-          <stop offset="100%" stopColor="#24110C" />
+          <stop offset="0%" stopColor="#3E2418" />
+          <stop offset="55%" stopColor="#291510" />
+          <stop offset="100%" stopColor="#160A06" />
         </linearGradient>
       </defs>
 
@@ -630,7 +630,7 @@ export const SoilSlab: React.FC<{
       {/* slab front soil wall */}
       <path d={frontPath} fill={`url(#${uid}-frontshade)`} />
       <g clipPath={`url(#${uid}-front)`}>
-        {texUrl && <image href={texUrl} x={x} y={y + d} width={w} height={h} preserveAspectRatio="none" opacity={0.34} />}
+        {texUrl && <image href={texUrl} x={x} y={y + d} width={w} height={h} preserveAspectRatio="none" opacity={0.13} />}
         {/* strata: the wall is a cut, not a painted panel */}
         <path d={`M ${x - 10},${y + d + h * 0.3} C ${x + w * 0.25},${y + d + h * 0.22} ${x + w * 0.6},${y + d + h * 0.4} ${x + w + 10},${y + d + h * 0.3} L ${x + w + 10},${y + d + h * 0.44} C ${x + w * 0.6},${y + d + h * 0.54} ${x + w * 0.25},${y + d + h * 0.36} ${x - 10},${y + d + h * 0.44} Z`} fill="rgba(24, 12, 6, 0.34)" />
         <path d={`M ${x - 10},${y + d + h * 0.68} C ${x + w * 0.3},${y + d + h * 0.6} ${x + w * 0.55},${y + d + h * 0.76} ${x + w + 10},${y + d + h * 0.66} L ${x + w + 10},${y + d + h} L ${x - 10},${y + d + h} Z`} fill="rgba(14, 8, 4, 0.4)" />
@@ -658,9 +658,9 @@ export const SoilSlab: React.FC<{
       <path d={`M ${x},${y + d} L ${x + w},${y + d}`} stroke="rgba(255, 226, 184, 0.22)" strokeWidth={2} />
 
       {/* slab top surface */}
-      <path d={topPath} fill="#4B2C1A" />
+      <path d={topPath} fill="#38241A" />
       <g clipPath={`url(#${uid}-top)`}>
-                {texUrl && <image href={texUrl} x={x} y={y} width={w} height={d} preserveAspectRatio="none" opacity={0.34} />}
+                {texUrl && <image href={texUrl} x={x} y={y} width={w} height={d} preserveAspectRatio="none" opacity={0.2} />}
         {grains.map((g, i) => (
           <circle key={`g${i}`} cx={g.gx} cy={g.gy} r={g.gr} fill={g.warm ? `rgba(238, 200, 152, ${g.ga})` : `rgba(26, 14, 8, ${g.ga * 0.9})`} />
         ))}
@@ -700,11 +700,11 @@ export const SoilSlab: React.FC<{
       {/* crumbs breaking the silhouette so it never reads as a plank */}
       {Array.from({ length: 26 }).map((_, i) => {
         const cxp = x + 50 + ((i * 149) % (w - 100));
-        const ry2 = 3 + (i % 4) * 2.6;
+        const ry2 = 3 + (i % 4) * 1.8;
         return (
           <g key={`cr${i}`}>
-            <ellipse cx={cxp} cy={y + (i % 2 === 0 ? 0 : y === y ? d : d) + (i % 3 === 0 ? -2 : 0)} rx={9 + (i % 5) * 4} ry={ry2} fill={i % 3 === 0 ? '#3A2212' : '#2A180D'} />
-            <ellipse cx={cxp - 2} cy={y + (i % 2 === 0 ? 0 : d) - 3} rx={4 + (i % 3) * 2} ry={2} fill="rgba(238, 202, 154, 0.24)" />
+            <ellipse cx={cxp} cy={y + (i % 2 === 0 ? 0 : d) + (i % 3 === 0 ? -2 : 0)} rx={5 + (i % 4) * 2.6} ry={ry2 * 0.8} fill={i % 3 === 0 ? '#2C1A0E' : '#20130A'} />
+            <ellipse cx={cxp - 2} cy={y + (i % 2 === 0 ? 0 : d) - 2} rx={3 + (i % 3) * 1.4} ry={1.6} fill="rgba(238, 202, 154, 0.16)" />
           </g>
         );
       })}
@@ -1180,7 +1180,7 @@ const HighSpeedFrame: React.FC<{
             <ellipse cx={cx} cy={surfaceY + 56} rx={44} ry={28} fill="rgba(206, 228, 228, 0.16)" stroke="rgba(232, 246, 244, 0.66)" strokeWidth={1.6} />
             <ellipse cx={cx - 8} cy={surfaceY + 40} rx={9} ry={5} fill="rgba(255, 255, 255, 0.5)" />
             {/* rising chain */}
-            {Array.from({ length: 6 }).map((_, i) => {
+            {Array.from({ length: 3 }).map((_, i) => {
               const rise = clamp01(bubbleP * 1.5 - i * 0.16);
               if (rise <= 0) return null;
               const by = surfaceY + 30 - rise * (120 + i * 12);
@@ -1473,9 +1473,9 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
       const a = (i / n) * Math.PI * 2;
       const k =
         1 +
-        0.085 * Math.sin(3 * a + seed * 1.7) +
-        0.055 * Math.sin(5 * a + seed * 2.9) +
-        0.03 * Math.sin(8 * a + seed * 4.3);
+        0.028 * Math.sin(3 * a + seed * 1.7) +
+        0.017 * Math.sin(5 * a + seed * 2.9) +
+        0.009 * Math.sin(8 * a + seed * 4.3);
       pts.push([Math.cos(a) * rr * k, Math.sin(a) * rr * k]);
     }
     const at = (i: number) => pts[(i + n) % n];
@@ -1531,35 +1531,14 @@ const Colony: React.FC<{ cx: number; cy: number; r: number; tone: number; grow: 
       <g clipPath={`url(#colclip-${seed})`}>
         <path d={edge} fill={`url(#colw-${seed})`} />
 
-        {/* a single faint growth front, never a bullseye */}
-        <ellipse
-          cx={rr * 0.08 * Math.sin(seed)}
-          cy={rr * 0.06 * Math.cos(seed * 1.3)}
-          rx={rr * 0.7}
-          ry={rr * 0.67}
-          fill="none"
-          stroke="rgba(104, 96, 66, 0.12)"
-          strokeWidth={1.2}
-          strokeDasharray="14 26"
-        />
-        {/* powdery flakes drifting toward the rim */}
-        {Array.from({ length: 64 }).map((_, i) => {
-          const a = hash2(i, Math.round(seed * 3), 23) * Math.PI * 2;
-          const rad = rr * (0.42 + hash2(i, 7, 19) * 0.6);
-          const ln = 2 + hash2(i, 2, 9) * 5;
-          return (
-            <line
-              key={`fl${i}`}
-              x1={Math.cos(a) * rad}
-              y1={Math.sin(a) * rad}
-              x2={Math.cos(a + 0.5) * (rad + ln)}
-              y2={Math.sin(a + 0.5) * (rad + ln)}
-              stroke={i % 3 === 0 ? 'rgba(250, 248, 236, 0.34)' : 'rgba(112, 104, 74, 0.16)'}
-              strokeWidth={1}
-              strokeLinecap="round"
-            />
-          );
+        {/* fine matte grain, the way a chalky colony actually reads */}
+        {Array.from({ length: 90 }).map((_, i) => {
+          const a = hash2(i, Math.round(seed * 7), 41) * Math.PI * 2;
+          const rad = Math.sqrt(hash2(i, Math.round(seed * 3), 17)) * rr * 0.97;
+          return <circle key={`dg${i}`} cx={Math.cos(a) * rad} cy={Math.sin(a) * rad} r={0.8 + hash2(i, 2, 5) * 1.4} fill={i % 4 === 0 ? 'rgba(250, 248, 236, 0.3)' : 'rgba(112, 104, 76, 0.14)'} />;
         })}
+        {/* a damp, slightly darker margin where the colony meets the agar */}
+        <circle cx={0} cy={0} r={rr * 0.93} fill="none" stroke="rgba(118, 104, 72, 0.16)" strokeWidth={rr * 0.14} />
 
         {/* chalky powder: the surface of a Streptomyces colony is matte and dusty */}
         {specks.map((sp, i) => (
@@ -1641,7 +1620,7 @@ const StreptoFilament: React.FC<{
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={2.4}
+        strokeWidth={1.7}
         strokeLinecap="round"
         pathLength={1}
         strokeDasharray="1 1"
@@ -1762,7 +1741,7 @@ export const Scene03CawanAgar: React.FC = () => {
 
   const colonies = useMemo(() => {
     const rnd = makeRng(9102);
-    const clusters = Array.from({ length: 9 }).map(() => {
+    const clusters = Array.from({ length: 12 }).map(() => {
       const a = rnd() * Math.PI * 2;
       const rad = 90 + rnd() * (R - 230);
       return { cx: Math.cos(a) * rad, cy: Math.sin(a) * rad };
@@ -1779,7 +1758,7 @@ export const Scene03CawanAgar: React.FC = () => {
         out.push({
           cx: px,
           cy: py,
-          r: 16 + rnd() * (i === 0 ? 62 : 34),
+          r: 13 + rnd() * (i === 0 ? 46 : 24),
           tone: rnd(),
           delay: rnd() * 0.45,
           seed: ci * 31 + i * 7 + 3,
@@ -1793,7 +1772,7 @@ export const Scene03CawanAgar: React.FC = () => {
     const rnd = makeRng(551);
     return Array.from({ length: 18 }).map((_, i) => {
       const a = rnd() * Math.PI * 2;
-      const r0 = 150 + rnd() * 230;
+      const r0 = 90 + rnd() * 300;
       const x0 = Math.cos(a) * r0;
       const y0 = Math.sin(a) * r0 * 0.94;
       const dir = a + (rnd() - 0.5) * 0.9;
@@ -1803,7 +1782,7 @@ export const Scene03CawanAgar: React.FC = () => {
       let d = `M ${px.toFixed(1)},${py.toFixed(1)}`;
       let ang = dir;
       for (let k = 0; k < seg; k++) {
-        const step = 56 + rnd() * 62;
+        const step = 34 + rnd() * 40;
         ang += (rnd() - 0.5) * 0.85;
         const nx = px + Math.cos(ang) * step;
         const ny = py + Math.sin(ang) * step * 0.92;
@@ -1815,7 +1794,7 @@ export const Scene03CawanAgar: React.FC = () => {
       }
       // one side branch off the middle joint
       const ba = ang + (rnd() > 0.5 ? 0.8 : -0.8);
-      const bl = 60 + rnd() * 70;
+      const bl = 34 + rnd() * 40;
       const bx = px - Math.cos(ang) * bl * 0.5;
       const by = py - Math.sin(ang) * bl * 0.5;
       const cxp = bx + Math.cos(ba) * bl * 0.6;
@@ -1927,8 +1906,8 @@ export const Scene03CawanAgar: React.FC = () => {
                   const gp = clamp01((filamentGrow - f.delay * 2) / 0.8);
                   return (
                     <g key={i}>
-                      <StreptoFilament d={f.d} p={gp} color="rgba(244, 234, 210, 0.8)" />
-                      <StreptoFilament d={f.branch} p={clamp01(gp * 1.5 - 0.5)} color="rgba(238, 226, 198, 0.62)" />
+                      <StreptoFilament d={f.d} p={gp} color="rgba(240, 230, 204, 0.6)" />
+                      <StreptoFilament d={f.branch} p={clamp01(gp * 1.5 - 0.5)} color="rgba(236, 224, 196, 0.46)" />
                       <SpiralSporeChain x={f.tip[0]} y={f.tip[1]} len={66} p={gp} rot={(i - 6) * 6} />
                       <SpiralSporeChain x={f.branchTip[0]} y={f.branchTip[1]} len={44} p={clamp01(gp * 1.6 - 0.5)} rot={(i - 3) * 9} r={4.2} color="#E4C895" />
                     </g>

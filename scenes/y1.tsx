@@ -40,35 +40,35 @@ export const Springtail: React.FC<{
 
   // thorax legs: three pairs, each with a real knee and two claws
   const legs = [
-    { x0: 30, y0: 16, kx: 44, ky: 40, x1: 54, y1: 62, ph: 0 },
-    { x0: 12, y0: 20, kx: 20, ky: 44, x1: 24, y1: 68, ph: 1.6 },
-    { x0: -6, y0: 20, kx: -14, ky: 44, x1: -12, y1: 66, ph: 3.1 },
+    { x0: 42, y0: 10, kx: 62, ky: 38, x1: 74, y1: 70, ph: 0 },
+    { x0: 20, y0: 18, kx: 28, ky: 46, x1: 30, y1: 76, ph: 1.6 },
+    { x0: -4, y0: 20, kx: -14, ky: 46, x1: -8, y1: 74, ph: 3.1 },
   ];
 
   const body =
-    'M -152,-4 C -154,-18 -140,-28 -120,-30 C -96,-34 -66,-32 -44,-26 C -24,-22 -8,-18 6,-12 C 20,-8 30,-3 33,5 C 35,15 24,20 10,22 C -12,26 -46,28 -76,24 C -106,22 -132,18 -146,8 C -152,4 -152,0 -152,-4 Z';
+    'M -156,4 C -158,-8 -146,-16 -128,-19 C -104,-24 -72,-30 -44,-38 C -18,-45 6,-50 24,-46 C 46,-41 60,-28 64,-12 C 68,2 58,16 44,22 C 22,30 -12,30 -44,26 C -80,22 -118,17 -140,11 C -152,7 -156,6 -156,4 Z';
   const head =
-    'M 30,-14 C 36,-30 54,-36 70,-28 C 84,-20 88,-2 82,10 C 76,22 58,26 46,20 C 34,13 27,2 30,-14 Z';
+    'M 62,-24 C 70,-40 88,-45 102,-35 C 114,-26 116,-9 108,3 C 100,15 82,17 72,9 C 62,1 58,-12 62,-24 Z';
 
   return (
     <g transform={`translate(${x}, ${y}) scale(${s})`} opacity={alpha}>
-      <ellipse cx={-40} cy={70} rx={112} ry={11} fill="rgba(0,0,0,0.34)" />
+      <ellipse cx={-30} cy={78} rx={118} ry={11} fill="rgba(0,0,0,0.32)" />
 
       {/* antennae: two four-segment, beaded feelers off the snout */}
       {[
-        { a: -18, spread: -1, ph: 0 },
-        { a: 4, spread: 1, ph: 1.7 },
+        { a: -30, spread: -1, ph: 0 },
+        { a: -8, spread: 1, ph: 1.7 },
       ].map((ant, i) => {
         const sway = Math.sin(look * 2 + ant.ph) * 3;
-        const x0 = 80;
+        const x0 = 108;
         const y0 = ant.a;
-        const d = `M ${x0},${y0} C ${x0 + 26},${y0 - 10 + sway * ant.spread} ${x0 + 44},${y0 + 12} ${x0 + 62},${y0 + 6 + sway}`;
+        const d = `M ${x0},${y0} C ${x0 + 34},${y0 - 12 + sway * ant.spread} ${x0 + 58},${y0 + 14} ${x0 + 84},${y0 + 6 + sway}`;
         return (
           <g key={i}>
             <path d={d} fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
             <path d={d} fill="none" stroke="rgba(96, 76, 44, 0.3)" strokeWidth={1.2} strokeLinecap="round" transform="translate(0.8, 1.2)" />
             {[0.25, 0.48, 0.7, 0.9, 1].map((k, j) => {
-              const px = x0 + 62 * k;
+              const px = x0 + 84 * k;
               const py = y0 + Math.sin(k * 2.6) * 8 + sway * k;
               return <circle key={j} cx={px} cy={py} r={j === 4 ? 2.4 : 2.9} fill="rgba(250, 244, 226, 0.92)" stroke="rgba(96, 76, 44, 0.42)" strokeWidth={0.6} />;
             })}
@@ -80,8 +80,8 @@ export const Springtail: React.FC<{
       <g>
         <path
           d={furcula > 0.02
-            ? `M -34,20 Q ${-34 - 64 * furcula},${26 + 34 * furcula} ${-34 - 150 * furcula},${10 + 96 * furcula}`
-            : 'M -34,20 Q -70,34 -104,30'}
+            ? `M -26,22 Q ${-26 - 70 * furcula},${28 + 40 * furcula} ${-26 - 152 * furcula},${16 + 104 * furcula}`
+            : 'M -26,22 Q -70,38 -112,32'}
           fill="none"
           stroke={bodyFill}
           strokeWidth={4.6}
@@ -89,7 +89,7 @@ export const Springtail: React.FC<{
         />
         {furcula > 0.02 && (
           <path
-            d={`M ${-34 - 150 * furcula},${10 + 96 * furcula} l -12,${-8 * furcula - 4} M ${-34 - 150 * furcula},${10 + 96 * furcula} l -12,${8 * furcula + 4}`}
+            d={`M ${-26 - 152 * furcula},${16 + 104 * furcula} l -13,${-9 * furcula - 4} M ${-26 - 152 * furcula},${16 + 104 * furcula} l -13,${9 * furcula + 4}`}
             fill="none"
             stroke={bodyFill}
             strokeWidth={3.6}
@@ -138,25 +138,41 @@ export const Springtail: React.FC<{
       <path d={body} fill={`url(#${uid}-fill)`} />
       <g clipPath={`url(#${uid}-clip)`}>
         {/* abdominal segment ridges, shallow and curved */}
-        {[-136, -114, -92, -70, -48, -26].map((sx, i) => (
-          <path
-            key={i}
-            d={`M ${sx},${-30 + i * 0.4} C ${sx + 7},${-14} ${sx + 7},${10} ${sx},${24}`}
-            fill="none"
-            stroke="rgba(104, 80, 44, 0.2)"
-            strokeWidth={1.5}
-          />
+        {[
+          { x: -138, top: -16, bot: 18 },
+          { x: -112, top: -24, bot: 23 },
+          { x: -86, top: -32, bot: 27 },
+          { x: -60, top: -39, bot: 29 },
+          { x: -34, top: -44, bot: 30 },
+          { x: -8, top: -48, bot: 28 },
+        ].map((seg, i) => (
+          <g key={i}>
+            <path
+              d={`M ${seg.x},${seg.top} C ${seg.x + 13},${seg.top + 14} ${seg.x + 13},${seg.bot - 12} ${seg.x},${seg.bot}`}
+              fill="none"
+              stroke="rgba(122, 96, 54, 0.34)"
+              strokeWidth={2.6}
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${seg.x + 3},${seg.top + 2} C ${seg.x + 16},${seg.top + 16} ${seg.x + 16},${seg.bot - 12} ${seg.x + 3},${seg.bot - 1}`}
+              fill="none"
+              stroke="rgba(255, 250, 232, 0.22)"
+              strokeWidth={1.4}
+              strokeLinecap="round"
+            />
+          </g>
         ))}
         {/* translucent gut */}
         {gut > 0.01 && (
           <g opacity={clamp01(gut)}>
-            <path d="M 34,2 C 6,10 -30,14 -70,8 C -104,3 -128,6 -146,2" fill="none" stroke="rgba(178, 138, 78, 0.34)" strokeWidth={11} strokeLinecap="round" />
-            <path d="M 34,2 C 6,10 -30,14 -70,8 C -104,3 -128,6 -146,2" fill="none" stroke="rgba(248, 238, 210, 0.22)" strokeWidth={5} strokeLinecap="round" />
+            <path d="M 60,0 C 20,8 -30,12 -70,6 C -102,2 -128,4 -148,2" fill="none" stroke="rgba(178, 138, 78, 0.34)" strokeWidth={11} strokeLinecap="round" />
+            <path d="M 60,0 C 20,8 -30,12 -70,6 C -102,2 -128,4 -148,2" fill="none" stroke="rgba(248, 238, 210, 0.22)" strokeWidth={5} strokeLinecap="round" />
             {sporeP > 0.01 &&
               Array.from({ length: 14 }).map((_, i) => {
                 const t = i / 13;
                 if (t > sporeP * 1.2) return null;
-                const px = 24 - t * 160;
+                const px = 50 - t * 190;
                 const py = 4 + Math.sin(t * Math.PI * 1.3) * 7;
                 return (
                   <g key={i}>
@@ -168,40 +184,42 @@ export const Springtail: React.FC<{
           </g>
         )}
         {/* body sheen */}
-        <ellipse cx={-70} cy={-12} rx={70} ry={11} fill="rgba(255, 252, 240, 0.16)" />
+        <ellipse cx={-66} cy={-16} rx={74} ry={10} fill="rgba(255, 252, 240, 0.18)" />
+        <path d="M -150,8 C -110,16 -60,22 -10,22" fill="none" stroke="rgba(112, 84, 46, 0.26)" strokeWidth={7} strokeLinecap="round" />
       </g>
       <path d={body} fill="none" stroke="rgba(108, 84, 46, 0.36)" strokeWidth={1.2} />
 
       {/* dorsal setae */}
       {Array.from({ length: 22 }).map((_, i) => {
-        const bx = -140 + i * 7.6;
-        const by = -30 + Math.abs(bx + 60) * 0.03;
+        const bx = -140 + i * 8.4;
+        const by = -18 - Math.max(0, 22 - Math.abs(bx + 20) * 0.7);
         return <line key={i} x1={bx} y1={by} x2={bx - 4} y2={by - 7} stroke="rgba(250, 242, 218, 0.42)" strokeWidth={0.9} strokeLinecap="round" />;
       })}
 
       {/* collophore tube under the thorax */}
-      <path d="M 6,22 L 4,32 L 12,32 Z" fill={bodyFill} stroke="rgba(108, 84, 46, 0.3)" strokeWidth={0.8} />
+      <path d="M 16,26 L 14,36 L 24,36 Z" fill={bodyFill} stroke="rgba(108, 84, 46, 0.3)" strokeWidth={0.8} />
 
       {/* head capsule, set slightly forward of the thorax */}
       <path d={head} fill={bodyFill} stroke="rgba(108, 84, 46, 0.36)" strokeWidth={1.2} />
-      <path d="M 36,-16 C 44,-30 60,-32 72,-26" fill="none" stroke={rim} strokeWidth={2.4} strokeLinecap="round" opacity={0.6} />
+      <path d="M 68,-28 C 78,-40 94,-40 104,-31" fill="none" stroke={rim} strokeWidth={2.4} strokeLinecap="round" opacity={0.6} />
       {/* eye patch: a small cluster of ommatidia, not one cartoon eye */}
       <g>
-        <ellipse cx={62} cy={-6} rx={12} ry={11} fill="rgba(38, 28, 16, 0.8)" />
+        <ellipse cx={94} cy={-18} rx={9.5} ry={8.5} fill="rgba(46, 34, 20, 0.55)" />
         {[
-          [58, -10],
-          [66, -9],
-          [57, -2],
-          [64, -1],
-          [61, -6],
+          [90, -21],
+          [97, -20],
+          [89, -14],
+          [96, -14],
+          [93, -18],
+          [99, -16],
         ].map(([ox, oy], i) => (
-          <circle key={i} cx={ox} cy={oy} r={2.3} fill="#171008" />
+          <circle key={i} cx={ox} cy={oy} r={1.8} fill="#1B1208" />
         ))}
-        <circle cx={57.4} cy={-11.4} r={1.4} fill="rgba(255, 250, 232, 0.7)" />
+        <circle cx={89.6} cy={-22.4} r={1.1} fill="rgba(255, 250, 232, 0.72)" />
       </g>
       {/* mouth cone */}
-      <path d="M 76,10 C 84,16 84,26 76,32" fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
-      <path d="M 78,28 C 84,30 86,34 84,38" fill="none" stroke="rgba(96, 76, 44, 0.5)" strokeWidth={1.6} strokeLinecap="round" />
+      <path d="M 104,4 C 112,12 111,22 102,26" fill="none" stroke={bodyFill} strokeWidth={5} strokeLinecap="round" />
+      <path d="M 104,22 C 110,24 111,28 108,32" fill="none" stroke="rgba(96, 76, 44, 0.5)" strokeWidth={1.6} strokeLinecap="round" />
     </g>
   );
 };
