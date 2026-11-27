@@ -1578,9 +1578,9 @@ export const Scene08: React.FC = () => {
                   stroke="rgba(140,190,210,0.28)" strokeWidth={1.2} strokeDasharray="10 14" />
               </g>
             ))}
-            <Mono x={panelX + panelW - 34} y={iceY + 156} text="4 °C" size={15} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 34} y={iceY + 306} text="2 °C" size={15} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
-            <Mono x={panelX + panelW - 34} y={iceY + 456} text="1 °C" size={15} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 68} y={iceY + 156} text="4 °C" size={15} color="rgba(150,200,220,0.5)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 68} y={iceY + 306} text="2 °C" size={15} color="rgba(150,200,220,0.45)" tracking={0.16} anchor="end" />
+            <Mono x={panelX + panelW - 68} y={iceY + 456} text="1 °C" size={15} color="rgba(150,200,220,0.4)" tracking={0.16} anchor="end" />
             {/* drifting particles */}
             {Array.from({ length: 40 }).map((_, i) => (
               <circle key={i} cx={panelX + hash(i, 12) * panelW} cy={iceY + 60 + hash(i, 13) * (floorY - iceY - 100)}
