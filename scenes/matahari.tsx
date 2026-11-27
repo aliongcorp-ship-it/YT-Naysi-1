@@ -75,7 +75,6 @@ export const Furniture: React.FC<{ i: number; t: number; color: string; note?: s
     <DotField x={1104} y={1852} w={226} h={58} cols={24} rows={5} color="rgba(238,228,208,0.5)" opacity={0.12} />
     <PlateFoot i={i} />
     <CornerStamp i={i} color={color} />
-    <BorderTicks t={t} color={color} />
     <FilmEdge />
     <GridCoords />
   </g>
@@ -86,6 +85,11 @@ export const Furniture: React.FC<{ i: number; t: number; color: string; note?: s
 // density layer — rails, rulers, dials, plate header. the frame should read
 // like a printed plate from an observatory logbook, never like an empty slide.
 // ============================================================================
+const fmtNum = (v: number, digits = 3) => v.toFixed(digits).replace('.', ',');
+const fmtInt = (v: number) => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const pctStr = (v: number) => `${Math.round(clamp01(v) * 100)}%`;
+const lerpAngle = (a0: number, a1: number, p: number) => a0 + (a1 - a0) * clamp01(p);
+
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
 const ProgressRail: React.FC<{ i: number; t: number; color: string }> = ({ i, t, color }) => {
@@ -187,8 +191,8 @@ const RailLabel: React.FC<{ x: number; y: number; text: string; flip?: boolean }
 
 const ExposureDial: React.FC<{ i: number; t: number; color: string }> = ({ i, t, color }) => {
   const cx = 118;
-  const cy = 208;
-  const r = 42;
+  const cy = 196;
+  const r = 40;
   const a0 = -212;
   const a1 = 32;
   const frac = (i + clamp01(prog(t, 0, 1))) / 12;
@@ -242,11 +246,12 @@ const PlateHeader: React.FC<{ i: number; t: number; dur: number; color: string }
   const local = Math.round(clamp01(t / Math.max(dur, 0.001)) * 1347);
   return (
     <g>
-      <rect x={1108} y={244} width={4} height={12} fill={color} opacity={0.85} />
-      <Mono x={1330} y={252} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12 · 90 FPS`} size={12} color="rgba(238,228,208,0.34)" tracking={0.22} anchor="end" />
+      <rect x={1108} y={228} width={4} height={12} fill={color} opacity={0.85} />
+      <Mono x={1330} y={236} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12 · 90 FPS`}
+        size={12} color="rgba(238,228,208,0.34)" tracking={0.22} anchor="end" />
       <Mono
         x={1330}
-        y={272}
+        y={258}
         text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`}
         size={11}
         color="rgba(238,228,208,0.2)"
@@ -270,7 +275,7 @@ const PlateFoot: React.FC<{ i: number }> = ({ i }) => {
       <Mono
         x={1050}
         y={1934}
-        text={`FR ${String(Math.round(ch.start * 90)).padStart(5, '0')} – ${String(Math.round(ch.end * 90)).padStart(5, '0')}`}
+        text={`FR ${fmtInt(ch.start * 90)} – ${fmtInt(ch.end * 90)}`}
         size={11}
         color="rgba(238,228,208,0.26)"
         tracking={0.18}
@@ -299,46 +304,6 @@ const CornerStamp: React.FC<{ i: number; color: string }> = ({ i, color }) => (
   </g>
 );
 
-const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const draw = easeOutCubic(prog(t, 0.2, 1.6));
-  return (
-    <g>
-      {Array.from({ length: 46 }).map((_, k) => {
-        const x = 110 + (930 * k) / 45;
-        const major = k % 5 === 0;
-        return (
-          <line
-            key={`t${k}`}
-            x1={x}
-            y1={250}
-            x2={x}
-            y2={250 - (major ? 9 : 4)}
-            stroke="rgba(238,228,208,0.16)"
-            strokeWidth={1}
-            opacity={k / 45 <= draw ? 1 : 0}
-          />
-        );
-      })}
-      {Array.from({ length: 46 }).map((_, k) => {
-        const x = 110 + (930 * k) / 45;
-        const major = k % 5 === 0;
-        return (
-          <line
-            key={`b${k}`}
-            x1={x}
-            y1={2008}
-            x2={x}
-            y2={2008 + (major ? 0 : 0)}
-            stroke="rgba(238,228,208,0.1)"
-            strokeWidth={1}
-            opacity={0}
-          />
-        );
-      })}
-      <line x1={110 + 930 * draw} y1={238} x2={110 + 930 * draw} y2={256} stroke={color} strokeWidth={1.4} opacity={0.45} />
-    </g>
-  );
-};
 
 const FilmEdge: React.FC = () => (
   <g opacity={0.22}>
@@ -802,6 +767,7 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
         );
       })}
       <Mono x={bx} y={by + 42} text="MATAHARI → PROXIMA: 4 TAHUN CAHAYA" size={10} color="rgba(238,228,208,0.3)" tracking={0.14} />
+      <Mono x={bx + bw} y={by + 42} text="LOG10 JARAK" size={9} color="rgba(238,228,208,0.2)" tracking={0.2} anchor="end" />
     </InsetFrame>
   );
 };
@@ -1026,7 +992,7 @@ const InsetEvolution: React.FC<{ t: number; color: string }> = ({ t, color }) =>
     ['BARA PUTIH', '6 M th →', 1],
   ];
   return (
-    <InsetFrame x={x} y={y} w={w} h={h} title="EVOLUSI BINTANG" note="M = MILIAR" color={color} p={prog(t, 1.0, 1.9)}>
+    <InsetFrame x={x} y={y} w={w} h={h} title="EVOLUSI BINTANG" color={color} p={prog(t, 1.0, 1.9)}>
       <line x1={x + 40} y1={y + 54} x2={x + 40} y2={y + h - 34} stroke="rgba(238,228,208,0.22)" strokeWidth={1.2} />
       {stages.map(([name, time, at], k) => {
         const p = easeOutCubic(prog(t, 1.4 + k * 0.6, 2.1 + k * 0.6));
@@ -1074,6 +1040,7 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
           </g>
         );
       })}
+      <line x1={x + 20} y1={y + h - 30} x2={x + w - 20} y2={y + h - 30} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
       <Mono x={x + 20} y={y + h - 14} text="TIDAK MELEDAK — HANYA BERHENTI" size={10} color={color} tracking={0.18} />
     </InsetFrame>
   );
@@ -1847,7 +1814,7 @@ export const Scene10: React.FC = () => {
                   </text>
                   <rect x={380} y={y} width={w * p} height={26} fill={b.color} opacity={0.85} />
                   <text x={380 + w * p + 14} y={y + 20} fill="rgba(246,231,213,0.45)" fontFamily={IDENTITY.fontMono} fontSize={16}>
-                    {b.rel >= 1 ? `${b.rel.toFixed(1).replace('.', ',')} ×` : b.rel.toFixed(3).replace('.', ',')}
+                    {b.rel >= 1 ? `${fmtNum(b.rel, 1)} ×` : fmtNum(b.rel, 3)}
                   </text>
                 </g>
               );
@@ -2010,3 +1977,36 @@ export const Scene12: React.FC = () => {
     </Stage>
   );
 };
+
+// ============================================================================
+// reference sheet — the numbers printed on the plates, kept in one place so a
+// later edit cannot make the graphics disagree with the narration.
+// ============================================================================
+export const PLATE_REFERENCE = {
+  lightSpeedKmS: 299792,
+  auKm: 149600000,
+  travelSeconds: 499,
+  travelClock: '8 mnt 19 dtk',
+  escapeSpeedKmH: 107000,
+  week1C: -18,
+  year1C: -73,
+  stableC: -240,
+  geothermalWm2: 0.087,
+  ventDepthM: 2000,
+  ventFluidC: 400,
+  redGiantInYears: 5e9,
+  redGiantRadiusX: 2.4,
+  whiteDwarfKm: 10000,
+  sunRadiusKm: 696340,
+  earthRadiusKm: 6371,
+  moonAlbedo: 0.12,
+} as const;
+
+export const PLATE_SOURCES = [
+  'NASA Sun Fact Sheet — jarak rata-rata 149,6 juta km, radius 696.340 km',
+  'BIPM — kecepatan cahaya dalam vakum 299.792.458 m/s',
+  'David Stevenson (Caltech) — skenario hilangnya matahari, suhu permukaan',
+  'NASA/ESA — evolusi bintang deret utama, raksasa merah, bara putih',
+  'NOAA PMEL — ventilasi hidrotermal, suhu fluida hingga 400 °C',
+  'USGS — fluks panas geotermal rata-rata 0,087 W/m²',
+] as const;
