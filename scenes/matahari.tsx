@@ -690,27 +690,26 @@ const InsetCoolingTable: React.FC<{ t: number; color: string }> = ({ t, color })
 
 
 const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const x = 700;
-  const y = 1618;
-  const w = 630;
-  const h = 224;
+  const x = 110;
+  const y = 1714;
+  const w = 566;
+  const h = 186;
   const rows: [string, string, number][] = [
     ['1 detik cahaya', '299.792 km', 0.1],
     ['1 menit cahaya', '17,9 juta km', 0.35],
     ['1 SA (Bumi–Matahari)', '149,6 juta km', 0.62],
     ['8 mnt 19 dtk cahaya', '1 SA', 0.86],
     ['1 tahun cahaya', '9,46 triliun km', 1],
-    ['1 parsek', '3,26 tahun cahaya', 1],
   ];
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="RANTAI SATUAN" note="JARAK = WAKTU × c" color={color} p={prog(t, 1.6, 2.6)}>
       {rows.map(([label, val, at], k) => {
         const p = easeOutCubic(prog(t, 2.0 + k * 0.45, 2.7 + k * 0.45));
-        const yy = y + 62 + k * 32;
+        const yy = y + 56 + k * 26;
         return (
           <g key={k} opacity={p}>
             <Mono x={x + 20} y={yy} text={label} size={11} color="rgba(238,228,208,0.42)" tracking={0.14} />
-            <line x1={x + 250} y1={yy - 4} x2={x + 400} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
+            <line x1={x + 226} y1={yy - 4} x2={x + 330} y2={yy - 4} stroke="rgba(238,228,208,0.16)" strokeWidth={1} strokeDasharray="2 5" />
             <Mono x={x + w - 20} y={yy} text={val} size={12} color={at > 0.8 ? color : 'rgba(238,228,208,0.7)'} tracking={0.1} anchor="end" />
           </g>
         );
@@ -720,12 +719,12 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
 };
 
 const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => {
-  const x = 700;
-  const y = 1618;
-  const w = 630;
-  const h = 224;
+  const x = 110;
+  const y = 1714;
+  const w = 566;
+  const h = 186;
   const bx = x + 34;
-  const by = y + 150;
+  const by = y + 116;
   const bw = w - 68;
   const marks: [number, string][] = [
     [0.08, '1 km'],
@@ -766,8 +765,8 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
           </g>
         );
       })}
-      <Mono x={bx} y={by + 42} text="MATAHARI → PROXIMA: 4 TAHUN CAHAYA" size={10} color="rgba(238,228,208,0.3)" tracking={0.14} />
-      <Mono x={bx + bw} y={by + 42} text="LOG10 JARAK" size={9} color="rgba(238,228,208,0.2)" tracking={0.2} anchor="end" />
+      <Mono x={bx} y={by + 38} text="MATAHARI → PROXIMA: 4 TAHUN CAHAYA" size={9} color="rgba(238,228,208,0.3)" tracking={0.14} />
+      <Mono x={bx + bw} y={by + 38} text="LOG10 JARAK" size={9} color="rgba(238,228,208,0.2)" tracking={0.2} anchor="end" />
     </InsetFrame>
   );
 };
