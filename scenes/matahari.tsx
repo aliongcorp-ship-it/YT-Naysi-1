@@ -1048,9 +1048,9 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
 
 const InsetLightTime: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 960;
-  const y = 1076;
+  const y = 1104;
   const w = 370;
-  const h = 306;
+  const h = 300;
   const ax = x + 40;
   const ay = y + 210;
   const bx = x + w - 44;
@@ -1956,11 +1956,11 @@ export const Scene12: React.FC = () => {
           </g>
 
           <g opacity={easeOutCubic(prog(t, 2.0, 3.4))}>
-            <Mono x={232} y={1700} text="YANG KAMU LIHAT" size={20} color={art.soft} tracking={0.28} />
-            <text x={224} y={1818} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={124} letterSpacing="0.012em">
+            <Mono x={232} y={1652} text="YANG KAMU LIHAT" size={19} color={art.soft} tracking={0.28} />
+            <text x={224} y={1742} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
               MATAHARI
             </text>
-            <text x={224} y={1938} fill={art.accent} fontFamily={IDENTITY.fontDisplay} fontSize={124} letterSpacing="0.012em">
+            <text x={224} y={1856} fill={art.accent} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
               YANG DULU
             </text>
           </g>
