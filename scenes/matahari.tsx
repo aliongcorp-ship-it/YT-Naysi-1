@@ -352,7 +352,7 @@ export const Scene05: React.FC = () => {
 
           {/* the sun we leave behind */}
           <g opacity={0.6}>
-            <SunCore cx={-96} cy={1240} r={150} t={t} cores={90} spots={2} glow={0.7} />
+            <SunCore cx={-96} cy={1240} r={150} t={t} cores={90} spots={2} limb={0.9} />
             <Mono x={96} y={1330} text="MATAHARI" size={19} color="rgba(246,231,213,0.5)" tracking={0.24} />
           </g>
 
