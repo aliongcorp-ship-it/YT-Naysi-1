@@ -1,3 +1,30 @@
+// ============================================================================
+// NAYSI — PLAT 12: "8 MENIT SETELAH MATAHARI MATI"
+// ----------------------------------------------------------------------------
+// One file, twelve plates. Every chapter is a single SVG scene driven by the
+// chapter clock in scenes/timing.ts, so captions, voice-over and animation
+// cannot drift apart.
+//
+//   furniture   crop marks · slug · pips · plate grid · rails · dial · header
+//   stage       backdrop + dust + grain + vignette (shared by all plates)
+//   head        kicker, plate number, serif subline
+//   insets      one measured figure per plate:
+//                 01 limb darkening        08 depth ladder
+//                 02 long division         09 vent chemistry
+//                 03 local star map        10 stellar evolution
+//                 04 vector diagram        11 white-dwarf table
+//                 05 orbit → straight       12 light-time diagram
+//                 06 cooling table         02b unit chain
+//                 07 moon phases           03b log scale
+//                                          04b delay window
+//                                          06b temperature scale
+//   scenes      Scene01 … Scene12, in airing order
+//
+// Palette per chapter comes from CHAPTER_ART in scenes/script.tsx; the twelve
+// font stacks come from IDENTITY. Nothing in this file uses raster assets: all
+// shapes are procedural SVG, so a re-render at any size stays sharp.
+// ============================================================================
+
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
 import {
@@ -240,7 +267,6 @@ const PlateFoot: React.FC<{ i: number }> = ({ i }) => {
     <g opacity={0.9}>
       <line x1={110} y1={1912} x2={1330} y2={1912} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
       <Mono x={110} y={1934} text={`DURASI ${dur.toFixed(1)} DETIK`} size={11} color="rgba(238,228,208,0.26)" tracking={0.2} />
-      <Mono x={720} y={1934} text={`${fmtSec(ch.start)} — ${fmtSec(ch.end)}`} size={11} color="rgba(238,228,208,0.22)" tracking={0.2} anchor="middle" />
       <Mono
         x={1050}
         y={1934}
@@ -278,7 +304,7 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   return (
     <g>
       {Array.from({ length: 46 }).map((_, k) => {
-        const x = 110 + (1220 * k) / 45;
+        const x = 110 + (930 * k) / 45;
         const major = k % 5 === 0;
         return (
           <line
@@ -294,7 +320,7 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
         );
       })}
       {Array.from({ length: 46 }).map((_, k) => {
-        const x = 110 + (1220 * k) / 45;
+        const x = 110 + (930 * k) / 45;
         const major = k % 5 === 0;
         return (
           <line
@@ -309,7 +335,7 @@ const BorderTicks: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           />
         );
       })}
-      <line x1={110 + 1220 * draw} y1={238} x2={110 + 1220 * draw} y2={256} stroke={color} strokeWidth={1.4} opacity={0.45} />
+      <line x1={110 + 930 * draw} y1={238} x2={110 + 930 * draw} y2={256} stroke={color} strokeWidth={1.4} opacity={0.45} />
     </g>
   );
 };
@@ -990,7 +1016,7 @@ const InsetEvolution: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   const x = 1046;
   const y = 372;
   const w = 284;
-  const h = 342;
+  const h = 356;
   const stages: [string, string, number][] = [
     ['AWAN MOLEKUL', '4,5 M th', 0.22],
     ['DERET UTAMA', '4,6 M th', 0.34],
@@ -1004,7 +1030,7 @@ const InsetEvolution: React.FC<{ t: number; color: string }> = ({ t, color }) =>
       <line x1={x + 40} y1={y + 54} x2={x + 40} y2={y + h - 34} stroke="rgba(238,228,208,0.22)" strokeWidth={1.2} />
       {stages.map(([name, time, at], k) => {
         const p = easeOutCubic(prog(t, 1.4 + k * 0.6, 2.1 + k * 0.6));
-        const yy = y + 66 + k * 56;
+        const yy = y + 62 + k * 50;
         const r = 5 + at * 10;
         return (
           <g key={k} opacity={p}>
