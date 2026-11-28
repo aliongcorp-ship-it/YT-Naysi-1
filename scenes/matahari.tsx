@@ -523,7 +523,7 @@ const InsetFrame: React.FC<{
         </g>
       ))}
       <Mono x={x + 14} y={y + 24} text={title} size={13} color="rgba(238,228,208,0.55)" tracking={0.26} />
-      {note && <Mono x={x + w - 14} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.26)" tracking={0.18} anchor="end" />}
+      {note && <Mono x={x + w - 24} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.3)" tracking={0.18} anchor="end" />}
       <line x1={x + 14} y1={y + 34} x2={x + w - 14} y2={y + 34} stroke="rgba(238,228,208,0.12)" strokeWidth={1} />
       <Hatch x={x + 2} y={y + h - 5} w={w - 4} h={4} step={4} angle={0} color={color} opacity={0.4} width={1} />
       <InkEdge x={x} y={y} w={w} h={h} color={color} opacity={0.3 * draw} seed={Math.round(y) % 13} width={1} progress={p} />
@@ -777,7 +777,7 @@ const InsetCoolingTable: React.FC<{ t: number; color: string }> = ({ t, color })
 
 const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 862;
-  const y = 624;
+  const y = 644;
   const w = 468;
   const h = 206;
   const rows: [string, string, number][] = [
@@ -806,7 +806,7 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
 
 const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 862;
-  const y = 624;
+  const y = 644;
   const w = 468;
   const h = 206;
   const bx = x + 34;
@@ -1199,9 +1199,11 @@ export const Scene01: React.FC = () => {
 
           <Corona4K cx={720} cy={1268} r={296} t={t} strength={0.95 * alive} rays={120} />
           <SunCore cx={720} cy={1268} r={296} t={t} alive={alive} cores={1500} spots={4} limb={0.86} />
-          <Prominence cx={720} cy={1268} r={296} angle={-0.55} height={150} t={t} phase={0.4} />
-          <Prominence cx={720} cy={1268} r={296} angle={2.45} height={112} t={t} phase={2.1} />
-          <Prominence cx={720} cy={1268} r={296} angle={-2.2} height={88} t={t} phase={4.2} />
+          <g opacity={alive}>
+            <Prominence cx={720} cy={1268} r={296} angle={-0.55} height={150} t={t} phase={0.4} />
+            <Prominence cx={720} cy={1268} r={296} angle={2.45} height={112} t={t} phase={2.1} />
+            <Prominence cx={720} cy={1268} r={296} angle={-2.2} height={88} t={t} phase={4.2} />
+          </g>
           <circle cx={720} cy={1268} r={296} fill="none" stroke="rgba(255,236,196,0.55)" strokeWidth={2} />
           {/* coronal loops: field lines that arch off the limb, drawn on */}
           <g opacity={0.9 * alive}>
@@ -1241,12 +1243,12 @@ export const Scene01: React.FC = () => {
           {/* light already in flight toward the lower left */}
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
             {[0.1, 0.32, 0.54, 0.76].map((k, i) => (
-              <PhotonPacket key={i} x1={514} y1={1486} x2={190} y2={1830} head={(t * 0.2 + k) % 1}
+              <PhotonPacket key={i} x1={514} y1={1486} x2={268} y2={1742} head={(t * 0.2 + k) % 1}
                 color={i % 2 === 0 ? '#FFD79A' : '#FFB463'} trail={110 - i * 18} width={2.6} />
             ))}
             <TickRule x1={190} y1={1856} x2={1250} y2={1856} major={8} minor={4} color="rgba(226,206,172,0.45)"
               labels={['0', '', '', '', '', '', '', '', '8:20']} labelSize={24} progress={prog(t, 2.0, 3.4)} />
-            <Mono x={190} y={1824} text="CAHAYA TERAKHIR" size={20} color={art.soft} tracking={0.26} />
+            <Mono x={190} y={1820} text="CAHAYA TERAKHIR" size={20} color={art.soft} tracking={0.26} />
           </g>
           <InsetLimbDarkening t={t} color={art.accent} />
           <ChapterEyebrow index={0} localSec={t} x={204} />
