@@ -489,7 +489,7 @@ const Head: React.FC<{ i: number; t: number; y?: number; size?: number }> = ({ i
           strokeWidth={1}
         />
       </g>
-      <Sheen id={`head-sheen-${i}`} x={104} y={y - size} w={est} h={size} p={prog(t, 1.5, 3.2)} color="rgba(255,248,232,0.16)" angle={12} />
+      <Sheen id={`head-sheen-${i}`} x={104} y={y - size} w={est} h={size * 0.8} p={prog(t, 1.5, 3.2)} color="rgba(255,248,232,0.1)" angle={12} />
     </g>
   );
 };
@@ -523,7 +523,7 @@ const InsetFrame: React.FC<{
         </g>
       ))}
       <Mono x={x + 14} y={y + 24} text={title} size={13} color="rgba(238,228,208,0.55)" tracking={0.26} />
-      {note && <Mono x={x + w - 24} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.3)" tracking={0.18} anchor="end" />}
+      {note && <Mono x={x + w - 34} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.3)" tracking={0.18} anchor="end" />}
       <line x1={x + 14} y1={y + 34} x2={x + w - 14} y2={y + 34} stroke="rgba(238,228,208,0.12)" strokeWidth={1} />
       <Hatch x={x + 2} y={y + h - 5} w={w - 4} h={4} step={4} angle={0} color={color} opacity={0.4} width={1} />
       <InkEdge x={x} y={y} w={w} h={h} color={color} opacity={0.3 * draw} seed={Math.round(y) % 13} width={1} progress={p} />
@@ -597,7 +597,7 @@ const InsetDivision: React.FC<{ t: number; color: string }> = ({ t, color }) => 
       <line x1={x + 20} y1={y + 172} x2={x + 20 + (w - 40) * p} y2={y + 172} stroke={color} strokeWidth={2} />
       <Mono x={x + 20} y={y + 196} text="SISA 199 664 → 499 DETIK" size={13} color={color} tracking={0.16} opacity={p} />
       <line x1={x + 20} y1={y + 206} x2={x + w - 20} y2={y + 206} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
-      <Mono x={x + 20} y={y + 228} text="DIBULATKAN: 8 MNT 19 DTK" size={10} color="rgba(238,228,208,0.28)" tracking={0.16} />
+      <Mono x={x + 20} y={y + 220} text="DIBULATKAN: 8 MNT 19 DTK" size={10} color="rgba(238,228,208,0.28)" tracking={0.16} />
     </InsetFrame>
   );
 };
@@ -1222,7 +1222,8 @@ export const Scene01: React.FC = () => {
               </g>
             ))}
           </g>
-          {/* flare pulses: hot knots on the limb */}
+          {/* flare pulses: hot knots on the limb, gone with the light */}
+          <g opacity={alive}>
           {[
             { ang: -0.42, off: 0.0 },
             { ang: 2.42, off: 0.45 },
@@ -1238,6 +1239,7 @@ export const Scene01: React.FC = () => {
               </g>
             );
           })}
+          </g>
           {off > 0.12 && <GhostSun cx={720} cy={1268} r={296} t={t} color={art.accent} />}
 
           {/* light already in flight toward the lower left */}
@@ -1308,7 +1310,7 @@ export const Scene02: React.FC = () => {
             <Mono x={116} y={1520} text="HASIL" size={22} color={art.accent} tracking={0.3} />
             <Counter x={104} y={1780} from={0} to={499} localSec={t} startSec={5.0} durSec={1.8} size={290} color={art.ink} weight={400} tracking="-0.035em" />
             <Mono x={1324} y={1706} text="DETIK" size={44} color="rgba(243,233,214,0.45)" tracking={0.2} anchor="end" />
-            <Sheen id="res-sheen" x={104} y={1500} w={720} h={290} p={prog(t, 6.4, 8.4)} color="rgba(255,246,224,0.2)" angle={14} />
+            
             <Hatch x={116} y={1580} w={520} h={170} step={7} angle={62} color="rgba(232,196,150,0.5)" opacity={0.13} />
             <RuleLine x1={116} y1={1840} x2={1324} y2={1840} color="rgba(226,206,172,0.28)" />
             <text x={116} y={1906} fill="rgba(243,233,214,0.66)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
