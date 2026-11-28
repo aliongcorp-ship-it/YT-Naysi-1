@@ -1819,7 +1819,7 @@ export const Scene09: React.FC = () => {
           <Head i={8} t={t} y={640} size={96} />
           <g opacity={easeOutCubic(prog(t, 0.3, 1.4))}>
             <Mono x={116} y={742} text="KEDALAMAN 2.000 M" size={20} color={art.accent} tracking={0.28} />
-            <Mono x={1324} y={742} text="TEKANAN 200 ATM" size={19} color="rgba(217,232,236,0.42)" tracking={0.24} anchor="end" />
+            <Mono x={1324} y={698} text="TEKANAN 200 ATM" size={19} color="rgba(217,232,236,0.42)" tracking={0.24} anchor="end" />
           </g>
 
           {/* seafloor */}
@@ -1841,6 +1841,9 @@ export const Scene09: React.FC = () => {
             <ellipse cx={726} cy={1132} rx={44} ry={12} fill={`rgba(255,150,70,${0.75 * plume})`} />
             <ellipse cx={726} cy={1132} rx={86} ry={30} fill={`rgba(255,140,60,${0.14 * plume})`} />
             <defs>
+              <filter id="plumeBlur" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="7" />
+              </filter>
               <linearGradient id="plume9" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stopColor="rgba(255,176,116,0.5)" />
                 <stop offset="30%" stopColor="rgba(255,162,96,0.24)" />
@@ -1861,7 +1864,7 @@ export const Scene09: React.FC = () => {
                 `M ${714 + off} 1120 C ${688 + off + sway(980)} 960 ${668 + off + sway(830)} 790 ${646 + off + sway(700)} 672`;
               return (
                 <g opacity={plume}>
-                  <path d={d} fill="url(#plume9)" />
+                  <path d={d} fill="url(#plume9)" filter="url(#plumeBlur)" />
                   {[
                     [-30, 1.6],
                     [0, 2.2],
@@ -2095,7 +2098,7 @@ export const Scene11: React.FC = () => {
           </g>
 
           <LeaderLabel from={[980, 940]} to={[1042, 862]} text="LAPISAN LUAR TERLEPAS" sub="gas dilempar ke angkasa" anchor="start" progress={prog(t, 3.2, 4.4)} color="rgba(226,230,244,0.85)" size={21} />
-          <LeaderLabel from={[610, 1290]} to={[548, 1372]} text="TINGGAL INTI" sub="seukuran bumi, sepadat matahari" anchor="start" progress={prog(t, 5.0, 6.2)} color="rgba(226,230,244,0.85)" size={21} />
+          <LeaderLabel from={[610, 1290]} to={[706, 1404]} text="TINGGAL INTI" sub="seukuran bumi, sepadat matahari" anchor="end" progress={prog(t, 5.0, 6.2)} color="rgba(226,230,244,0.85)" size={21} />
 
           <text x={116} y={1866} fill="rgba(226,230,244,0.9)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
             Tidak ada ledakan. Hanya pendinginan yang panjang.
