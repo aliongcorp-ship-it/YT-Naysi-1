@@ -1052,13 +1052,13 @@ const InsetChemistry: React.FC<{ t: number; color: string }> = ({ t, color }) =>
           </g>
         );
       })}
-      <Mono x={x + 196} y={y + 78} text="H2S + O2 → S + H2O" size={12} color="rgba(238,228,208,0.62)" tracking={0.12} />
-      <Mono x={x + 196} y={y + 100} text="+ ENERGI" size={12} color={color} tracking={0.14} />
-      <Mono x={x + 196} y={y + 138} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 158} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 178} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 218} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.42)" tracking={0.14} />
-      <Mono x={x + 196} y={y + 236} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.34)" tracking={0.12} />
+      <Mono x={x + 242} y={y + 78} text="H2S + O2 → S + H2O" size={12} color="rgba(238,228,208,0.62)" tracking={0.12} />
+      <Mono x={x + 242} y={y + 100} text="+ ENERGI" size={12} color={color} tracking={0.14} />
+      <Mono x={x + 242} y={y + 138} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 242} y={y + 158} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 242} y={y + 178} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 242} y={y + 218} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.42)" tracking={0.14} />
+      <Mono x={x + 242} y={y + 236} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.34)" tracking={0.12} />
       <Mono x={x + 20} y={y + h - 16} text="ENERGI DARI BATU, BUKAN DARI MATAHARI" size={9} color={color} tracking={0.16} />
     </InsetFrame>
   );
@@ -1138,7 +1138,7 @@ const InsetLightTime: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   const w = 370;
   const h = 300;
   const ax = x + 40;
-  const ay = y + 210;
+  const ay = y + 168;
   const bx = x + w - 44;
   const beam = easeOutCubic(prog(t, 0.8, 3.4));
   return (
@@ -1153,11 +1153,11 @@ const InsetLightTime: React.FC<{ t: number; color: string }> = ({ t, color }) =>
         const visible = px <= ax + (bx - ax) * beam;
         return <circle key={k} cx={px} cy={ay} r={2.6} fill="rgba(255,226,168,0.9)" opacity={visible ? 0.85 : 0.12} />;
       })}
-      <Mono x={ax} y={ay - 46} text="MATAHARI" size={10} color="rgba(244,194,94,0.7)" tracking={0.2} />
-      <Mono x={bx} y={ay - 34} text="BUMI" size={10} color="rgba(140,180,205,0.7)" tracking={0.2} anchor="end" />
-      <Mono x={ax + 6} y={ay + 32} text="t = 0" size={10} color="rgba(238,228,208,0.3)" tracking={0.16} />
-      <Mono x={ax + 6} y={ay - 66} text="c = 299.792 km/dtk" size={10} color="rgba(238,228,208,0.26)" tracking={0.14} />
-      <Mono x={bx} y={ay + 32} text="t = 499 s" size={10} color="rgba(238,228,208,0.42)" tracking={0.16} anchor="end" />
+      <Mono x={ax} y={ay - 44} text="MATAHARI" size={10} color="rgba(244,194,94,0.7)" tracking={0.2} />
+      <Mono x={bx} y={ay - 44} text="BUMI" size={10} color="rgba(140,180,205,0.7)" tracking={0.2} anchor="end" />
+      <Mono x={ax + 6} y={ay + 40} text="t = 0" size={10} color="rgba(238,228,208,0.3)" tracking={0.16} />
+      <Mono x={x + 20} y={y + 62} text="c = 299.792 km/dtk" size={10} color="rgba(238,228,208,0.26)" tracking={0.14} />
+      <Mono x={bx} y={ay + 40} text="t = 499 s" size={10} color="rgba(238,228,208,0.42)" tracking={0.16} anchor="end" />
       <Mono x={x + 20} y={y + h - 46} text="YANG KAMU LIHAT: SELALU MASA LALU" size={10} color={color} tracking={0.16} />
       <Mono x={x + 20} y={y + h - 24} text="SELISIH = 8 MENIT 19 DETIK" size={10} color="rgba(238,228,208,0.34)" tracking={0.14} />
     </InsetFrame>
@@ -1576,7 +1576,7 @@ export const Scene06: React.FC = () => {
           </g>
 
           <g opacity={easeOutCubic(prog(t, 1.2, 2.2))}>
-            <Mono x={150} y={1144} text="SUHU PERMUKAAN · HARI KE-" size={18} color="rgba(226,240,248,0.45)" tracking={0.22} />
+            <Mono x={150} y={1120} text="SUHU PERMUKAAN · HARI KE-" size={18} color="rgba(226,240,248,0.5)" tracking={0.22} />
             <line x1={gx0} y1={gy0} x2={gx1} y2={gy0} stroke="rgba(212,232,242,0.32)" strokeWidth={1.6} />
             <line x1={gx0} y1={gy0} x2={gx0} y2={gy1 - 30} stroke="rgba(212,232,242,0.32)" strokeWidth={1.6} />
             {[20, 0, -20, -40, -60, -80].map((c) => (
@@ -1840,17 +1840,39 @@ export const Scene09: React.FC = () => {
             <ellipse cx={726} cy={1132} rx={62} ry={18} fill="#0B1114" stroke="rgba(255,160,90,0.4)" strokeWidth={2} />
             <ellipse cx={726} cy={1132} rx={44} ry={12} fill={`rgba(255,150,70,${0.75 * plume})`} />
             <ellipse cx={726} cy={1132} rx={86} ry={30} fill={`rgba(255,140,60,${0.14 * plume})`} />
-            {Array.from({ length: 7 }).map((_, k) => {
-              const kk = k / 6;
-              const cy = 1116 - kk * 430;
-              const rx = 28 + kk * 132;
-              const ry = 13 + kk * 34;
-              const dx = Math.sin(t * 0.55 + k * 0.9) * 20 * kk;
+            <defs>
+              <linearGradient id="plume9" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stopColor="rgba(255,176,116,0.5)" />
+                <stop offset="30%" stopColor="rgba(255,162,96,0.24)" />
+                <stop offset="70%" stopColor="rgba(255,152,84,0.09)" />
+                <stop offset="100%" stopColor="rgba(255,150,80,0)" />
+              </linearGradient>
+            </defs>
+            {(() => {
+              const sway = (y: number) => Math.sin(t * 0.55 + y * 0.004) * 24 + Math.sin(t * 0.21 + y * 0.0017) * 14;
+              const d = [
+                `M 688 1132`,
+                `C ${648 + sway(1020)} 1000 ${612 + sway(880)} 812 ${572 + sway(700)} 660`,
+                `L ${884 + sway(700)} 660`,
+                `C ${846 + sway(880)} 812 ${808 + sway(1020)} 1000 764 1132`,
+                'Z',
+              ].join(' ');
+              const wisp = (off: number, w: number) =>
+                `M ${714 + off} 1120 C ${688 + off + sway(980)} 960 ${668 + off + sway(830)} 790 ${646 + off + sway(700)} 672`;
               return (
-                <ellipse key={k} cx={726 + dx} cy={cy} rx={rx} ry={ry}
-                  fill={`rgba(255,${Math.round(164 - 34 * kk)},${Math.round(104 - 40 * kk)},${0.15 * (1 - kk) + 0.02})`} />
+                <g opacity={plume}>
+                  <path d={d} fill="url(#plume9)" />
+                  {[
+                    [-30, 1.6],
+                    [0, 2.2],
+                    [34, 1.4],
+                  ].map(([off, w], k) => (
+                    <path key={k} d={wisp(off, w)} fill="none" stroke="rgba(255,198,150,0.16)" strokeWidth={w} strokeLinecap="round" />
+                  ))}
+                  <path d={wisp(-14, 0.8)} fill="none" stroke="rgba(255,226,190,0.12)" strokeWidth={0.8} />
+                </g>
               );
-            })}
+            })()}
             {/* mineral shimmer inside the column */}
             {Array.from({ length: 9 }).map((_, k) => (
               <line key={`sh${k}`} x1={690 + hash(k, 41) * 72} y1={1110 - ((t * 90 + k * 120) % 420)}
@@ -1893,7 +1915,7 @@ export const Scene09: React.FC = () => {
           )}
 
           <LeaderLabel from={[726, 1132]} to={[420, 1020]} text="FLUIDA 400 °C" sub="kaya hidrogen sulfida" anchor="end" progress={prog(t, 2.2, 3.4)} color="rgba(250,200,160,0.9)" size={21} />
-          <LeaderLabel from={[1010, 1330]} to={[946, 1216]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={20} />
+          <LeaderLabel from={[760, 800]} to={[886, 742]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={20} />
 
           <g opacity={easeOutCubic(prog(t, 5.4, 6.6))}>
             <Brackets x={116} y={1650} w={620} h={190} color="rgba(95,168,160,0.5)" size={24} />
@@ -2018,13 +2040,28 @@ export const Scene11: React.FC = () => {
           })}
 
           <g opacity={0.55 * expand}>
+            <defs>
+              <radialGradient id="wispA">
+                <stop offset="0%" stopColor="rgba(154,166,212,0.34)" />
+                <stop offset="55%" stopColor="rgba(154,166,212,0.14)" />
+                <stop offset="100%" stopColor="rgba(154,166,212,0)" />
+              </radialGradient>
+              <radialGradient id="wispB">
+                <stop offset="0%" stopColor="rgba(127,182,201,0.26)" />
+                <stop offset="55%" stopColor="rgba(127,182,201,0.1)" />
+                <stop offset="100%" stopColor="rgba(127,182,201,0)" />
+              </radialGradient>
+            </defs>
             {Array.from({ length: 54 }).map((_, i) => {
               const a = hash(i, 61) * Math.PI * 2;
               const rr = 160 + hash(i, 62) * 360;
+              const cx = 720 + Math.cos(a) * rr;
+              const cy = 1140 + Math.sin(a) * rr * 0.8;
               return (
-                <ellipse key={i} cx={720 + Math.cos(a) * rr} cy={1140 + Math.sin(a) * rr * 0.8}
-                  rx={26 + hash(i, 63) * 86} ry={12 + hash(i, 64) * 44}
-                  fill={i % 3 === 0 ? 'rgba(154,166,212,0.18)' : 'rgba(127,182,201,0.13)'} />
+                <ellipse key={i} cx={cx} cy={cy}
+                  rx={(26 + hash(i, 63) * 86) * 1.5} ry={(12 + hash(i, 64) * 44) * 1.5}
+                  fill={i % 3 === 0 ? 'url(#wispA)' : 'url(#wispB)'}
+                  transform={`rotate(${hash(i, 65) * 180} ${cx} ${cy})`} />
               );
             })}
           </g>
@@ -2057,8 +2094,8 @@ export const Scene11: React.FC = () => {
             <Mono x={116} y={1740} text="4.000 K → 100.000 K → MENDINGIN SELAMANYA" size={17} color="rgba(226,230,244,0.4)" tracking={0.14} />
           </g>
 
-          <LeaderLabel from={[980, 940]} to={[1150, 856]} text="LAPISAN LUAR TERLEPAS" sub="gas dilempar ke angkasa" anchor="start" progress={prog(t, 3.2, 4.4)} color="rgba(226,230,244,0.85)" size={21} />
-          <LeaderLabel from={[610, 1290]} to={[390, 1390]} text="TINGGAL INTI" sub="seukuran bumi, sepadat matahari" anchor="end" progress={prog(t, 5.0, 6.2)} color="rgba(226,230,244,0.85)" size={21} />
+          <LeaderLabel from={[980, 940]} to={[1042, 862]} text="LAPISAN LUAR TERLEPAS" sub="gas dilempar ke angkasa" anchor="start" progress={prog(t, 3.2, 4.4)} color="rgba(226,230,244,0.85)" size={21} />
+          <LeaderLabel from={[610, 1290]} to={[548, 1372]} text="TINGGAL INTI" sub="seukuran bumi, sepadat matahari" anchor="start" progress={prog(t, 5.0, 6.2)} color="rgba(226,230,244,0.85)" size={21} />
 
           <text x={116} y={1866} fill="rgba(226,230,244,0.9)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
             Tidak ada ledakan. Hanya pendinginan yang panjang.
@@ -2105,6 +2142,8 @@ export const Scene12: React.FC = () => {
               </linearGradient>
             </defs>
             <polygon points="254,722 882,1540 1210,1540 296,722" fill="url(#shaft12)" />
+            <polygon points="296,722 858,1540 906,1540 300,722" fill="rgba(255,226,178,0.09)" />
+            <polygon points="254,722 882,1540 894,1540 268,722" fill="rgba(255,246,222,0.12)" />
             <ellipse cx={900} cy={1600} rx={350} ry={74} fill="rgba(255,206,140,0.2)" />
             {Array.from({ length: 40 }).map((_, i) => (
               <circle key={i} cx={300 + hash(i, 71) * 880 + Math.sin(t * 0.5 + i) * 12} cy={740 + hash(i, 72) * 800 - ((t * 14 + i * 9) % 140)}
@@ -2120,18 +2159,18 @@ export const Scene12: React.FC = () => {
           </g>
 
           <g opacity={easeOutCubic(prog(t, 2.0, 3.4))}>
-            <Mono x={232} y={1652} text="YANG KAMU LIHAT" size={19} color={art.soft} tracking={0.28} />
-            <text x={224} y={1742} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
+            <Mono x={232} y={1600} text="YANG KAMU LIHAT" size={19} color={art.soft} tracking={0.28} />
+            <text x={224} y={1694} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
               MATAHARI
             </text>
-            <text x={224} y={1856} fill={art.accent} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
+            <text x={224} y={1808} fill={art.accent} fontFamily={IDENTITY.fontDisplay} fontSize={112} letterSpacing="0.012em">
               YANG DULU
             </text>
           </g>
 
           <g opacity={cta} transform={`translate(0 ${(1 - cta) * 22})`}>
-            <Mono x={232} y={1598} text="SELISIH 8 MENIT 20 DETIK" size={19} color="rgba(247,236,217,0.5)" tracking={0.22} />
-            <Mono x={1324} y={1598} text="TULIS DI KOMENTAR →" size={19} color={art.accent} tracking={0.24} anchor="end" />
+            <Mono x={232} y={1878} text="SELISIH 8 MENIT 20 DETIK" size={19} color="rgba(247,236,217,0.62)" tracking={0.22} />
+            <Mono x={1324} y={1878} text="TULIS DI KOMENTAR →" size={19} color={art.accent} tracking={0.24} anchor="end" />
           </g>
           <InsetLightTime t={t} color={art.accent} />
           <ChapterEyebrow index={11} localSec={t} x={204} />
