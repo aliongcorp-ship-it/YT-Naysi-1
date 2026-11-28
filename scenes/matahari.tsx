@@ -42,6 +42,8 @@ import {
 import { Backdrop, Camera, ChapterEyebrow, DustMotes, FilmGrain, LeaderLabel, Mono, RuleLine, useChapterClock } from './kit';
 import { BigNumber, Brackets, Corona4K, EarthGlobe, MilkyWay, MoonDisc, PhotonPacket, Prominence, StarField, SunCore, TickRule } from './graphics';
 import { Counter, GhostSun, ThermoGauge, VectorArrow } from './sol';
+import { Bloom, Draw, KineticHeadline, PulseRing, Rise, Sheen, Wipe, countText, easeInOutCubic, easeOutQuint, stagger } from './motion';
+import { DustFore, Hatch, HalftoneField, InkBleed, InkEdge, LightLeak, PaperFibre, PlateSheen, Registration, Shutter } from './texture';
 
 // ============================================================================
 // furniture — crop marks, slug, pips. the frame should look ruled, not empty.
@@ -77,6 +79,9 @@ export const Furniture: React.FC<{ i: number; t: number; color: string; note?: s
     <CornerStamp i={i} color={color} />
     <FilmEdge />
     <GridCoords />
+    <Registration t={t} color={color} />
+    <InkEdge x={15} y={15} w={1410} h={2530} color="rgba(238,228,208,0.6)" opacity={0.14}
+      seed={i * 5 + 3} progress={prog(t, 0.1, 1.7)} width={1.1} />
   </g>
 );
 
@@ -89,6 +94,22 @@ const fmtNum = (v: number, digits = 3) => v.toFixed(digits).replace('.', ',');
 const fmtInt = (v: number) => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const pctStr = (v: number) => `${Math.round(clamp01(v) * 100)}%`;
 const lerpAngle = (a0: number, a1: number, p: number) => a0 + (a1 - a0) * clamp01(p);
+
+const coronalArc = (cx: number, cy: number, r: number, a0: number, a1: number, lift: number) => {
+  const x0 = cx + Math.cos(a0) * r * 0.99;
+  const y0 = cy + Math.sin(a0) * r * 0.99;
+  const x1 = cx + Math.cos(a1) * r * 0.99;
+  const y1 = cy + Math.sin(a1) * r * 0.99;
+  const am = (a0 + a1) / 2;
+  const mx = cx + Math.cos(am) * (r + lift);
+  const my = cy + Math.sin(am) * (r + lift);
+  return `M ${x0.toFixed(1)} ${y0.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+};
+
+// The narration was re-recorded slower, so each chapter changed length. Scene
+// beats were authored against the previous cut; scaling local time by the
+// ratio keeps every entrance on the same proportion of its paragraph.
+const TIMING_SCALE = [1.000, 0.869, 1.007, 1.136, 0.925, 1.227, 1.334, 1.108, 1.044, 1.014, 1.050, 0.804];
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
@@ -363,11 +384,21 @@ const PlateGrid: React.FC<{ color: string; opacity?: number }> = ({ color, opaci
   </g>
 );
 
-export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: string }> = ({ i, children, note }) => {
+export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: string }> = ({ i, children }) => {
   const ch = CHAPTERS[i];
+  const art = CHAPTER_ART[i];
+  const { localSec, dur } = useChapterClock(i);
   return (
     <AbsoluteFill style={{ backgroundColor: ch.groundBottom, overflow: 'hidden' }}>
       {children}
+
+      {/* paper fibre — the plate was printed on stock, not exported from a viewport */}
+      <PaperFibre opacity={0.13} seed={i * 7 + 11} />
+      <InkBleed t={localSec} color={art.accent} sid={`${i}`} />
+      <LightLeak x={i % 2 === 0 ? 300 : 1140} y={420} r={720} color={art.accent} t={localSec} speed={0.11} sid={`${i}`} />
+      <PlateSheen t={localSec} dur={Math.min(dur, 6.5)} color="rgba(255,246,228,0.045)" sid={`${i}`} />
+
+      {/* vignette + fine print screen */}
       <div
         style={{
           position: 'absolute',
@@ -387,6 +418,12 @@ export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: stri
             'repeating-linear-gradient(180deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 5px)',
         }}
       />
+
+      <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <DustFore t={localSec} count={12} seed={i * 3 + 21} />
+        <Shutter t={localSec} dur={dur} color={art.accent} />
+      </svg>
+
       <DustMotes count={13} seed={i + 5} y0={280} y1={1860} color="rgba(244,232,208,0.16)" />
       <FilmGrain opacity={0.055} scale={208} />
     </AbsoluteFill>
@@ -395,25 +432,66 @@ export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: stri
 
 const Head: React.FC<{ i: number; t: number; y?: number; size?: number }> = ({ i, t, y = 640, size = 92 }) => {
   const art = CHAPTER_ART[i];
-  const p = easeOutCubic(prog(t, 0.2, 1.2));
+  const p = prog(t, 0.18, 1.15);
+  const kick = prog(t, 0.55, 1.55);
+  const meta = easeOutQuint(prog(t, 0.1, 1.0));
+  const title = CHAPTER_TITLES[i];
+  const est = title.length * size * 0.6;
   return (
-    <g opacity={p} transform={`translate(0 ${(1 - p) * 16})`}>
-      <Mono x={116} y={y - 92} text={`${String(i + 1).padStart(2, '0')} / 12`} size={20} color={art.accent} tracking={0.3} />
-      <text x={110} y={y} fill={art.ink} fontFamily={IDENTITY.fontDisplay} fontSize={size} letterSpacing="0.014em">
-        {CHAPTER_TITLES[i]}
+    <g>
+      {/* ghost numeral, printed behind the title */}
+      <text
+        x={104}
+        y={y + size * 0.16}
+        fill="none"
+        stroke={art.accent}
+        strokeWidth={1.4}
+        fontFamily={IDENTITY.fontDisplay}
+        fontSize={size * 3.1}
+        letterSpacing="-0.03em"
+        opacity={0.06 * meta}
+      >
+        {String(i + 1).padStart(2, '0')}
       </text>
-      <text x={116} y={y + 50} fill="rgba(240,232,216,0.46)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={32}>
-        {CHAPTER_KICKERS[i]}
-      </text>
+
+      <g opacity={easeOutQuint(prog(t, 0.05, 0.8))}>
+        <rect x={110} y={y - 152} width={26 * easeOutQuint(prog(t, 0.1, 0.9))} height={3} fill={art.accent} />
+        <Mono x={110} y={y - 96} text={`${String(i + 1).padStart(2, '0')} / 12`} size={20} color={art.accent} tracking={0.3} />
+        <Mono x={210} y={y - 96} text={CHAPTERS[i].eyebrow} size={15} color="rgba(238,228,208,0.34)" tracking={0.24} />
+      </g>
+
+      <KineticHeadline
+        id={`head-${i}`}
+        x={110}
+        y={y}
+        size={size}
+        text={title}
+        color={art.ink}
+        family={IDENTITY.fontDisplay}
+        p={p}
+        width={est}
+        weight={500}
+        trackingFrom={0.085}
+        trackingTo={0.012}
+      />
+      <g opacity={easeOutQuint(kick)} transform={`translate(0 ${(1 - easeOutQuint(kick)) * 14})`}>
+        <text x={112} y={y + 50} fill="rgba(240,232,216,0.48)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={32}>
+          {CHAPTER_KICKERS[i]}
+        </text>
+        <line
+          x1={112}
+          y1={y + 68}
+          x2={112 + Math.min(est, 560) * easeOutQuint(kick)}
+          y2={y + 68}
+          stroke="rgba(238,228,208,0.18)"
+          strokeWidth={1}
+        />
+      </g>
+      <Sheen id={`head-sheen-${i}`} x={104} y={y - size} w={est} h={size} p={prog(t, 1.5, 3.2)} color="rgba(255,248,232,0.16)" angle={12} />
     </g>
   );
 };
 
-
-// ============================================================================
-// chapter insets — every plate carries one small measured diagram, the way a
-// science page carries a figure next to its body copy.
-// ============================================================================
 const InsetFrame: React.FC<{
   x: number;
   y: number;
@@ -426,8 +504,10 @@ const InsetFrame: React.FC<{
   children: React.ReactNode;
 }> = ({ x, y, w, h, title, note, color, p = 1, children }) => {
   const draw = easeOutCubic(clamp01(p));
+  const insetId = `inset-${Math.round(x)}-${Math.round(y)}`;
   return (
     <g opacity={draw}>
+      <rect x={x + 4} y={y + 7} width={w} height={h} fill="rgba(0,0,0,0.34)" />
       <rect x={x} y={y} width={w} height={h} fill="rgba(8,8,10,0.42)" stroke="rgba(238,228,208,0.16)" strokeWidth={1} />
       {[
         [x, y, 1, 1],
@@ -443,7 +523,12 @@ const InsetFrame: React.FC<{
       <Mono x={x + 14} y={y + 24} text={title} size={13} color="rgba(238,228,208,0.55)" tracking={0.26} />
       {note && <Mono x={x + w - 14} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.26)" tracking={0.18} anchor="end" />}
       <line x1={x + 14} y1={y + 34} x2={x + w - 14} y2={y + 34} stroke="rgba(238,228,208,0.12)" strokeWidth={1} />
-      {children}
+      <HalftoneField x={x + 3} y={y + h - 26} w={Math.min(w - 20, 96)} h={18} step={5} color={color} opacity={0.22} ramp="linear" seed={Math.round(x) % 17} />
+      <Hatch x={x + 2} y={y + h - 4} w={w - 4} h={3} step={4} angle={0} color={color} opacity={0.35} width={1} />
+      <InkEdge x={x} y={y} w={w} h={h} color={color} opacity={0.3 * draw} seed={Math.round(y) % 13} width={1} progress={p} />
+      <Wipe id={insetId} p={(p - 0.12) / 0.88} x={x + 1} y={y + 36} w={w - 2} h={h - 38} dir="ttb" soft={2}>
+        {children}
+      </Wipe>
     </g>
   );
 };
@@ -1077,11 +1162,13 @@ const InsetLightTime: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   );
 };
 
+
 // ============================================================================
 // 01 — CAHAYA YANG TERLAMBAT
 // ============================================================================
 export const Scene01: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(0);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(0);
+  const t = rawT * TIMING_SCALE[0];
   const off = prog(t, 9.4, 10.4);
   const alive = 1 - off;
   const reveal = easeOutCubic(prog(t, 0.1, 1.2));
@@ -1092,7 +1179,7 @@ export const Scene01: React.FC = () => {
         light={{ x: 720, y: 1120, rx: 900, ry: 900, color: `rgba(255,176,80,${0.3 * alive})` }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={150} t={t} opacity={0.32 + off * 0.5} />
-        <Camera localSec={t} dur={dur} push={0.055} drift={9}>
+        <Camera localSec={rawT} dur={dur} push={0.055} drift={9}>
           <Head i={0} t={t} y={640} size={96} />
 
           {/* plate: punch holes + ruled border */}
@@ -1114,6 +1201,39 @@ export const Scene01: React.FC = () => {
           <Prominence cx={720} cy={1268} r={296} angle={2.45} height={112} t={t} phase={2.1} />
           <Prominence cx={720} cy={1268} r={296} angle={-2.2} height={88} t={t} phase={4.2} />
           <circle cx={720} cy={1268} r={296} fill="none" stroke="rgba(255,236,196,0.55)" strokeWidth={2} />
+          {/* coronal loops: field lines that arch off the limb, drawn on */}
+          <g opacity={0.9 * alive}>
+            {[
+              { a0: -2.55, a1: -1.75, lift: 168, at: 0.55, w: 1.7 },
+              { a0: -2.30, a1: -1.95, lift: 232, at: 0.95, w: 1.2 },
+              { a0: -0.95, a1: -0.30, lift: 140, at: 1.25, w: 1.5 },
+              { a0: 0.55, a1: 1.15, lift: 196, at: 1.55, w: 1.3 },
+              { a0: 2.05, a1: 2.60, lift: 156, at: 1.85, w: 1.6 },
+            ].map((L, k) => (
+              <g key={k}>
+                <Draw d={coronalArc(720, 1268, 296, L.a0, L.a1, L.lift)} p={prog(t, L.at, L.at + 1.9)}
+                  color="rgba(255,216,158,0.55)" width={L.w} />
+                <Draw d={coronalArc(720, 1268, 296, L.a0 + 0.03, L.a1 - 0.03, L.lift * 0.72)} p={prog(t, L.at + 0.25, L.at + 2.1)}
+                  color="rgba(255,246,226,0.3)" width={0.9} />
+              </g>
+            ))}
+          </g>
+          {/* flare pulses: hot knots on the limb */}
+          {[
+            { ang: -0.42, off: 0.0 },
+            { ang: 2.42, off: 0.45 },
+            { ang: -2.12, off: 0.2 },
+          ].map((f, k) => {
+            const px = 720 + Math.cos(f.ang) * 296;
+            const py = 1268 + Math.sin(f.ang) * 296;
+            const ph = (t * 0.34 + f.off) % 1;
+            return (
+              <g key={k}>
+                <Bloom id={`flare-${k}`} cx={px} cy={py} r={70} color="rgba(255,214,150,0.5)" t={t} speed={1.2} base={0.5} amp={0.3} />
+                <PulseRing cx={px} cy={py} r0={10} r1={86} p={ph} color="rgba(255,232,190,0.7)" width={1.4} />
+              </g>
+            );
+          })}
           {off > 0.12 && <GhostSun cx={720} cy={1268} r={296} t={t} color={art.accent} />}
 
           {/* light already in flight toward the lower left */}
@@ -1139,7 +1259,8 @@ export const Scene01: React.FC = () => {
 // 02 — 499 DETIK
 // ============================================================================
 export const Scene02: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(1);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(1);
+  const t = rawT * TIMING_SCALE[1];
   const rows = [
     { label: 'JARAK MATAHARI – BUMI', unit: 'KM', at: 0.5, to: 149600000 },
     { label: 'KECEPATAN CAHAYA', unit: 'KM / DETIK', at: 2.4, to: 299792 },
@@ -1156,7 +1277,7 @@ export const Scene02: React.FC = () => {
             <circle key={k} cx={1180} cy={980} r={330 + k * 78} fill="none" stroke="rgba(255,214,150,0.12)" strokeWidth={1} />
           ))}
         </g>
-        <Camera localSec={t} dur={dur} push={0.03} drift={6}>
+        <Camera localSec={rawT} dur={dur} push={0.03} drift={6}>
           <Head i={1} t={t} y={640} size={96} />
 
           {rows.map((r, i) => {
@@ -1183,6 +1304,8 @@ export const Scene02: React.FC = () => {
             <Mono x={116} y={1520} text="HASIL" size={22} color={art.accent} tracking={0.3} />
             <Counter x={104} y={1780} from={0} to={499} localSec={t} startSec={5.0} durSec={1.8} size={290} color={art.ink} weight={400} tracking="-0.035em" />
             <Mono x={1324} y={1706} text="DETIK" size={44} color="rgba(243,233,214,0.45)" tracking={0.2} anchor="end" />
+            <Sheen id="res-sheen" x={104} y={1500} w={720} h={290} p={prog(t, 6.4, 8.4)} color="rgba(255,246,224,0.2)" angle={14} />
+            <Hatch x={116} y={1580} w={520} h={170} step={7} angle={62} color="rgba(232,196,150,0.5)" opacity={0.13} />
             <RuleLine x1={116} y1={1840} x2={1324} y2={1840} color="rgba(226,206,172,0.28)" />
             <text x={116} y={1906} fill="rgba(243,233,214,0.66)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
               499 detik. Matahari yang kamu lihat selalu terlambat.
@@ -1202,7 +1325,8 @@ export const Scene02: React.FC = () => {
 // 03 — MELIHAT MASA LALU
 // ============================================================================
 export const Scene03: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(2);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(2);
+  const t = rawT * TIMING_SCALE[2];
   const baseY = 1520;
   const x0 = 150;
   const x1 = 1290;
@@ -1224,7 +1348,7 @@ export const Scene03: React.FC = () => {
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={420} t={t} opacity={0.95} band tintB="#F6E3C4" />
         <MilkyWay t={t} opacity={0.55} />
-        <Camera localSec={t} dur={dur} push={0.04} drift={8}>
+        <Camera localSec={rawT} dur={dur} push={0.04} drift={8}>
           <Head i={2} t={t} y={640} size={96} />
 
           {/* constellation guides */}
@@ -1285,7 +1409,8 @@ export const Scene03: React.FC = () => {
 // 04 — MENGELILINGI BAYANGAN
 // ============================================================================
 export const Scene04: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(3);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(3);
+  const t = rawT * TIMING_SCALE[3];
   const cx = 720;
   const cy = 1180;
   const R = 392;
@@ -1299,7 +1424,7 @@ export const Scene04: React.FC = () => {
         light={{ x: cx, y: cy, rx: 720, ry: 720, color: 'rgba(120,170,200,0.14)' }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={220} t={t} opacity={0.7} tintA="#CFE0EC" />
-        <Camera localSec={t} dur={dur} push={0.05} drift={7}>
+        <Camera localSec={rawT} dur={dur} push={0.05} drift={7}>
           <Head i={3} t={t} y={640} size={92} />
 
           {[0, 1, 2].map((k) => {
@@ -1319,7 +1444,11 @@ export const Scene04: React.FC = () => {
 
           <path d={`M ${cx + Math.cos(ang - 0.8) * R} ${cy + Math.sin(ang - 0.8) * R} A ${R} ${R} 0 0 1 ${ex} ${ey}`}
             fill="none" stroke={art.ink} strokeWidth={4} opacity={0.6} strokeLinecap="round" />
+          <Bloom id="earthshine" cx={ex} cy={ey} r={190} color="rgba(126,178,214,0.42)" t={t} speed={0.8} base={0.55} amp={0.2} />
           <EarthGlobe cx={ex} cy={ey} r={46} t={t} terminator={0.45} atmosphere={0.45} />
+          {/* tracer: a bright segment sliding along the orbit */}
+          <circle cx={cx + Math.cos(ang - 1.7) * R} cy={cy + Math.sin(ang - 1.7) * R} r={4.5} fill="#EAF3FA" opacity={0.75} />
+          <circle cx={cx + Math.cos(ang - 1.5) * R} cy={cy + Math.sin(ang - 1.5) * R} r={2.6} fill="#EAF3FA" opacity={0.4} />
 
           <LeaderLabel from={[cx + 250, cy - 250]} to={[cx + 232, cy - 470]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/dtk" anchor="start"
             progress={prog(t, 2.2, 3.4)} color="rgba(226,238,244,0.85)" size={21} />
@@ -1344,7 +1473,8 @@ export const Scene04: React.FC = () => {
 // 05 — ORBIT LEPAS
 // ============================================================================
 export const Scene05: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(4);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(4);
+  const t = rawT * TIMING_SCALE[4];
   const sx = 320;
   const sy = 1380;
   const launch = easeOutCubic(prog(t, 1.2, 3.6));
@@ -1364,7 +1494,7 @@ export const Scene05: React.FC = () => {
             return <line key={i} x1={x} y1={y} x2={x + len} y2={y} stroke="rgba(200,222,240,0.26)" strokeWidth={1 + hash(i, 35) * 1.8} strokeLinecap="round" />;
           })}
         </g>
-        <Camera localSec={t} dur={dur} push={0.05} drift={10}>
+        <Camera localSec={rawT} dur={dur} push={0.05} drift={10}>
           <Head i={4} t={t} y={640} size={96} />
 
           {/* the sun we leave behind */}
@@ -1406,7 +1536,8 @@ export const Scene05: React.FC = () => {
 // 06 — MINGGU PERTAMA
 // ============================================================================
 export const Scene06: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(5);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(5);
+  const t = rawT * TIMING_SCALE[5];
   const fall = easeOutCubic(prog(t, 1.0, 5.2));
   const temp = lerp(15, -18, fall);
 
@@ -1425,9 +1556,10 @@ export const Scene06: React.FC = () => {
         light={{ x: 400, y: 780, rx: 800, ry: 740, color: 'rgba(120,170,200,0.11)' }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={120} t={t} opacity={0.35} tintA="#CFE0EC" />
-        <Camera localSec={t} dur={dur} push={0.04} drift={8}>
+        <Camera localSec={rawT} dur={dur} push={0.04} drift={8}>
           <Head i={5} t={t} y={640} size={96} />
 
+          <Bloom id="cold-haze" cx={1120} cy={1120} r={420} color="rgba(96,158,196,0.3)" t={t} speed={0.55} base={0.6} amp={0.18} />
           <ThermoGauge x={1092} y={880} h={560} value={temp} min={-100} max={30} color={art.accent} cold="#2F6E92" t={t} />
           <Mono x={1092} y={1560} text="SUHU RATA-RATA" size={18} color="rgba(226,240,248,0.45)" tracking={0.24} anchor="middle" />
 
@@ -1480,7 +1612,8 @@ export const Scene06: React.FC = () => {
 // 07 — BULAN IKUT PADAM
 // ============================================================================
 export const Scene07: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(6);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(6);
+  const t = rawT * TIMING_SCALE[6];
   const sweep = prog(t, 1.0, 9.0);
   const phase = 1 - sweep * 0.97;
   const moonCx = 720;
@@ -1493,7 +1626,7 @@ export const Scene07: React.FC = () => {
         light={{ x: 760, y: 1000, rx: 900, ry: 900, color: `rgba(190,205,230,${0.18 * (0.3 + phase)})` }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={320} t={t} opacity={0.6 + sweep * 0.35} tintA="#D8E2EE" band />
-        <Camera localSec={t} dur={dur} push={0.045} drift={7}>
+        <Camera localSec={rawT} dur={dur} push={0.045} drift={7}>
           <Head i={6} t={t} y={640} size={96} />
 
           {/* reflected light: a narrow bundle, not a disc */}
@@ -1535,7 +1668,8 @@ export const Scene07: React.FC = () => {
 // 08 — TAHUN PERTAMA
 // ============================================================================
 export const Scene08: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(7);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(7);
+  const t = rawT * TIMING_SCALE[7];
   const ice = easeOutCubic(prog(t, 0.8, 4.6));
   const panelX = 116;
   const panelW = 1208;
@@ -1551,7 +1685,7 @@ export const Scene08: React.FC = () => {
         light={{ x: 720, y: 1500, rx: 880, ry: 560, color: 'rgba(255,140,60,0.12)' }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={110} t={t} opacity={0.28} tintA="#D3E4EE" />
-        <Camera localSec={t} dur={dur} push={0.05} drift={7}>
+        <Camera localSec={rawT} dur={dur} push={0.05} drift={7}>
           <Head i={7} t={t} y={640} size={96} />
 
           <g>
@@ -1654,7 +1788,8 @@ export const Scene08: React.FC = () => {
 // 09 — HIDUP TANPA CAHAYA
 // ============================================================================
 export const Scene09: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(8);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(8);
+  const t = rawT * TIMING_SCALE[8];
   const plume = 0.72 + 0.28 * Math.sin(t * 1.3);
 
   return (
@@ -1676,7 +1811,7 @@ export const Scene09: React.FC = () => {
         </defs>
         <rect x={0} y={0} width={1440} height={2560} fill="url(#abyss9)" />
 
-        <Camera localSec={t} dur={dur} push={0.055} drift={10}>
+        <Camera localSec={rawT} dur={dur} push={0.055} drift={10}>
           <Head i={8} t={t} y={640} size={96} />
           <g opacity={easeOutCubic(prog(t, 0.3, 1.4))}>
             <Mono x={116} y={742} text="KEDALAMAN 2.000 M" size={20} color={art.accent} tracking={0.28} />
@@ -1761,7 +1896,8 @@ export const Scene09: React.FC = () => {
 // 10 — RAKSASA MERAH
 // ============================================================================
 export const Scene10: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(9);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(9);
+  const t = rawT * TIMING_SCALE[9];
   const grow = easeOutCubic(prog(t, 1.0, 4.6));
 
   const bars = [
@@ -1777,7 +1913,7 @@ export const Scene10: React.FC = () => {
         light={{ x: 760, y: 1020, rx: 880, ry: 880, color: 'rgba(255,120,50,0.22)' }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={140} t={t} opacity={0.32} tintA="#F0D8C0" />
-        <Camera localSec={t} dur={dur} push={0.045} drift={8}>
+        <Camera localSec={rawT} dur={dur} push={0.045} drift={8}>
           <Head i={9} t={t} y={640} size={96} />
 
           <SunCore cx={286} cy={1020} r={70} t={t} cores={80} spots={3} hot="#FFF3CE" mid="#F4C25E" edge="#B9702C" />
@@ -1837,7 +1973,8 @@ export const Scene10: React.FC = () => {
 // 11 — BARA PUTIH
 // ============================================================================
 export const Scene11: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(10);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(10);
+  const t = rawT * TIMING_SCALE[10];
   const expand = easeOutCubic(prog(t, 1.0, 6.0));
 
   return (
@@ -1846,7 +1983,7 @@ export const Scene11: React.FC = () => {
         light={{ x: 720, y: 1040, rx: 800, ry: 800, color: `rgba(150,166,212,${0.16 + 0.06 * expand})` }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
         <StarField count={240} t={t} opacity={0.7} tintA="#E2E6F4" band />
-        <Camera localSec={t} dur={dur} push={0.05} drift={8}>
+        <Camera localSec={rawT} dur={dur} push={0.05} drift={8}>
           <Head i={10} t={t} y={640} size={96} />
 
           {[0, 1, 2, 3, 4, 5].map((k) => {
@@ -1888,6 +2025,11 @@ export const Scene11: React.FC = () => {
               </linearGradient>
             </defs>
             <rect x={116} y={1660} width={1208} height={44} fill="url(#spec11)" opacity={0.8} />
+            {/* cursor: the plate is being read left to right */}
+            <g opacity={easeOutCubic(prog(t, 5.6, 6.4))}>
+              <line x1={116 + 1208 * ((t * 0.14) % 1)} y1={1648} x2={116 + 1208 * ((t * 0.14) % 1)} y2={1718} stroke="#F4F7FF" strokeWidth={1.6} opacity={0.7} />
+              <Mono x={116 + 1208 * ((t * 0.14) % 1) + 8} y={1640} text="PANJANG GELOMBANG" size={11} color="rgba(226,230,244,0.42)" tracking={0.18} />
+            </g>
             {[0.14, 0.22, 0.38, 0.52, 0.66, 0.74, 0.88].map((k, i) => (
               <rect key={i} x={116 + k * 1208} y={1660} width={3 + (i % 2) * 3} height={44} fill="#05070C" opacity={0.85} />
             ))}
@@ -1914,7 +2056,8 @@ export const Scene11: React.FC = () => {
 // 12 — PESAN UNTUK MATAHARI
 // ============================================================================
 export const Scene12: React.FC = () => {
-  const { ch, art, localSec: t, dur } = useChapterClock(11);
+  const { ch, art, localSec: rawT, dur } = useChapterClock(11);
+  const t = rawT * TIMING_SCALE[11];
   const breathe = 0.5 + 0.5 * Math.sin(t * 0.8);
   const cta = easeOutCubic(prog(t, 7.2, 8.6));
 
@@ -1923,7 +2066,7 @@ export const Scene12: React.FC = () => {
       <Backdrop top={ch.groundTop} bottom={ch.groundBottom} tex="wall-plaster" texOpacity={0.2}
         light={{ x: 960, y: 900, rx: 780, ry: 800, color: `rgba(255,206,130,${0.16 + 0.05 * breathe})` }} />
       <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0 }}>
-        <Camera localSec={t} dur={dur} push={0.05} drift={9}>
+        <Camera localSec={rawT} dur={dur} push={0.05} drift={9}>
           <g opacity={easeOutCubic(prog(t, 0.2, 1.4))}>
             <rect x={232} y={700} width={650} height={840} fill="#141009" stroke="rgba(240,220,186,0.42)" strokeWidth={6} />
             <rect x={254} y={722} width={606} height={796} fill="none" stroke="rgba(240,220,186,0.16)" strokeWidth={2} />
@@ -1951,6 +2094,7 @@ export const Scene12: React.FC = () => {
 
           <g opacity={easeOutCubic(prog(t, 1.2, 2.4))}>
             <rect x={986} y={760} width={280} height={280} fill="#100C08" stroke="rgba(240,220,186,0.32)" strokeWidth={3} />
+            <Bloom id="lamp" cx={1126} cy={900} r={300} color="rgba(255,206,140,0.36)" t={t} speed={0.45} base={0.62} amp={0.12} />
             <SunCore cx={1126} cy={900} r={96} t={t} cores={70} spots={2} />
             <Mono x={986} y={1070} text="PLAT 12 · 8:20" size={17} color="rgba(240,220,186,0.45)" tracking={0.22} />
           </g>

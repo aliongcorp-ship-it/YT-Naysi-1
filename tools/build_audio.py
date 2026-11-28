@@ -18,10 +18,10 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 from vo_master import SR, decode, encode  # noqa: E402
 
-TARGET_WPM = 180.0
-HEAD = 0.30
-GAP = 0.22
-TAIL = 1.00
+TARGET_WPM = 148.0
+HEAD = 0.35
+GAP = 0.30
+TAIL = 1.05
 
 
 def read_vo() -> list[str]:
