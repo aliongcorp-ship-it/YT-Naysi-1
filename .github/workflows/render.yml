@@ -125,19 +125,20 @@ jobs:
           ffmpeg -y -v error -start_number 1 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_1.jpg"
           ffmpeg -y -v error -start_number 9 -i "out/qa/f_%02d.jpg" -frames:v 1 -vf "tile=4x2:padding=8:color=0x090D0C" "out/qa/qa_sheet_2.jpg"
 
-          ffmpeg -y -v error -ss 10.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1.jpg"
-          ffmpeg -y -v error -ss 12.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch1b.jpg"
-          ffmpeg -y -v error -ss 26.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch2.jpg"
-          ffmpeg -y -v error -ss 40.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch3.jpg"
-          ffmpeg -y -v error -ss 57.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch4.jpg"
-          ffmpeg -y -v error -ss 70.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch5.jpg"
-          ffmpeg -y -v error -ss 88.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch6.jpg"
-          ffmpeg -y -v error -ss 102.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch7.jpg"
-          ffmpeg -y -v error -ss 118.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch8.jpg"
-          ffmpeg -y -v error -ss 128.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch9.jpg"
-          ffmpeg -y -v error -ss 145.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch10.jpg"
-          ffmpeg -y -v error -ss 158.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch11.jpg"
-          ffmpeg -y -v error -ss 172.00 -i "$VIDEO_OUT" -frames:v 1 "out/qa/hi_ch12.jpg"
+          # stills are taken at the midpoint of each chapter, read from the timeline,
+          # so the QA frames follow the narration instead of drifting out of the cut
+          python3 - <<'PY' > out/qa/stills.txt
+          import re
+          src = open('scenes/timing.ts').read()
+          ch = re.findall(r"^      start: ([0-9.]+), end: ([0-9.]+)", src, re.M)
+          for i, (a, b) in enumerate(ch, 1):
+              print(f"{(float(a) + float(b)) / 2:.2f} hi_ch{i}.jpg")
+          a, b = ch[0]
+          print(f"{float(a) + 0.75 * (float(b) - float(a)):.2f} hi_ch1b.jpg")
+          PY
+          while read -r stamp name; do
+            ffmpeg -y -v error -ss "$stamp" -i "$VIDEO_OUT" -frames:v 1 "out/qa/$name"
+          done < out/qa/stills.txt
           rm -f out/qa/f_*.jpg
 
           cat << 'PAKET_EOF' > "out/Paket YouTube - 8 Menit Setelah Matahari Mati.txt"

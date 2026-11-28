@@ -665,11 +665,11 @@ const InsetStarMap: React.FC<{ t: number; color: string }> = ({ t, color }) => {
           </g>
         );
       })}
-      <Mono x={x + w - 16} y={y + h - 14} text="1 px ≈ 1 tahun cahaya" size={10} color="rgba(238,228,208,0.24)" tracking={0.14} anchor="end" />
+      <Mono x={x + w - 16} y={y + h - 22} text="1 px ≈ 1 tahun cahaya" size={10} color="rgba(238,228,208,0.34)" tracking={0.14} anchor="end" />
       <g opacity={0.5}>
-        <line x1={x + 18} y1={y + h - 18} x2={x + 18 + 44} y2={y + h - 18} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
-        <line x1={x + 18} y1={y + h - 24} x2={x + 18} y2={y + h - 12} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
-        <line x1={x + 62} y1={y + h - 24} x2={x + 62} y2={y + h - 12} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
+        <line x1={x + 18} y1={y + h - 26} x2={x + 18 + 44} y2={y + h - 26} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
+        <line x1={x + 18} y1={y + h - 32} x2={x + 18} y2={y + h - 20} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
+        <line x1={x + 62} y1={y + h - 32} x2={x + 62} y2={y + h - 20} stroke="rgba(238,228,208,0.4)" strokeWidth={1.4} />
       </g>
     </InsetFrame>
   );
@@ -1054,11 +1054,11 @@ const InsetChemistry: React.FC<{ t: number; color: string }> = ({ t, color }) =>
       })}
       <Mono x={x + 196} y={y + 78} text="H2S + O2 → S + H2O" size={12} color="rgba(238,228,208,0.62)" tracking={0.12} />
       <Mono x={x + 196} y={y + 100} text="+ ENERGI" size={12} color={color} tracking={0.14} />
-      <Mono x={x + 196} y={y + 138} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 158} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 178} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 218} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.3)" tracking={0.14} />
-      <Mono x={x + 196} y={y + 236} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.24)" tracking={0.12} />
+      <Mono x={x + 196} y={y + 138} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 158} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 178} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.44)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 218} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.42)" tracking={0.14} />
+      <Mono x={x + 196} y={y + 236} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.34)" tracking={0.12} />
       <Mono x={x + 20} y={y + h - 16} text="ENERGI DARI BATU, BUKAN DARI MATAHARI" size={9} color={color} tracking={0.16} />
     </InsetFrame>
   );
@@ -1838,7 +1838,23 @@ export const Scene09: React.FC = () => {
             <ellipse cx={726} cy={1132} rx={62} ry={18} fill="#0B1114" stroke="rgba(255,160,90,0.4)" strokeWidth={2} />
             <ellipse cx={726} cy={1132} rx={44} ry={12} fill={`rgba(255,150,70,${0.75 * plume})`} />
             <ellipse cx={726} cy={1132} rx={86} ry={30} fill={`rgba(255,140,60,${0.14 * plume})`} />
-            <ellipse cx={726} cy={1108} rx={120} ry={70} fill="rgba(255,150,80,0.10)" />
+            {Array.from({ length: 7 }).map((_, k) => {
+              const kk = k / 6;
+              const cy = 1116 - kk * 430;
+              const rx = 28 + kk * 132;
+              const ry = 13 + kk * 34;
+              const dx = Math.sin(t * 0.55 + k * 0.9) * 20 * kk;
+              return (
+                <ellipse key={k} cx={726 + dx} cy={cy} rx={rx} ry={ry}
+                  fill={`rgba(255,${Math.round(164 - 34 * kk)},${Math.round(104 - 40 * kk)},${0.15 * (1 - kk) + 0.02})`} />
+              );
+            })}
+            {/* mineral shimmer inside the column */}
+            {Array.from({ length: 9 }).map((_, k) => (
+              <line key={`sh${k}`} x1={690 + hash(k, 41) * 72} y1={1110 - ((t * 90 + k * 120) % 420)}
+                x2={700 + hash(k, 41) * 72} y2={1090 - ((t * 90 + k * 120) % 420)}
+                stroke="rgba(255,206,160,0.22)" strokeWidth={1.4} />
+            ))}
             {Array.from({ length: 46 }).map((_, i) => {
               const k = (t * 0.30 + i / 46) % 1;
               const x = 726 + Math.sin(k * 7 + i) * (12 + k * 150);
