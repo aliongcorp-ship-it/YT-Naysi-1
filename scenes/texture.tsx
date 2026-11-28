@@ -36,11 +36,11 @@ export const InkBleed: React.FC<{ t: number; color: string; sid?: string }> = ({
   <svg width={1440} height={2560} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
     <defs>
       <radialGradient id={`bleed-tr-${sid}`} cx="100%" cy="0%" r="62%">
-        <stop offset="0%" stopColor="rgba(12,9,6,0.55)" />
+        <stop offset="0%" stopColor="rgba(12,9,6,0.3)" />
         <stop offset="100%" stopColor="rgba(12,9,6,0)" />
       </radialGradient>
       <radialGradient id={`bleed-bl-${sid}`} cx="0%" cy="100%" r="58%">
-        <stop offset="0%" stopColor="rgba(9,7,5,0.5)" />
+        <stop offset="0%" stopColor="rgba(9,7,5,0.26)" />
         <stop offset="100%" stopColor="rgba(9,7,5,0)" />
       </radialGradient>
     </defs>

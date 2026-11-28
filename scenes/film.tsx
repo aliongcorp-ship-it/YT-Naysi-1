@@ -111,7 +111,7 @@ const SCENE_COMPONENTS: readonly React.FC[] = [
   Scene12,
 ];
 
-const PUSH = [0.05, 0.03, 0.04, 0.05, 0.045, 0.04, 0.045, 0.05, 0.055, 0.045, 0.05, 0.05];
+const PUSH = [0.022, 0.016, 0.02, 0.022, 0.02, 0.018, 0.02, 0.022, 0.024, 0.02, 0.022, 0.024];
 
 const ChapterStage: React.FC<{ index: number; durationFrames: number; Component: React.FC }> = ({
   index,

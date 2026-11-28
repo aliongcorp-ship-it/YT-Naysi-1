@@ -405,8 +405,8 @@ export const Camera: React.FC<{ children: React.ReactNode; localSec: number; dur
   children,
   localSec,
   dur,
-  push = 0.05,
-  drift = 8,
+  push = 0.025,
+  drift = 6,
 }) => {
   const p = smoothstep(clamp01(localSec / Math.max(0.1, dur)));
   const scale = 1.01 + push * p;
@@ -415,7 +415,7 @@ export const Camera: React.FC<{ children: React.ReactNode; localSec: number; dur
   return <g transform={`translate(${720 + tx}, ${1280 + ty}) scale(${scale}) translate(-720, -1280)`}>{children}</g>;
 };
 
-export const ChapterEyebrow: React.FC<{ index: number; localSec: number; x?: number }> = ({ index, localSec, x = 92 }) => {
+export const ChapterEyebrow: React.FC<{ index: number; localSec: number; x?: number }> = ({ index, localSec, x = 204 }) => {
   const ch = CHAPTERS[index];
   const p = easeOutCubic(prog(localSec, 0.1, 1.2));
   return (

@@ -33,6 +33,7 @@ import {
   CHAPTER_KICKERS,
   CHAPTER_TITLES,
   IDENTITY,
+  VIDEO_SPEC,
   clamp01,
   easeOutCubic,
   hash,
@@ -264,18 +265,19 @@ const DotField: React.FC<{
 );
 
 const PlateHeader: React.FC<{ i: number; t: number; dur: number; color: string }> = ({ i, t, dur, color }) => {
-  const local = Math.round(clamp01(t / Math.max(dur, 0.001)) * 1347);
+  const ch = CHAPTERS[i];
+  const local = Math.round(t * 90);
   return (
     <g>
       <rect x={1108} y={228} width={4} height={12} fill={color} opacity={0.85} />
       <Mono x={1330} y={236} text={`SPESIMEN ${String(i + 1).padStart(2, '0')} / 12 · 90 FPS`}
-        size={12} color="rgba(238,228,208,0.34)" tracking={0.22} anchor="end" />
+        size={12} color="rgba(238,228,208,0.5)" tracking={0.22} anchor="end" />
       <Mono
         x={1330}
         y={258}
-        text={`FR ${String(i * 1347 + local).padStart(5, '0')} / 16167`}
+        text={`FR ${fmtInt(ch.start * 90 + local)} / ${fmtInt(VIDEO_SPEC.durationInFrames)}`}
         size={11}
-        color="rgba(238,228,208,0.2)"
+        color="rgba(238,228,208,0.34)"
         tracking={0.18}
         anchor="end"
       />
@@ -405,7 +407,7 @@ export const Stage: React.FC<{ i: number; children: React.ReactNode; note?: stri
           inset: 0,
           pointerEvents: 'none',
           background:
-            'radial-gradient(128% 92% at 50% 44%, rgba(0,0,0,0) 44%, rgba(0,0,0,0.26) 76%, rgba(0,0,0,0.58) 100%)',
+            'radial-gradient(128% 92% at 50% 44%, rgba(0,0,0,0) 44%, rgba(0,0,0,0.2) 76%, rgba(0,0,0,0.5) 100%)',
         }}
       />
       <div
@@ -441,23 +443,23 @@ const Head: React.FC<{ i: number; t: number; y?: number; size?: number }> = ({ i
     <g>
       {/* ghost numeral, printed behind the title */}
       <text
-        x={104}
-        y={y + size * 0.16}
+        x={100}
+        y={y + size * 0.92}
         fill="none"
         stroke={art.accent}
-        strokeWidth={1.4}
+        strokeWidth={1.2}
         fontFamily={IDENTITY.fontDisplay}
-        fontSize={size * 3.1}
+        fontSize={size * 2.45}
         letterSpacing="-0.03em"
-        opacity={0.06 * meta}
+        opacity={0.045 * meta}
       >
         {String(i + 1).padStart(2, '0')}
       </text>
 
       <g opacity={easeOutQuint(prog(t, 0.05, 0.8))}>
         <rect x={110} y={y - 152} width={26 * easeOutQuint(prog(t, 0.1, 0.9))} height={3} fill={art.accent} />
-        <Mono x={110} y={y - 96} text={`${String(i + 1).padStart(2, '0')} / 12`} size={20} color={art.accent} tracking={0.3} />
-        <Mono x={210} y={y - 96} text={CHAPTERS[i].eyebrow} size={15} color="rgba(238,228,208,0.34)" tracking={0.24} />
+        <Mono x={110} y={y - 96} text={`PLAT ${String(i + 1).padStart(2, '0')} / 12`} size={17} color={art.accent} tracking={0.3} />
+        <line x1={250} y1={y - 103} x2={404} y2={y - 103} stroke="rgba(238,228,208,0.16)" strokeWidth={1} />
       </g>
 
       <KineticHeadline
@@ -523,8 +525,7 @@ const InsetFrame: React.FC<{
       <Mono x={x + 14} y={y + 24} text={title} size={13} color="rgba(238,228,208,0.55)" tracking={0.26} />
       {note && <Mono x={x + w - 14} y={y + 24} text={note} size={11} color="rgba(238,228,208,0.26)" tracking={0.18} anchor="end" />}
       <line x1={x + 14} y1={y + 34} x2={x + w - 14} y2={y + 34} stroke="rgba(238,228,208,0.12)" strokeWidth={1} />
-      <HalftoneField x={x + 3} y={y + h - 26} w={Math.min(w - 20, 96)} h={18} step={5} color={color} opacity={0.22} ramp="linear" seed={Math.round(x) % 17} />
-      <Hatch x={x + 2} y={y + h - 4} w={w - 4} h={3} step={4} angle={0} color={color} opacity={0.35} width={1} />
+      <Hatch x={x + 2} y={y + h - 5} w={w - 4} h={4} step={4} angle={0} color={color} opacity={0.4} width={1} />
       <InkEdge x={x} y={y} w={w} h={h} color={color} opacity={0.3 * draw} seed={Math.round(y) % 13} width={1} progress={p} />
       <Wipe id={insetId} p={(p - 0.12) / 0.88} x={x + 1} y={y + 36} w={w - 2} h={h - 38} dir="ttb" soft={2}>
         {children}
@@ -581,7 +582,7 @@ const InsetDivision: React.FC<{ t: number; color: string }> = ({ t, color }) => 
   const x = 950;
   const y = 372;
   const w = 380;
-  const h = 238;
+  const h = 252;
   const p = easeOutCubic(prog(t, 1.0, 3.4));
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="PEMBAGIAN PANJANG" note="SATUAN: DETIK" color={color} p={prog(t, 0.4, 1.3)}>
@@ -778,7 +779,7 @@ const InsetUnitChain: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   const x = 862;
   const y = 624;
   const w = 468;
-  const h = 194;
+  const h = 206;
   const rows: [string, string, number][] = [
     ['1 detik cahaya', '299.792 km', 0.1],
     ['1 menit cahaya', '17,9 juta km', 0.35],
@@ -807,7 +808,7 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
   const x = 862;
   const y = 624;
   const w = 468;
-  const h = 194;
+  const h = 206;
   const bx = x + 34;
   const by = y + 112;
   const bw = w - 68;
@@ -859,7 +860,7 @@ const InsetLogScale: React.FC<{ t: number; color: string }> = ({ t, color }) => 
 
 const InsetThermo: React.FC<{ t: number; color: string }> = ({ t, color }) => {
   const x = 700;
-  const y = 1640;
+  const y = 372;
   const w = 630;
   const h = 212;
   const bx = x + 34;
@@ -1024,7 +1025,7 @@ const InsetChemistry: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   const x = 110;
   const y = 1088;
   const w = 432;
-  const h = 262;
+  const h = 296;
   const nodes: [string, string][] = [
     ['H2S', 'dari batuan'],
     ['O2', 'dari air'],
@@ -1034,11 +1035,11 @@ const InsetChemistry: React.FC<{ t: number; color: string }> = ({ t, color }) =>
   ];
   return (
     <InsetFrame x={x} y={y} w={w} h={h} title="REAKSI DI VENTILASI" note="KEMOSINTESIS" color={color} p={prog(t, 0.9, 1.8)}>
-      <line x1={x + 66} y1={y + 70} x2={x + 66} y2={y + 70 + 48 * 3} stroke="rgba(238,228,208,0.18)" strokeWidth={1} strokeDasharray="4 6" />
+      <line x1={x + 66} y1={y + 64} x2={x + 66} y2={y + 64 + 34 * 3} stroke="rgba(238,228,208,0.18)" strokeWidth={1} strokeDasharray="4 6" />
       {nodes.map(([formula, source], k) => {
         const p = easeOutCubic(prog(t, 1.2 + k * 0.55, 1.9 + k * 0.55));
         const cx = x + 66;
-        const cy = y + 70 + k * 48;
+        const cy = y + 64 + k * 34;
         return (
           <g key={k} opacity={p}>
             <circle cx={cx} cy={cy} r={16} fill="rgba(10,20,26,0.92)" stroke={k === 0 ? color : 'rgba(200,220,230,0.4)'} strokeWidth={1.2} />
@@ -1051,13 +1052,14 @@ const InsetChemistry: React.FC<{ t: number; color: string }> = ({ t, color }) =>
           </g>
         );
       })}
-      <Mono x={x + 196} y={y + 86} text="H2S + O2 → S + H2O" size={12} color="rgba(238,228,208,0.62)" tracking={0.12} />
-      <Mono x={x + 196} y={y + 108} text="+ ENERGI" size={12} color={color} tracking={0.14} />
-      <Mono x={x + 196} y={y + 146} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 166} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 186} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
-      <Mono x={x + 196} y={y + 222} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.24)" tracking={0.14} />
-      <Mono x={x + 196} y={y + 240} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.18)" tracking={0.12} />
+      <Mono x={x + 196} y={y + 78} text="H2S + O2 → S + H2O" size={12} color="rgba(238,228,208,0.62)" tracking={0.12} />
+      <Mono x={x + 196} y={y + 100} text="+ ENERGI" size={12} color={color} tracking={0.14} />
+      <Mono x={x + 196} y={y + 138} text="TANPA FOTON" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 158} text="TANPA KLOROFIL" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 178} text="TANPA MATAHARI" size={11} color="rgba(238,228,208,0.3)" tracking={0.2} />
+      <Mono x={x + 196} y={y + 218} text="BAKTERI → CACING → KEPITING" size={10} color="rgba(238,228,208,0.3)" tracking={0.14} />
+      <Mono x={x + 196} y={y + 236} text="RANTAI MAKANAN TANPA FOTOSINTESIS" size={9} color="rgba(238,228,208,0.24)" tracking={0.12} />
+      <Mono x={x + 20} y={y + h - 16} text="ENERGI DARI BATU, BUKAN DARI MATAHARI" size={9} color={color} tracking={0.16} />
     </InsetFrame>
   );
 };
@@ -1103,7 +1105,7 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
   const x = 740;
   const y = 1372;
   const w = 590;
-  const h = 214;
+  const h = 252;
   const rows: [string, string][] = [
     ['JARI-JARI', '± 10.000 km'],
     ['MASSA', '0,6 massa matahari'],
@@ -1115,7 +1117,7 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
     <InsetFrame x={x} y={y} w={w} h={h} title="SISA INTI" note="BARA PUTIH" color={color} p={prog(t, 1.0, 1.9)}>
       {rows.map(([k, v], idx) => {
         const p = easeOutCubic(prog(t, 1.4 + idx * 0.5, 2.1 + idx * 0.5));
-        const yy = y + 68 + idx * 34;
+        const yy = y + 70 + idx * 32;
         return (
           <g key={k} opacity={p}>
             <Mono x={x + 20} y={yy} text={k} size={12} color="rgba(238,228,208,0.42)" tracking={0.2} />
@@ -1124,7 +1126,7 @@ const InsetDwarfTable: React.FC<{ t: number; color: string }> = ({ t, color }) =
           </g>
         );
       })}
-      <line x1={x + 20} y1={y + h - 30} x2={x + w - 20} y2={y + h - 30} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
+      <line x1={x + 20} y1={y + h - 32} x2={x + w - 20} y2={y + h - 32} stroke="rgba(238,228,208,0.1)" strokeWidth={1} />
       <Mono x={x + 20} y={y + h - 14} text="TIDAK MELEDAK — HANYA BERHENTI" size={10} color={color} tracking={0.18} />
     </InsetFrame>
   );
@@ -1247,7 +1249,7 @@ export const Scene01: React.FC = () => {
             <Mono x={190} y={1824} text="CAHAYA TERAKHIR" size={20} color={art.soft} tracking={0.26} />
           </g>
           <InsetLimbDarkening t={t} color={art.accent} />
-          <ChapterEyebrow index={0} localSec={t} x={116} />
+          <ChapterEyebrow index={0} localSec={t} x={204} />
         </Camera>
         <Furniture i={0} t={t} color={art.accent} note="499,0 S DARI MATAHARI" />
       </svg>
@@ -1313,7 +1315,7 @@ export const Scene02: React.FC = () => {
           </g>
           <InsetDivision t={t} color={art.accent} />
           <InsetUnitChain t={t} color={art.accent} />
-          <ChapterEyebrow index={1} localSec={t} x={116} />
+          <ChapterEyebrow index={1} localSec={t} x={204} />
         </Camera>
         <Furniture i={1} t={t} color={art.accent} note="c = 299.792 km/s" />
       </svg>
@@ -1397,7 +1399,7 @@ export const Scene03: React.FC = () => {
           </g>
           <InsetStarMap t={t} color={art.accent} />
           <InsetLogScale t={t} color={art.accent} />
-          <ChapterEyebrow index={2} localSec={t} x={116} />
+          <ChapterEyebrow index={2} localSec={t} x={204} />
         </Camera>
         <Furniture i={2} t={t} color={art.accent} note="1 TH CAHAYA = 9,46 × 10¹² KM" />
       </svg>
@@ -1440,6 +1442,7 @@ export const Scene04: React.FC = () => {
           </g>
 
           <GhostSun cx={cx} cy={cy} r={112} t={t} color={art.accent} />
+          <HalftoneField x={cx - 76} y={cy - 76} w={152} h={152} step={7} color={art.accent} opacity={0.22} ramp="radial" seed={4} />
           <Mono x={cx} y={cy + 196} text="TITIK KOSONG" size={20} color="rgba(220,231,236,0.55)" tracking={0.24} anchor="middle" />
 
           <path d={`M ${cx + Math.cos(ang - 0.8) * R} ${cy + Math.sin(ang - 0.8) * R} A ${R} ${R} 0 0 1 ${ex} ${ey}`}
@@ -1452,7 +1455,7 @@ export const Scene04: React.FC = () => {
 
           <LeaderLabel from={[cx + 250, cy - 250]} to={[cx + 232, cy - 470]} text="GRAVITASI = CAHAYA" sub="keduanya 299.792 km/dtk" anchor="start"
             progress={prog(t, 2.2, 3.4)} color="rgba(226,238,244,0.85)" size={21} />
-          <LeaderLabel from={[ex, ey]} to={[ex + 40, ey - 230]} text="ORBIT MASIH BERJALAN" sub="mengelilingi ketiadaan" anchor="start"
+          <LeaderLabel from={[ex, ey]} to={[ex - 300, ey + 96]} text="ORBIT MASIH BERJALAN" sub="mengelilingi ketiadaan" anchor="end"
             progress={prog(t, 4.6, 5.8)} color="rgba(226,238,244,0.85)" size={22} />
 
           <g opacity={easeOutCubic(prog(t, 0.8, 1.8))}>
@@ -1461,7 +1464,7 @@ export const Scene04: React.FC = () => {
           </g>
           <InsetVector t={t} color={art.accent} />
           <InsetGravityDelay t={t} color={art.accent} />
-          <ChapterEyebrow index={3} localSec={t} x={116} />
+          <ChapterEyebrow index={3} localSec={t} x={204} />
         </Camera>
         <Furniture i={3} t={t} color={art.accent} note="ORBIT 365,25 HARI · 29,8 KM/S" />
       </svg>
@@ -1500,7 +1503,7 @@ export const Scene05: React.FC = () => {
           {/* the sun we leave behind */}
           <g opacity={0.6}>
             <SunCore cx={-96} cy={1240} r={150} t={t} cores={90} spots={2} limb={0.9} />
-            <Mono x={96} y={1330} text="MATAHARI" size={19} color="rgba(246,231,213,0.5)" tracking={0.24} />
+            <Mono x={126} y={1330} text="MATAHARI" size={19} color="rgba(246,231,213,0.55)" tracking={0.24} />
           </g>
 
           <path d={`M -220 760 A 740 740 0 0 0 ${sx} ${sy}`} fill="none" stroke={art.soft} strokeWidth={2.4} strokeDasharray="10 14" opacity={0.55} />
@@ -1524,7 +1527,7 @@ export const Scene05: React.FC = () => {
             </text>
           </g>
           <InsetTrajectory t={t} color={art.accent} />
-          <ChapterEyebrow index={4} localSec={t} x={116} />
+          <ChapterEyebrow index={4} localSec={t} x={204} />
         </Camera>
         <Furniture i={4} t={t} color={art.accent} note="T+8:20 · ORBIT DILEPAS" />
       </svg>
@@ -1598,9 +1601,8 @@ export const Scene06: React.FC = () => {
           <text x={116} y={1888} fill="rgba(226,240,248,0.82)" fontFamily={IDENTITY.fontSerif} fontStyle="italic" fontSize={38}>
             Fotosintesis berhenti lebih dulu daripada dinginnya.
           </text>
-          <InsetCoolingTable t={t} color={art.accent} />
           <InsetThermo t={t} color={art.accent} />
-          <ChapterEyebrow index={5} localSec={t} x={116} />
+          <ChapterEyebrow index={5} localSec={t} x={204} />
         </Camera>
         <Furniture i={5} t={t} color={art.accent} note="−18 °C DALAM 7 HARI" />
       </svg>
@@ -1656,7 +1658,7 @@ export const Scene07: React.FC = () => {
             </text>
           </g>
           <InsetPhases t={t} color={art.accent} />
-          <ChapterEyebrow index={6} localSec={t} x={116} />
+          <ChapterEyebrow index={6} localSec={t} x={204} />
         </Camera>
         <Furniture i={6} t={t} color={art.accent} note="FASE BULAN = GEOMETRI" />
       </svg>
@@ -1776,7 +1778,7 @@ export const Scene08: React.FC = () => {
             <Mono x={560} y={1770} text="DI ATAS ES BISA LEBIH RENDAH" size={18} color="rgba(226,240,248,0.4)" tracking={0.16} />
           </g>
           <InsetDepthLadder t={t} color={art.accent} />
-          <ChapterEyebrow index={7} localSec={t} x={116} />
+          <ChapterEyebrow index={7} localSec={t} x={204} />
         </Camera>
         <Furniture i={7} t={t} color={art.accent} note="STABIL ± −240 °C SETELAH JUTAAN TAHUN" />
       </svg>
@@ -1873,7 +1875,7 @@ export const Scene09: React.FC = () => {
           )}
 
           <LeaderLabel from={[726, 1132]} to={[420, 1020]} text="FLUIDA 400 °C" sub="kaya hidrogen sulfida" anchor="end" progress={prog(t, 2.2, 3.4)} color="rgba(250,200,160,0.9)" size={21} />
-          <LeaderLabel from={[1010, 1330]} to={[1120, 1230]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={20} />
+          <LeaderLabel from={[1010, 1330]} to={[946, 1216]} text="CACING TABUNG" sub="tanpa mulut, tanpa usus" anchor="start" progress={prog(t, 3.8, 5.0)} color="rgba(217,232,236,0.85)" size={20} />
 
           <g opacity={easeOutCubic(prog(t, 5.4, 6.6))}>
             <Brackets x={116} y={1650} w={620} h={190} color="rgba(95,168,160,0.5)" size={24} />
@@ -1884,7 +1886,7 @@ export const Scene09: React.FC = () => {
             <Mono x={144} y={1826} text="H₂S + O₂ → S + H₂O + ENERGI" size={17} color="rgba(217,232,236,0.4)" tracking={0.14} />
           </g>
           <InsetChemistry t={t} color={art.accent} />
-          <ChapterEyebrow index={8} localSec={t} x={116} />
+          <ChapterEyebrow index={8} localSec={t} x={204} />
         </Camera>
         <Furniture i={8} t={t} color={art.accent} note="TANPA CAHAYA SEJAK AWAL" />
       </svg>
@@ -1961,7 +1963,7 @@ export const Scene10: React.FC = () => {
             Merkurius ditelan. Venus ditelan. Bumi jadi bara.
           </text>
           <InsetEvolution t={t} color={art.accent} />
-          <ChapterEyebrow index={9} localSec={t} x={116} />
+          <ChapterEyebrow index={9} localSec={t} x={204} />
         </Camera>
         <Furniture i={9} t={t} color={art.accent} note="± 5 MILIAR TAHUN DARI SEKARANG" />
       </svg>
@@ -2044,7 +2046,7 @@ export const Scene11: React.FC = () => {
             Tidak ada ledakan. Hanya pendinginan yang panjang.
           </text>
           <InsetDwarfTable t={t} color={art.accent} />
-          <ChapterEyebrow index={10} localSec={t} x={116} />
+          <ChapterEyebrow index={10} localSec={t} x={204} />
         </Camera>
         <Furniture i={10} t={t} color={art.accent} note="10⁹ TAHUN MENDINGIN" />
       </svg>
@@ -2110,11 +2112,11 @@ export const Scene12: React.FC = () => {
           </g>
 
           <g opacity={cta} transform={`translate(0 ${(1 - cta) * 22})`}>
-            <Mono x={232} y={1656} text="SELISIH 8 MENIT 20 DETIK" size={20} color="rgba(247,236,217,0.55)" tracking={0.22} />
-            <Mono x={1324} y={1656} text="TULIS DI KOMENTAR →" size={20} color={art.accent} tracking={0.24} anchor="end" />
+            <Mono x={232} y={1598} text="SELISIH 8 MENIT 20 DETIK" size={19} color="rgba(247,236,217,0.5)" tracking={0.22} />
+            <Mono x={1324} y={1598} text="TULIS DI KOMENTAR →" size={19} color={art.accent} tracking={0.24} anchor="end" />
           </g>
           <InsetLightTime t={t} color={art.accent} />
-          <ChapterEyebrow index={11} localSec={t} x={116} />
+          <ChapterEyebrow index={11} localSec={t} x={204} />
         </Camera>
         <Furniture i={11} t={t} color={art.accent} note="SELALU MATAHARI 8 MENIT LALU" />
       </svg>
